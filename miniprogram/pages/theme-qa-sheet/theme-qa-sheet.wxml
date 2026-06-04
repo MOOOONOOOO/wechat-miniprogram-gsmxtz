@@ -1,0 +1,36 @@
+<view class="page qa-sheet-page">
+  <block wx:if="{{isInviteLanding}}">
+    <view class="qa-invite-card">
+      <text class="label">好友邀请</text>
+      <view class="serif-title">朋友发来了9个音乐题目。</view>
+      <view class="muted">点击进入小程序查看详情。</view>
+      <view class="qa-invite-profile">
+        <view class="qa-invite-avatar">
+          <image wx:if="{{creatorAvatarUrl}}" src="{{creatorAvatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>{{creatorInitial}}</text>
+        </view>
+        <view>{{creatorProfile.nickName || "匿名挑战者"}}</view>
+      </view>
+    </view>
+  </block>
+  <view wx:else class="qa-sheet-head">
+    <text class="label">Question Sheet</text>
+    <view class="serif-title">歌单问答表</view>
+    <view class="muted">这 9 个问题会被发给朋友，自己也可以先填一版。</view>
+  </view>
+
+  <view class="qa-sheet-board">
+    <view wx:for="{{prompts}}" wx:key="id" class="qa-sheet-cell">
+      <view class="qa-question">{{item.prompt}}</view>
+      <view class="qa-answer-line"></view>
+    </view>
+  </view>
+
+  <view class="qa-sheet-actions {{isInviteLanding ? 'single' : ''}}">
+    <button wx:if="{{isInviteLanding}}" class="primary-button qa-invite-enter" disabled="{{!shareChallengeId}}" bindtap="startAnswer">进入</button>
+    <block wx:else>
+      <button class="secondary-button" disabled="{{prompts.length !== 9}}" bindtap="selfFill">自己先填</button>
+      <button class="primary-button" disabled="{{prompts.length !== 9 || creating}}" bindtap="inviteFill">{{creating ? "创建中" : "只让朋友填"}}</button>
+    </block>
+  </view>
+</view>

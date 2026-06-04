@@ -1,0 +1,17 @@
+# WeChat developer local settings
+project.private.config.json
+**/project.private.config.json
+
+# Dependencies and build output
+node_modules/
+miniprogram_npm/
+dist/
+.temp/
+
+# Local/editor noise
+.DS_Store
+Thumbs.db
+*.log
+
+# Old nested scaffold repo in this workspace
+wechat-miniprogram/

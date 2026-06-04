@@ -1,0 +1,38 @@
+<view class="page qa-select-page">
+  <view class="qa-head">
+    <text class="label">Playlist Q&A</text>
+    <view class="serif-title">歌单问答</view>
+    <view class="muted">从题库里挑 9 个问题，也可以写一个自己的。下一页生成问答表。</view>
+  </view>
+
+  <view class="custom-box">
+    <input value="{{customQuestion}}" bindinput="onCustomInput" placeholder="自定义一个音乐问题" />
+    <button bindtap="addCustomQuestion">添加</button>
+  </view>
+
+  <view class="select-meta">
+    <view>选择问题</view>
+    <text>{{selectedCount}}/9</text>
+  </view>
+
+  <scroll-view class="question-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{questions}}"
+      wx:key="id"
+      class="question-row {{item.selectedClass}}"
+      data-id="{{item.id}}"
+      bindtap="toggleQuestion"
+    >
+      <view class="question-check">
+        <text wx:if="{{item.selectedClass}}">✓</text>
+      </view>
+      <view class="question-copy">
+        <text>{{item.prompt}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="sheet-action">
+    <button class="primary-button" disabled="{{selectedCount !== 9}}" bindtap="generateSheet">下一步：生成问题清单</button>
+  </view>
+</view>

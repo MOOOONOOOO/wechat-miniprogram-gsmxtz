@@ -1,0 +1,63 @@
+<view class="page">
+  <view class="panel invite">
+    <view class="avatars">
+      <view class="avatar">
+        <image wx:if="{{creatorAvatar}}" src="{{creatorAvatar}}" mode="aspectFill"></image>
+        <text wx:else>发</text>
+      </view>
+      <view class="avatar friend">
+        <image wx:if="{{friendAvatar}}" src="{{friendAvatar}}" mode="aspectFill"></image>
+        <text wx:else class="avatar-placeholder">点我修改</text>
+      </view>
+    </view>
+    <view class="inviter-name">{{creatorName || "好友"}} 发来的挑战</view>
+    <view class="serif-title">{{inviteTitle}}</view>
+    <view class="muted">{{inviteCopy}}</view>
+
+    <view class="profile-row">
+      <view class="profile-avatar">
+        <image wx:if="{{friendAvatar}}" src="{{friendAvatar}}" mode="aspectFill"></image>
+        <text wx:else class="avatar-placeholder">点我修改</text>
+        <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar"></button>
+      </view>
+      <input
+        class="profile-name"
+        type="nickname"
+        value="{{friendProfile.nickName}}"
+        placeholder="填写你的昵称"
+        bindinput="onNicknameInput"
+        bindblur="saveFriendProfile"
+      />
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">正在读取挑战...</view>
+  <view wx:else class="friend-actions">
+    <button class="primary-button start" bindtap="start">{{hasSavedResult ? "重新作答" : "开始作答"}}</button>
+    <button wx:if="{{hasSavedResult}}" class="secondary-button start" bindtap="viewSavedResult">查看上次结果</button>
+  </view>
+
+  <view wx:if="{{showProfileModal}}" class="profile-modal-mask">
+    <view class="profile-modal">
+      <view class="profile-modal-title">先设置你的资料</view>
+      <view class="profile-modal-copy">用于和好友一起生成挑战结果。</view>
+      <button class="modal-avatar" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image wx:if="{{friendAvatar}}" src="{{friendAvatar}}" mode="aspectFill"></image>
+        <text wx:else class="avatar-placeholder">点我修改</text>
+      </button>
+      <input
+        class="modal-name"
+        type="nickname"
+        value="{{friendProfile.nickName}}"
+        placeholder="填写你的昵称"
+        bindinput="onNicknameInput"
+        bindblur="saveFriendProfile"
+      />
+      <button
+        class="primary-button modal-confirm"
+        disabled="{{!friendProfile.avatarUrl || !friendProfile.nickName}}"
+        bindtap="confirmProfileModal"
+      >完成</button>
+    </view>
+  </view>
+</view>

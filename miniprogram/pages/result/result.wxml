@@ -1,0 +1,210 @@
+<view class="page">
+  <view wx:if="{{sharedResultLoading || sharedResultError}}" class="shared-result-state">
+    <text class="label">Result</text>
+    <view>{{sharedResultError || "正在读取分享结果"}}</view>
+    <text wx:if="{{!sharedResultError}}">稍等一下，音乐品味正在对齐。</text>
+    <button wx:if="{{sharedResultError}}" class="primary-button shared-result-enter" bindtap="goHome">点击进入</button>
+  </view>
+
+  <block wx:else>
+  <view wx:if="{{mode === 'top9'}}" class="top9-result-page">
+    <view class="summary top9-summary">
+      <view class="top9-summary-copy">
+        <text class="label">同担 Top9 挑战</text>
+        <view class="top9-artist">{{topArtist.name}}</view>
+        <view class="score">{{score}}% 默契度</view>
+        <view class="muted">共同选择 {{matchCount}}/9</view>
+        <view class="muted top9-result-copy">{{resultCopy}}</view>
+      </view>
+      <image wx:if="{{topArtistCover}}" class="top9-artist-cover" src="{{topArtistCover}}" mode="aspectFill"></image>
+      <view wx:else class="top9-artist-cover top9-artist-fallback">{{topArtistAvatar}}</view>
+    </view>
+
+    <view class="top9-section shared">
+      <view class="top9-section-title">你们都选了</view>
+      <view wx:if="{{matchedSongs.length === 0}}" class="top9-empty-result">这次没有重复歌曲，但这也是一种品味边界。</view>
+      <view wx:for="{{matchedSongs}}" wx:key="trackId" class="shared-song-row">
+        <image src="{{item.cover}}" mode="aspectFill"></image>
+        <view>
+          <text>{{item.name}}</text>
+          <label>你 #{{item.viewerRank}} / 友 #{{item.otherRank}}</label>
+          <label wx:if="{{item.rankHitText}}" class="rank-hit-inline">{{item.rankHitText}}</label>
+        </view>
+      </view>
+    </view>
+
+    <view class="top9-compare">
+      <view class="top9-column">
+        <view class="top9-column-title">{{top9LeftTitle}}</view>
+        <view wx:for="{{top9LeftSongs}}" wx:key="trackId" class="top9-result-row {{item.matched ? 'matched' : ''}}">
+          <text>#{{item.rank}}</text>
+          <image src="{{item.cover}}" mode="aspectFill"></image>
+          <view>{{item.name}}</view>
+        </view>
+      </view>
+      <view class="top9-column">
+        <view class="top9-column-title">{{top9RightTitle}}</view>
+        <view wx:for="{{top9RightSongs}}" wx:key="trackId" class="top9-result-row {{item.matched ? 'matched' : ''}}">
+          <text>#{{item.rank}}</text>
+          <image src="{{item.cover}}" mode="aspectFill"></image>
+          <view>{{item.name}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-actions">
+      <button class="secondary-button" bindtap="createNew">创建新挑战</button>
+      <button wx:if="{{showPoster}}" class="primary-button" bindtap="toPoster">生成结果海报</button>
+    </view>
+  </view>
+
+  <block wx:elif="{{mode === 'color'}}">
+    <view class="color-result-title">颜色推歌结果</view>
+    <view class="color-result-grid">
+      <view
+        wx:for="{{colorResults}}"
+        wx:key="colorName"
+        class="color-result-card {{item.matchedClass}}"
+        style="{{item.cardStyle}}"
+      >
+        <view class="color-pair-grid">
+          <view class="color-pick">
+            <view class="color-pick-person">
+              <image wx:if="{{creatorAvatar}}" src="{{creatorAvatar}}" mode="aspectFill"></image>
+              <view wx:else>{{creatorInitial}}</view>
+              <text>{{creatorName}}</text>
+            </view>
+            <view class="color-pick-cover">
+              <image wx:if="{{item.creatorCover}}" src="{{item.creatorCover}}" mode="aspectFill"></image>
+              <view wx:else class="color-cover-placeholder"></view>
+            </view>
+            <view class="color-song-copy">
+              <text>{{item.creatorSongName}}</text>
+              <label>{{item.creatorArtistName}}</label>
+            </view>
+          </view>
+          <view class="color-pick">
+            <view class="color-pick-person">
+              <image wx:if="{{friendAvatar}}" src="{{friendAvatar}}" mode="aspectFill"></image>
+              <view wx:else>{{friendInitial}}</view>
+              <text>{{friendName}}</text>
+            </view>
+            <view class="color-pick-cover">
+              <image wx:if="{{item.friendCover}}" src="{{item.friendCover}}" mode="aspectFill"></image>
+              <view wx:else class="color-cover-placeholder"></view>
+            </view>
+            <view class="color-song-copy">
+              <text>{{item.friendSongName}}</text>
+              <label>{{item.friendArtistName}}</label>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-actions">
+      <button class="secondary-button" disabled="{{savingColorResult}}" bindtap="saveColorResultImage">{{savingColorResult ? "生成中" : "保存图片"}}</button>
+      <button class="primary-button" bindtap="goHome">回到首页</button>
+    </view>
+    <canvas canvas-id="colorResultCanvas" class="color-result-canvas"></canvas>
+  </block>
+
+  <block wx:elif="{{mode === 'qa'}}">
+    <view class="qa-result-head">
+      <view class="qa-result-title">同一组问题里，两个人各自留下 9 首歌。</view>
+      <view class="qa-profile-row">
+        <view class="qa-profile">
+          <image wx:if="{{creatorAvatar}}" src="{{creatorAvatar}}" mode="aspectFill"></image>
+          <view wx:else>{{creatorInitial}}</view>
+          <text>{{creatorName}}</text>
+        </view>
+        <view class="qa-profile">
+          <image wx:if="{{friendAvatar}}" src="{{friendAvatar}}" mode="aspectFill"></image>
+          <view wx:else>{{friendInitial}}</view>
+          <text>{{friendName}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="qa-result-list">
+      <view wx:for="{{qaResults}}" wx:key="index" class="qa-result-card">
+        <view class="qa-result-prompt">
+          <text>{{item.promptText}}</text>
+        </view>
+        <view class="qa-answer-grid">
+          <view class="qa-answer">
+            <view class="qa-answer-person">{{creatorName}}</view>
+            <view class="qa-answer-cover">
+              <image wx:if="{{item.creatorCover}}" src="{{item.creatorCover}}" mode="aspectFill"></image>
+              <view wx:else>?</view>
+            </view>
+            <view class="qa-song-copy">
+              <text>{{item.creatorSongName}}</text>
+              <label>{{item.creatorArtistName}}</label>
+            </view>
+          </view>
+          <view class="qa-answer">
+            <view class="qa-answer-person">{{friendName}}</view>
+            <view class="qa-answer-cover">
+              <image wx:if="{{item.friendCover}}" src="{{item.friendCover}}" mode="aspectFill"></image>
+              <view wx:else>?</view>
+            </view>
+            <view class="qa-song-copy">
+              <text>{{item.friendSongName}}</text>
+              <label>{{item.friendArtistName}}</label>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-actions qa-bottom-actions">
+      <button class="primary-button" bindtap="goHome">回到首页</button>
+    </view>
+  </block>
+
+  <block wx:else>
+  <view class="summary">
+    <text class="label">结果</text>
+    <view class="score">{{score}}% 音乐品味契合度</view>
+    <view class="muted">{{resultCopy}}</view>
+  </view>
+
+  <view class="album-grid">
+    <view wx:for="{{comparisons}}" wx:key="index" class="tile">
+      <view class="cover-box">
+        <image src="{{item.cover}}" mode="aspectFill"></image>
+        <text class="badge {{item.badgeClass}}">{{item.badgeText}}</text>
+      </view>
+      <view class="tile-copy">
+        <view>{{item.artist.name}}</view>
+        <text>{{item.songName}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="result-lists">
+    <view class="result-list ok">
+      <view>契合{{subjectLabel}}</view>
+      <block wx:for="{{matched}}" wx:key="index">
+        <text>{{item.artist.name}}</text>
+        <label>都选了 {{item.friendSongName}}</label>
+      </block>
+    </view>
+    <view class="result-list">
+      <view>未契合{{subjectLabel}}</view>
+      <block wx:for="{{missed}}" wx:key="index">
+        <text>{{item.artist.name}}</text>
+        <label>你：{{item.viewerSongName}} / 友：{{item.otherSongName}}</label>
+      </block>
+    </view>
+  </view>
+
+  <view class="bottom-actions">
+    <button class="secondary-button" bindtap="createNew">创建新挑战</button>
+    <button wx:if="{{showPoster}}" class="primary-button" bindtap="toPoster">生成结果海报</button>
+  </view>
+  </block>
+  </block>
+  <canvas canvas-id="resultTimelineCanvas" class="result-timeline-canvas"></canvas>
+</view>

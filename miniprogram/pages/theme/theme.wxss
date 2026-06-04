@@ -1,0 +1,122 @@
+.theme-page {
+  padding-bottom: 52rpx;
+}
+
+.theme-head {
+  margin: 18rpx 0 28rpx;
+}
+
+.theme-head .serif-title {
+  margin-top: 8rpx;
+}
+
+.template-list {
+  display: grid;
+  justify-content: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.template-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14rpx;
+  width: calc((100% - 24rpx) / 2);
+  min-width: 0;
+  min-height: 324rpx;
+  margin: 0;
+  padding: 18rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 8rpx;
+  background: rgba(255,255,255,.56);
+  overflow: hidden;
+  text-align: left;
+}
+
+.template-card::after {
+  border: 0;
+}
+
+.template-card.soon {
+  opacity: .72;
+}
+
+.template-visual {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 0;
+  padding-bottom: 100%;
+  overflow: hidden;
+  border-radius: 4rpx;
+  background: #fffdfa;
+  box-shadow: inset 0 0 0 1rpx rgba(23,21,18,.09);
+}
+
+.template-cover,
+.template-cover-empty {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.template-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18rpx;
+  box-sizing: border-box;
+  color: #827b70;
+  background: #fffdfa;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 21rpx;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.template-copy {
+  min-width: 0;
+}
+
+.template-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.template-title {
+  min-width: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 30rpx;
+  line-height: 1.2;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-title-row label {
+  flex: 0 0 auto;
+  padding: 4rpx 10rpx;
+  border: 1rpx solid rgba(23,21,18,.16);
+  border-radius: 999rpx;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 17rpx;
+  font-weight: 800;
+}
+
+.template-desc {
+  margin-top: 10rpx;
+  color: #5f584f;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 1.35;
+}

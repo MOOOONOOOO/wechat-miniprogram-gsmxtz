@@ -1,0 +1,47 @@
+<view class="page">
+  <view class="panel progress">
+    <view>
+      <text class="label">正在选择</text>
+      <view class="artist-heading">
+        <image wx:if="{{currentArtist.avatarUrl}}" class="artist-avatar" src="{{currentArtist.avatarUrl}}" mode="aspectFill"></image>
+        <view wx:else class="artist-avatar artist-avatar-fallback" style="{{currentArtist.swatchStyle}}">{{currentArtist.avatar}}</view>
+        <view class="artist-name">{{currentArtist.displayName || currentArtist.name}}</view>
+      </view>
+    </view>
+    <view class="step">{{stepText}}<text>/{{targetCount}}</text></view>
+  </view>
+
+  <view class="search">
+    <text>⌕</text>
+    <input value="{{query}}" bindinput="onSongSearch" placeholder="{{searchPlaceholder}}" />
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">正在准备热门歌曲...</view>
+
+  <scroll-view class="song-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{songs}}"
+      wx:key="trackId"
+      class="song-item {{item.selectedClass}}"
+      data-track-id="{{item.trackId}}"
+      bindtap="selectSong"
+    >
+      <image class="song-cover" src="{{item.cover}}" mode="aspectFill"></image>
+      <view class="song-info">
+        <view class="song-title">{{item.name}}</view>
+        <view class="song-meta">{{item.artistName}} - {{item.album}}</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{showEmpty}}" class="loading">{{emptyText}}</view>
+
+  <view class="timeline">
+    <view wx:for="{{progressDots}}" wx:key="id" class="dot {{item.doneClass}}"></view>
+  </view>
+
+  <view class="bottom-action nav-actions {{mode === 'top9' ? 'top9-actions' : ''}}">
+    <button wx:if="{{mode !== 'top9'}}" class="secondary-button" disabled="{{!canPrev}}" bindtap="prev">上一位</button>
+    <button class="primary-button" disabled="{{!canProceed}}" bindtap="next">{{nextLabel}}</button>
+  </view>
+</view>

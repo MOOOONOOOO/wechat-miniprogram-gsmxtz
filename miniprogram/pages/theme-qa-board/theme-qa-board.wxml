@@ -1,0 +1,40 @@
+<view class="page qa-board-page">
+  <view class="qa-board-head">
+    <view>
+      <view class="serif-title">歌单问答</view>
+      <view class="muted">点一个问题，选一位歌手，再选一首歌。</view>
+    </view>
+    <view class="qa-count">{{selectedCount}}<text>/9</text></view>
+  </view>
+
+  <view class="qa-grid">
+    <button
+      wx:for="{{prompts}}"
+      wx:key="id"
+      class="qa-card {{item.doneClass}}"
+      data-id="{{item.id}}"
+      bindtap="choosePrompt"
+    >
+      <view class="qa-prompt-title">{{item.prompt}}</view>
+      <view class="qa-cover-wrap">
+        <view class="qa-cover-box">
+          <image wx:if="{{item.song.cover}}" class="qa-cover" src="{{item.song.cover}}" mode="aspectFill"></image>
+          <view wx:else class="qa-empty">?</view>
+        </view>
+      </view>
+      <view class="qa-info">
+        <view class="song-title">{{item.songName}}</view>
+        <view class="song-meta">{{item.songArtistName}}</view>
+        <view class="song-album">{{item.songAlbumName}}</view>
+      </view>
+    </button>
+  </view>
+
+  <view class="qa-actions {{actionClass}}">
+    <button wx:if="{{showSaveButton}}" class="secondary-button" disabled="{{!isComplete || savingImage}}" bindtap="saveImage">{{savingImage ? "绘制中" : "仅保存图片"}}</button>
+    <button class="primary-button" disabled="{{!isComplete || creating}}" bindtap="primaryAction">{{creating ? "创建中" : primaryLabel}}</button>
+  </view>
+
+  <canvas canvas-id="qaCanvas" class="qa-canvas"></canvas>
+  <canvas canvas-id="qaTimelineCanvas" class="qa-timeline-canvas"></canvas>
+</view>

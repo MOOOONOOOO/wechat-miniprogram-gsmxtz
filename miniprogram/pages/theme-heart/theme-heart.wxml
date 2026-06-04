@@ -1,0 +1,45 @@
+<view class="page theme-heart-page">
+  <view class="theme-heart-head">
+    <view>
+      <view class="serif-title">{{title}}</view>
+      <view class="muted">点击空格，放入专辑。</view>
+    </view>
+    <view class="heart-count">{{selectedCount}}<text>/{{slots.length}}</text></view>
+  </view>
+
+  <view class="heart-board {{draggingClass}}">
+    <view
+      wx:if="{{draggingClass}}"
+      wx:for="{{slots}}"
+      wx:key="id"
+      class="heart-slot-guide"
+      style="{{item.cardStyle}}"
+    ></view>
+    <view
+      wx:for="{{slots}}"
+      wx:key="id"
+      wx:for-index="index"
+      class="heart-slot {{item.doneClass}} {{item.dragClass}} {{item.hoverClass}} {{item.swapClass}}"
+      style="{{item.cardStyle}}{{item.dragStyle}}"
+      data-id="{{item.id}}"
+      data-index="{{index}}"
+      bindtap="chooseSlot"
+      bindlongpress="startDrag"
+      catchtouchmove="moveDrag"
+      bindtouchend="endDrag"
+      bindtouchcancel="cancelDrag"
+    >
+      <image wx:if="{{item.albumCover}}" src="{{item.albumCover}}" mode="aspectFill"></image>
+      <text wx:else>+</text>
+    </view>
+  </view>
+
+  <view class="heart-note">可通过返回歌手列表按钮选择多个歌手的专辑，填满后保存成一张心形专辑，可以先长按并拖动专辑封面移动位置。</view>
+
+  <view class="theme-actions">
+    <button class="secondary-button" disabled="{{!isComplete || savingImage}}" bindtap="saveImage">{{savingImage ? "绘制中" : "保存图片"}}</button>
+    <button class="primary-button" bindtap="goHome">返回首页</button>
+  </view>
+
+  <canvas canvas-id="themeHeartCanvas" class="theme-heart-canvas"></canvas>
+</view>

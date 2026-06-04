@@ -1,0 +1,9 @@
+{
+  "triggers": [
+    {
+      "name": "cleanupExpiredSubmissionsTimer",
+      "type": "timer",
+      "config": "0 */30 * * * * *"
+    }
+  ]
+}

@@ -1,0 +1,534 @@
+const { artists } = require("../../data/artists");
+const { searchArtists, searchAlbumsByQuery, searchSongs } = require("../../utils/api");
+const { readArtistCovers } = require("../../utils/itunesCache");
+
+function getAlbumTargetCount(mode) {
+  if (mode !== "themeAlbum") return 9;
+  const app = getApp();
+  return Number(app.globalData.draftThemeAlbumTarget || (app.globalData.draftThemePrompts || []).length || 9);
+}
+
+function getThemeAlbumDoneText() {
+  return getApp().globalData.draftThemeTemplate === "heart"
+    ? "完成：生成心形专辑挑战"
+    : "完成：组成我的人生九专";
+}
+
+function normalizeArtistName(value) {
+  const variants = {
+    "張": "张",
+    "陳": "陈",
+    "劉": "刘",
+    "鄧": "邓",
+    "楊": "杨",
+    "蕭": "萧",
+    "謝": "谢",
+    "鄭": "郑",
+    "趙": "赵",
+    "羅": "罗",
+    "盧": "卢",
+    "齊": "齐",
+    "蘇": "苏",
+    "譚": "谭",
+    "黃": "黄",
+    "吳": "吴",
+    "藍": "蓝",
+    "竇": "窦",
+    "傑": "杰",
+    "倫": "伦",
+    "華": "华",
+    "國": "国",
+    "榮": "荣",
+    "龍": "龙",
+    "風": "风",
+    "櫻": "樱",
+    "體": "体",
+    "髮": "发",
+    "愛": "爱",
+    "寶": "宝",
+    "貝": "贝",
+    "懸": "悬",
+    "無": "无",
+    "裏": "里",
+    "裡": "里"
+  };
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[張陳劉鄧楊蕭謝鄭趙羅盧齊蘇譚黃吳藍竇傑倫華國榮龍風櫻體髮愛寶貝懸無裏裡]/g, (char) => variants[char] || char)
+    .replace(/[\s·・.。'’`"“”\-_/\\()（）[\]【】:：,，]+/g, "");
+}
+
+function getArtistDedupeNames(artist) {
+  return [
+    artist && artist.name,
+    artist && artist.artistName,
+    artist && artist.searchTerm,
+    artist && artist.resolvedArtistName,
+    artist && artist.itunesArtistName
+  ].map(normalizeArtistName).filter(Boolean);
+}
+
+Page({
+  data: {
+    mode: "artist",
+    role: "creator",
+    challengeId: "",
+    colorId: "",
+    slotId: "",
+    query: "",
+    browsingLetter: false,
+    selected: [],
+    albumCount: 0,
+    activeLetter: "C",
+    letters: [],
+    letterItems: [],
+    localArtists: artists,
+    remoteArtists: [],
+    remoteAlbums: [],
+    visibleArtists: artists,
+    visibleAlbums: [],
+    visibleArtistResults: [],
+    showSearchSections: false,
+    loading: false,
+    canNext: false,
+    isAlbumMode: false,
+    albumTargetCount: 9,
+    themeAlbumDoneText: "完成：组成我的人生九专",
+    titleText: "",
+    targetCount: 9
+  },
+
+  onLoad(options = {}) {
+    const mode = options.mode || getApp().globalData.draftMode || "artist";
+    const app = getApp();
+    const challengeId = options.challengeId
+      ? decodeURIComponent(options.challengeId)
+      : ((app.globalData.challenge || {}).challengeId || "");
+    app.globalData.draftMode = mode;
+    const isAlbumMode = mode === "album" || mode === "themeAlbum";
+    const albumTargetCount = getAlbumTargetCount(mode);
+    const topArtist = app.globalData.draftTopArtist;
+    const colorId = options.colorId || app.globalData.currentColorId || "";
+    const colorArtist = colorId ? ((app.globalData.draftColorArtists || {})[colorId] || app.globalData.currentColorArtist) : null;
+    const slotId = options.slotId || (mode === "qa" ? app.globalData.currentQaSlotId : app.globalData.currentThemeSlotId) || "";
+    const themeArtist = slotId ? ((app.globalData.draftThemeArtists || {})[slotId] || app.globalData.currentThemeSlotArtist) : null;
+    const qaArtist = slotId ? ((app.globalData.draftQaArtists || {})[slotId] || app.globalData.currentQaSlotArtist) : null;
+    const letters = this.buildLetters(this.data.localArtists);
+    this.setData({
+      mode,
+      role: options.role || "creator",
+      challengeId,
+      colorId,
+      slotId,
+      selected: mode === "top9" && topArtist ? [topArtist] : (mode === "color" && colorArtist ? [colorArtist] : (mode === "theme" && themeArtist ? [themeArtist] : (mode === "qa" && qaArtist ? [qaArtist] : []))),
+      albumCount: (app.globalData.draftAlbums || []).length,
+      isAlbumMode,
+      albumTargetCount,
+      themeAlbumDoneText: getThemeAlbumDoneText(),
+      letters,
+      activeLetter: letters.includes("C") ? "C" : letters[0]
+    }, () => this.renderArtists());
+  },
+
+  onShow() {
+    const albumCount = (getApp().globalData.draftAlbums || []).length;
+    const albumTargetCount = getAlbumTargetCount(this.data.mode);
+    this.setData({
+      albumCount,
+      albumTargetCount,
+      canNext: this.data.isAlbumMode ? albumCount === albumTargetCount : this.data.canNext
+    }, () => {
+      if (this.data.isAlbumMode) this.renderArtists();
+    });
+  },
+
+  onSearchInput(event) {
+    const query = event.detail.value || "";
+    const keyword = query.trim();
+    this.setData({ query, browsingLetter: false });
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.searchRemote(keyword), 360);
+    this.renderArtists();
+  },
+
+  setLetter(event) {
+    const letter = event.currentTarget.dataset.letter;
+    this.setData({
+      activeLetter: letter,
+      browsingLetter: Boolean(String(this.data.query || "").trim())
+    }, () => this.renderArtists());
+  },
+
+  searchRemote(query) {
+    if (!query) {
+      this.setData({ remoteArtists: [], remoteAlbums: [], loading: false }, () => this.renderArtists());
+      return;
+    }
+
+    this.setData({ loading: true });
+    const artistRequest = searchArtists(query).catch(() => ({ artists: [] }));
+    const albumRequest = this.data.isAlbumMode
+      ? searchAlbumsByQuery(query).catch(() => ({ albums: [] }))
+      : Promise.resolve({ albums: [] });
+
+    Promise.all([artistRequest, albumRequest])
+      .then(([artistRes, albumRes]) => {
+        this.setData({
+          remoteArtists: artistRes.artists || [],
+          remoteAlbums: this.data.isAlbumMode ? ((albumRes && albumRes.albums) || []) : []
+        }, () => this.renderArtists());
+      })
+      .catch(() => {
+        wx.showToast({ title: this.data.isAlbumMode ? "搜索失败" : "歌手搜索失败", icon: "none" });
+      })
+      .finally(() => this.setData({ loading: false }));
+  },
+
+  renderArtists() {
+    const { query, activeLetter, browsingLetter, selected, localArtists, remoteArtists, remoteAlbums } = this.data;
+    const keyword = String(query || "").trim();
+    const lowerKeyword = keyword.toLowerCase();
+    const selectedAlbums = getApp().globalData.draftAlbums || [];
+    const selectedMap = selected.reduce((map, item) => {
+      map[item.id] = true;
+      return map;
+    }, {});
+    const selectedAlbumMap = selectedAlbums.reduce((map, item) => {
+      map[item.id] = true;
+      return map;
+    }, {});
+
+    const localMatchedArtists = localArtists.filter((item) => (
+        item.name.includes(keyword) ||
+        String(item.searchTerm || "").toLowerCase().includes(lowerKeyword)
+      ));
+    const localMatchedNameMap = localMatchedArtists.reduce((map, item) => {
+      getArtistDedupeNames(item).forEach((name) => {
+        map[name] = true;
+      });
+      return map;
+    }, {});
+    const searchedArtists = [
+      ...localMatchedArtists.map((item) => ({ ...item, type: "artist" })),
+      ...remoteArtists
+        .filter((remote) => !getArtistDedupeNames(remote).some((name) => localMatchedNameMap[name]))
+        .map((item) => ({ ...item, type: "artist" }))
+    ];
+    const searchedAlbums = remoteAlbums.map((item) => ({ ...item, type: "album" }));
+    const searchBase = this.data.isAlbumMode
+      ? [...searchedAlbums, ...searchedArtists]
+      : searchedArtists;
+    const shouldShowLetterArtists = !keyword || browsingLetter;
+    const base = shouldShowLetterArtists
+      ? localArtists.filter((item) => item.initial === activeLetter).map((item) => ({ ...item, type: "artist" }))
+      : searchBase;
+
+    const decorateItem = (item) => ({
+        ...item,
+        avatar: item.name ? item.name.slice(0, 1) : "?",
+        avatarUrl: item.type === "album" ? item.cover : (item.avatarUrl || ""),
+        meta: item.type === "album" ? `${item.artistName || ""}${item.year ? ` · ${item.year}` : ""}` : "",
+        selectedClass: item.type === "album" ? (selectedAlbumMap[item.id] ? "selected" : "") : (selectedMap[item.id] ? "selected" : "")
+      });
+    const visibleArtists = base.map(decorateItem);
+    const showSearchSections = this.data.isAlbumMode && keyword && !browsingLetter;
+    const visibleAlbums = showSearchSections ? searchedAlbums.map(decorateItem) : [];
+    const visibleArtistResults = showSearchSections ? searchedArtists.map(decorateItem) : [];
+
+    const targetCount = this.data.isAlbumMode ? this.data.albumTargetCount : (this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? 1 : 9);
+    const titleText = this.data.isAlbumMode ? "选择专辑或歌手" : (targetCount === 1 ? "选择 1 位歌手" : "选择 9 位歌手");
+    this.setData({
+      visibleArtists,
+      visibleAlbums,
+      visibleArtistResults,
+      showSearchSections,
+      canNext: this.data.isAlbumMode ? this.data.albumCount === this.data.albumTargetCount : selected.length === (this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? 1 : 9),
+      titleText,
+      targetCount,
+      letterItems: this.data.letters.map((key) => ({
+        key,
+        activeClass: key === activeLetter && shouldShowLetterArtists ? "active" : ""
+      }))
+    }, () => this.loadVisibleArtistAvatars(showSearchSections ? visibleArtistResults : visibleArtists));
+  },
+
+  getItemInitial(item) {
+    const initial = String((item && item.initial) || "").toUpperCase();
+    if (/^[A-Z]$/.test(initial)) return initial;
+
+    const source = String((item && (item.searchTerm || item.artistName || item.name)) || "").trim();
+    const letter = source.slice(0, 1).toUpperCase();
+    return /^[A-Z]$/.test(letter) ? letter : "";
+  },
+
+  buildLetters(list) {
+    return list
+      .map((item) => item.initial)
+      .filter((initial, index, source) => initial && source.indexOf(initial) === index)
+      .sort((a, b) => a.localeCompare(b));
+  },
+
+  loadVisibleArtistAvatars(visibleArtists) {
+    if (!this.avatarRequests) this.avatarRequests = {};
+    if (!this.avatarCacheReads) this.avatarCacheReads = {};
+
+    const candidates = (visibleArtists || [])
+      .filter((artist) => artist.type !== "album" && !artist.avatarUrl);
+    const unread = candidates.filter((artist) => {
+      const key = this.getArtistRequestKey(artist);
+      if (this.avatarCacheReads[key]) return false;
+      this.avatarCacheReads[key] = true;
+      return true;
+    });
+
+    if (!unread.length) {
+      this.loadMissingArtistAvatars(candidates);
+      return;
+    }
+
+    readArtistCovers(unread)
+      .then((coverMap) => {
+        const hits = unread.filter((artist) => coverMap[artist.id]);
+        const misses = unread.filter((artist) => !coverMap[artist.id]);
+        if (!hits.length) {
+          this.loadMissingArtistAvatars(misses);
+          return;
+        }
+
+        this.applyArtistCoverMap(hits, coverMap, () => this.loadMissingArtistAvatars(misses));
+      })
+      .catch(() => this.loadMissingArtistAvatars(unread));
+  },
+
+  getArtistRequestKey(artist) {
+    return String(
+      (artist && (artist.itunesArtistId || artist.artistId || artist.searchTerm || artist.name || artist.id)) || ""
+    );
+  },
+
+  applyArtistCoverMap(artistsWithCover, coverMap, callback) {
+    const byId = {};
+    (artistsWithCover || []).forEach((artist) => {
+      if (artist && coverMap[artist.id]) byId[artist.id] = coverMap[artist.id];
+    });
+
+    const patch = (item) => {
+      const cover = item && byId[item.id];
+      const avatarUrl = cover && (cover.avatarUrl || cover.coverUrl);
+      if (!avatarUrl) return item;
+      return {
+        ...item,
+        avatarUrl,
+        artistId: item.artistId || cover.artistId || "",
+        itunesArtistId: item.itunesArtistId || cover.artistId || "",
+        trustedArtistId: item.trustedArtistId || cover.trustedArtistId || Boolean(cover.resolvedArtistName || cover.itunesArtistName),
+        resolvedArtistName: item.resolvedArtistName || cover.resolvedArtistName || cover.itunesArtistName || "",
+        sourceCollectionId: item.sourceCollectionId || cover.sourceCollectionId || "",
+        sourceCollectionName: item.sourceCollectionName || cover.sourceCollectionName || ""
+      };
+    };
+
+    this.setData({
+      localArtists: this.data.localArtists.map(patch),
+      remoteArtists: this.data.remoteArtists.map(patch),
+      selected: this.data.selected.map(patch)
+    }, () => {
+      this.renderArtists();
+      if (callback) callback();
+    });
+  },
+
+  loadMissingArtistAvatars(artistsToLoad) {
+    (artistsToLoad || [])
+      .filter((artist) => !artist.avatarUrl && !this.avatarRequests[this.getArtistRequestKey(artist)])
+      .forEach((artist) => {
+        const requestKey = this.getArtistRequestKey(artist);
+        this.avatarRequests[requestKey] = true;
+        searchSongs(artist, "")
+          .then((res) => {
+            const song = (res.songs || []).find((item) => item.cover);
+            if (!song || !song.cover) return;
+
+            this.applyArtistCoverMap([artist], {
+              [artist.id]: {
+                avatarUrl: song.cover,
+                coverUrl: song.cover,
+                artistId: res.artistId || song.artistId || "",
+                trustedArtistId: Boolean(res.artistId),
+                resolvedArtistName: res.artistName || "",
+                sourceCollectionId: song.collectionId || "",
+                sourceCollectionName: song.collectionName || song.album || ""
+              }
+            });
+          })
+          .catch(() => {});
+      });
+  },
+
+  toggleArtist(event) {
+    const id = event.currentTarget.dataset.id;
+    const type = event.currentTarget.dataset.type || "artist";
+    if (type === "album") {
+      this.toggleAlbum(id);
+      return;
+    }
+
+    const all = [...this.data.localArtists, ...this.data.remoteArtists];
+    const artist = all.find((item) => item.id === id);
+    if (this.data.isAlbumMode) {
+      if (!artist) return;
+      getApp().globalData.currentAlbumArtist = artist;
+      wx.navigateTo({ url: `/pages/albums/albums?artistId=${encodeURIComponent(id)}&mode=${this.data.mode}` });
+      return;
+    }
+
+    if (this.data.mode === "top9") {
+      const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
+      getApp().globalData.draftTopArtist = selected[0] || null;
+      this.setData({ selected }, () => this.renderArtists());
+      return;
+    }
+
+    if (this.data.mode === "color") {
+      const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
+      this.setData({ selected }, () => this.renderArtists());
+      return;
+    }
+
+    if (this.data.mode === "theme") {
+      const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
+      this.setData({ selected }, () => this.renderArtists());
+      return;
+    }
+
+    if (this.data.mode === "qa") {
+      const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
+      this.setData({ selected }, () => this.renderArtists());
+      return;
+    }
+
+    let selected = [...this.data.selected];
+
+    if (selected.some((item) => item.id === id)) {
+      selected = selected.filter((item) => item.id !== id);
+    } else if (selected.length < 9 && artist) {
+      selected.push(artist);
+    }
+
+    this.setData({ selected }, () => this.renderArtists());
+  },
+
+  toggleAlbum(id) {
+    const album = this.data.remoteAlbums.find((item) => item.id === id);
+    if (!album) return;
+
+    let selected = [...(getApp().globalData.draftAlbums || [])];
+    if (selected.some((item) => item.id === id)) {
+      selected = selected.filter((item) => item.id !== id);
+    } else if (selected.length < this.data.albumTargetCount) {
+      selected.push(album);
+    } else {
+      wx.showToast({ title: `最多选择 ${this.data.albumTargetCount} 张专辑`, icon: "none" });
+      return;
+    }
+
+    getApp().globalData.draftAlbums = selected;
+    this.setData({
+      albumCount: selected.length,
+      canNext: selected.length === this.data.albumTargetCount
+    }, () => this.renderArtists());
+  },
+
+  next() {
+    if (this.data.mode === "qa") {
+      if (this.data.selected.length !== 1) {
+        wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
+        return;
+      }
+      const app = getApp();
+      const artist = this.data.selected[0];
+      app.globalData.currentQaSlotId = this.data.slotId;
+      app.globalData.currentQaSlotArtist = artist;
+      app.globalData.draftQaArtists = {
+        ...(app.globalData.draftQaArtists || {}),
+        [this.data.slotId]: artist
+      };
+      wx.redirectTo({ url: `/pages/songs/songs?role=${this.data.role}&mode=qa&slotId=${this.data.slotId}&challengeId=${encodeURIComponent(this.data.challengeId || "")}` });
+      return;
+    }
+
+    if (this.data.mode === "theme") {
+      if (this.data.selected.length !== 1) {
+        wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
+        return;
+      }
+      const app = getApp();
+      const artist = this.data.selected[0];
+      app.globalData.currentThemeSlotId = this.data.slotId;
+      app.globalData.currentThemeSlotArtist = artist;
+      app.globalData.draftThemeArtists = {
+        ...(app.globalData.draftThemeArtists || {}),
+        [this.data.slotId]: artist
+      };
+      wx.redirectTo({ url: `/pages/songs/songs?role=${this.data.role}&mode=theme&slotId=${this.data.slotId}` });
+      return;
+    }
+
+    if (this.data.mode === "color") {
+      if (this.data.selected.length !== 1) {
+        wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
+        return;
+      }
+      const app = getApp();
+      const artist = this.data.selected[0];
+      app.globalData.currentColorId = this.data.colorId;
+      app.globalData.currentColorArtist = artist;
+      app.globalData.draftColorArtists = {
+        ...(app.globalData.draftColorArtists || {}),
+        [this.data.colorId]: artist
+      };
+      wx.redirectTo({ url: `/pages/songs/songs?role=${this.data.role}&mode=color&colorId=${this.data.colorId}&challengeId=${encodeURIComponent(this.data.challengeId || "")}` });
+      return;
+    }
+
+    if (this.data.mode === "top9") {
+      if (this.data.selected.length !== 1) {
+        wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
+        return;
+      }
+      const app = getApp();
+      app.globalData.draftTopArtist = this.data.selected[0];
+      app.globalData.draftMode = "top9";
+      app.globalData.creatorTopSongs = [];
+      wx.navigateTo({ url: "/pages/songs/songs?role=creator&mode=top9" });
+      return;
+    }
+
+    if (this.data.mode === "album") {
+      if ((getApp().globalData.draftAlbums || []).length !== 9) {
+        wx.showToast({ title: "请选择 9 张专辑", icon: "none" });
+        return;
+      }
+      getApp().globalData.creatorChoices = {};
+      wx.navigateTo({ url: "/pages/songs/songs?role=creator&mode=album" });
+      return;
+    }
+
+    if (this.data.mode === "themeAlbum") {
+      if ((getApp().globalData.draftAlbums || []).length !== this.data.albumTargetCount) {
+        wx.showToast({ title: `请选择 ${this.data.albumTargetCount} 张专辑`, icon: "none" });
+        return;
+      }
+      const app = getApp();
+      app.globalData.draftMode = "theme";
+      wx.navigateBack();
+      return;
+    }
+
+    getApp().globalData.draftArtists = this.data.selected;
+    getApp().globalData.draftMode = "artist";
+    getApp().globalData.creatorChoices = {};
+    wx.navigateTo({ url: "/pages/songs/songs?role=creator" });
+  }
+});

@@ -1,0 +1,241 @@
+.history-page {
+  width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 48rpx;
+  overflow-x: hidden;
+}
+
+.history-head {
+  position: relative;
+  margin-bottom: 22rpx;
+  width: 100%;
+  min-height: 96rpx;
+  box-sizing: border-box;
+}
+
+.history-title-wrap {
+  box-sizing: border-box;
+  padding-right: 188rpx;
+  min-width: 0;
+}
+
+.history-title {
+  margin-top: 8rpx;
+  font-size: 48rpx;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.refresh-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 28rpx;
+  right: 0;
+  width: 164rpx;
+  height: 56rpx;
+  margin: 0;
+  padding: 0;
+  border: 1rpx solid rgba(23,21,18,.14);
+  border-radius: 8px;
+  background: rgba(255,255,255,.62);
+  color: #171512;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.refresh-button::after {
+  border: 0;
+}
+
+.refresh-button[disabled] {
+  opacity: .48;
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8rpx;
+  margin-bottom: 22rpx;
+  padding: 8rpx;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 12rpx;
+  background: rgba(255,255,255,.46);
+}
+
+.segment text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 62rpx;
+  border-radius: 8px;
+  color: #5c554d;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.segment text.active {
+  color: #fff;
+  background: #171512;
+}
+
+.history-list {
+  display: grid;
+  gap: 18rpx;
+}
+
+.history-card {
+  box-sizing: border-box;
+  padding: 22rpx;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 12rpx;
+  background: rgba(255,255,255,.58);
+  overflow: hidden;
+}
+
+.record-main {
+  display: flex;
+  min-width: 0;
+}
+
+.record-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 76rpx;
+  width: 76rpx;
+  height: 76rpx;
+  margin-right: 18rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  color: #fff;
+  background: #171512;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.record-avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+.record-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.record-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.record-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 32rpx;
+  line-height: 1.2;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-score {
+  flex: 0 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 28rpx;
+  font-weight: 900;
+}
+
+.record-meta,
+.record-time {
+  margin-top: 6rpx;
+  color: #5f584f;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.record-time {
+  color: #827b70;
+}
+
+.record-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 10rpx;
+  margin-top: 18rpx;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.record-actions.action-count-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mini-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 64rpx;
+  margin: 0;
+  padding: 0 10rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 8px;
+  background: rgba(255,255,255,.64);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 23rpx;
+  font-weight: 800;
+  color: #171512;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-actions.action-count-3 .mini-button {
+  padding: 0 6rpx;
+  font-size: 22rpx;
+}
+
+.primary-mini {
+  color: #1f6d43;
+  border-color: rgba(31,109,67,.24);
+  background: rgba(223,238,227,.72);
+}
+
+.danger {
+  color: #8a3b2d;
+}
+
+.empty {
+  padding: 36rpx 28rpx;
+  border: 1rpx dashed rgba(23,21,18,.2);
+  border-radius: 12rpx;
+  background: rgba(255,255,255,.42);
+}
+
+.empty view {
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.empty text {
+  display: block;
+  margin-top: 8rpx;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  font-weight: 700;
+}

@@ -1,0 +1,142 @@
+.albums-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.artist-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  margin-bottom: 22rpx;
+}
+
+.artist-heading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.artist-avatar {
+  flex: 0 0 auto;
+  width: 82rpx;
+  height: 82rpx;
+  margin-right: 18rpx;
+  border-radius: 50%;
+  background: rgba(23,21,18,.08);
+}
+
+.artist-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #2d2d30, #7f8f86);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.artist-name {
+  margin-top: 8rpx;
+  font-size: 44rpx;
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.album-count {
+  font-size: 54rpx;
+  font-weight: 800;
+}
+
+.album-count text {
+  display: block;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  text-align: center;
+}
+
+.album-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.album-row {
+  display: grid;
+  grid-template-columns: 92rpx minmax(0, 1fr) auto;
+  gap: 18rpx;
+  align-items: center;
+  min-height: 118rpx;
+  padding: 12rpx 0;
+  box-sizing: border-box;
+}
+
+.album-row.selected {
+  background: rgba(61,127,90,.1);
+}
+
+.album-cover {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 6rpx;
+  background: rgba(23,21,18,.08);
+}
+
+.album-copy {
+  min-width: 0;
+}
+
+.album-title {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 31rpx;
+  line-height: 1.25;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.album-copy text {
+  display: block;
+  margin-top: 6rpx;
+  color: #8c8a90;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 16rpx;
+  color: #fff;
+  border-radius: 50%;
+  background: #d43a31;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 18rpx;
+  font-weight: 800;
+}
+
+.album-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+
+.album-actions button {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0 16rpx;
+  box-sizing: border-box;
+}

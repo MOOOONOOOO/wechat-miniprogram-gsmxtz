@@ -1,0 +1,108 @@
+<view class="page home">
+  <view class="profile-row">
+    <button class="profile-avatar" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+      <image wx:if="{{profile.avatarUrl}}" src="{{profile.avatarUrl}}" mode="aspectFill"></image>
+      <text wx:else class="avatar-placeholder">点我修改</text>
+    </button>
+    <input
+      class="profile-name"
+      type="nickname"
+      value="{{profile.nickName}}"
+      placeholder="填写昵称"
+      bindinput="onNicknameInput"
+      bindblur="saveProfile"
+    />
+    <button class="profile-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar"></button>
+  </view>
+
+  <view class="hero panel">
+    <view class="hero-main">
+      <view class="disc">
+        <view class="disc-label"></view>
+      </view>
+      <view class="serif-title">看看你们的音乐切口能不能对上。</view>
+    </view>
+    <view class="muted">选择歌手/专辑/颜色/问题，填写你爱的专辑/歌曲，分享给朋友让ta一起来填写，看看你们的默契怎么样吧。</view>
+  </view>
+
+  <view class="mode-list">
+    <button class="mode-card" data-mode="artist" bindtap="start">
+      <view>
+        <text>歌手默契挑战</text>
+        <label>选 9 位歌手，每位 1 首最爱</label>
+      </view>
+      <text class="mode-arrow">›</text>
+    </button>
+    <button class="mode-card" data-mode="album" bindtap="start">
+      <view>
+        <text>专辑默契挑战</text>
+        <label>选 9 张专辑，每张 1 首最爱</label>
+      </view>
+      <text class="mode-arrow">›</text>
+    </button>
+    <button class="mode-card" data-mode="top9" bindtap="start">
+      <view>
+        <text>同担 Top9 挑战</text>
+        <label>选 1 位歌手，排出你最爱的 9 首歌</label>
+      </view>
+      <text class="mode-arrow">›</text>
+    </button>
+    <button class="mode-card" data-mode="color" bindtap="start">
+      <view>
+        <text>颜色推歌挑战</text>
+        <label>按 9 个颜色，各推荐 1 首歌</label>
+      </view>
+      <text class="mode-arrow">›</text>
+    </button>
+    <button class="mode-card theme-mode-card" bindtap="startTheme">
+      <view>
+        <text>主题推歌</text>
+        <label>心形专辑挑战、人生九专、歌单问答</label>
+      </view>
+      <text class="mode-arrow">›</text>
+    </button>
+  </view>
+
+  <view class="actions">
+    <button class="secondary-button" bindtap="comingSoon">我发起/参与的</button>
+    <button class="secondary-button notice-button" bindtap="openNotice">意见反馈 / 更新公告</button>
+  </view>
+
+  <view wx:if="{{showProfileModal}}" class="profile-modal-mask">
+    <view class="profile-modal">
+      <view class="profile-modal-title">先设置你的资料</view>
+      <view class="profile-modal-copy">用于生成挑战和结果页里的头像昵称。</view>
+      <button class="modal-avatar" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image wx:if="{{profile.avatarUrl}}" src="{{profile.avatarUrl}}" mode="aspectFill"></image>
+        <text wx:else class="avatar-placeholder">点我修改</text>
+      </button>
+      <input
+        class="modal-name"
+        type="nickname"
+        value="{{profile.nickName}}"
+        placeholder="填写昵称"
+        bindinput="onNicknameInput"
+        bindblur="saveProfile"
+      />
+      <button
+        class="primary-button modal-confirm"
+        disabled="{{!profile.avatarUrl || !profile.nickName}}"
+        bindtap="confirmProfileModal"
+      >完成</button>
+    </view>
+  </view>
+
+  <view wx:if="{{showAnnouncementPopup}}" class="profile-modal-mask">
+    <view class="profile-modal announcement-popup">
+      <view class="profile-modal-title">{{announcementPopup.title}}</view>
+      <view class="announcement-popup-content">
+        <text wx:for="{{announcementPopup.contentLines}}" wx:key="index">{{item}}</text>
+      </view>
+      <button
+        class="primary-button modal-confirm announcement-popup-button"
+        bindtap="closeAnnouncementPopup"
+      >{{announcementPopup.buttonText}}</button>
+    </view>
+  </view>
+
+</view>

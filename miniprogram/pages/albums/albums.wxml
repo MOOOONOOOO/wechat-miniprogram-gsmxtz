@@ -1,0 +1,39 @@
+<view class="page albums-page">
+  <view class="panel artist-panel">
+    <view class="artist-heading">
+      <image wx:if="{{artist.avatarUrl}}" class="artist-avatar" src="{{artist.avatarUrl}}" mode="aspectFill"></image>
+      <view wx:else class="artist-avatar artist-avatar-fallback">{{artist.avatar}}</view>
+      <view>
+        <text class="label">{{mode === "themeAlbum" ? themeAlbumPickText : "正在为这位歌手选专辑"}}</text>
+        <view class="artist-name">{{artist.name}}</view>
+      </view>
+    </view>
+    <view class="album-count">{{selected.length}}<text>/{{targetCount}}</text></view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">正在从 iTunes 准备专辑...</view>
+
+  <scroll-view class="album-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{albums}}"
+      wx:key="id"
+      class="album-row {{item.selectedClass}}"
+      data-id="{{item.id}}"
+      bindtap="toggleAlbum"
+    >
+      <image class="album-cover" src="{{item.cover}}" mode="aspectFill"></image>
+      <view class="album-copy">
+        <view class="album-title">{{item.name}}</view>
+        <text>{{item.displayMeta}}</text>
+      </view>
+      <text wx:if="{{item.selectedClass}}" class="selected-mark">✓</text>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{showEmpty}}" class="loading">没有找到这位歌手的专辑。</view>
+
+  <view class="bottom-action album-actions">
+    <button class="secondary-button" bindtap="backToArtists">返回歌手列表</button>
+    <button class="primary-button" disabled="{{!canNext}}" bindtap="next">{{mode === "themeAlbum" ? themeAlbumDoneText : "下一步：每张专辑选 1 首"}}</button>
+  </view>
+</view>

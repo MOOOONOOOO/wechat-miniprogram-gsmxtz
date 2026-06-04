@@ -1,0 +1,37 @@
+<view class="page theme-life-page">
+  <view class="theme-life-head">
+    <view>
+      <view class="serif-title">{{title}}</view>
+      <view class="muted">点格子、选专辑放入，可通过返回歌手列表按钮选择多个歌手的多个专辑。</view>
+    </view>
+    <view class="theme-count">{{selectedCount}}<text>/9</text></view>
+  </view>
+
+  <view class="life-grid">
+    <view
+      wx:for="{{prompts}}"
+      wx:key="id"
+      class="life-card {{item.doneClass}}"
+      data-id="{{item.id}}"
+      bindtap="choosePrompt"
+    >
+      <view class="life-cover-wrap">
+        <view class="life-cover-box">
+          <image wx:if="{{item.albumCover}}" class="life-cover" src="{{item.albumCover}}" mode="aspectFill"></image>
+          <view wx:else class="life-empty">+</view>
+        </view>
+      </view>
+      <view class="life-info">
+        <view class="album-title">{{item.albumName}}</view>
+        <view class="album-meta">{{item.albumArtistName}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="theme-actions">
+    <button class="secondary-button" disabled="{{!isComplete || savingImage}}" bindtap="saveImage">{{savingImage ? "绘制中" : "保存图片"}}</button>
+    <button class="primary-button" bindtap="goHome">返回首页</button>
+  </view>
+
+  <canvas canvas-id="themeLifeCanvas" class="theme-life-canvas"></canvas>
+</view>

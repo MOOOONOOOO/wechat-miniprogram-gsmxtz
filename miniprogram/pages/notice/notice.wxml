@@ -1,0 +1,43 @@
+<view class="page notice-page">
+  <view class="notice-head">
+    <text class="label">Notice</text>
+    <view class="notice-title">更新公告 / 意见反馈</view>
+  </view>
+
+  <view class="notice-segment">
+    <text class="{{activeTab === 'announcements' ? 'active' : ''}}" data-tab="announcements" bindtap="setTab">更新公告</text>
+    <text class="{{activeTab === 'feedback' ? 'active' : ''}}" data-tab="feedback" bindtap="setTab">意见反馈</text>
+  </view>
+
+  <block wx:if="{{activeTab === 'announcements'}}">
+    <view wx:if="{{announcements.length === 0 && !loading}}" class="notice-empty">
+      <view>暂时没有更新公告</view>
+      <text>有新版本说明时会显示在这里。</text>
+    </view>
+
+    <view class="announcement-list">
+      <view wx:for="{{announcements}}" wx:key="id" class="announcement-card">
+        <view class="announcement-meta">
+          <text wx:if="{{item.version}}">{{item.version}}</text>
+          <label>{{item.timeText}}</label>
+        </view>
+        <view class="announcement-title">{{item.title}}</view>
+        <view class="announcement-content">
+          <text wx:for="{{item.contentLines}}" wx:key="index">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="feedback-panel">
+      <textarea
+        value="{{content}}"
+        maxlength="1000"
+        placeholder="如果对新功能有想法，或者有哪些歌手、歌曲没有，可以给开发者留言，我会尽快查阅:D"
+        bindinput="onContentInput"
+      ></textarea>
+      <button class="primary-button" disabled="{{submitting}}" bindtap="submitFeedback">{{submitting ? "提交中" : "提交反馈"}}</button>
+    </view>
+  </block>
+</view>

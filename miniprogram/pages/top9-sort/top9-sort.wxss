@@ -1,0 +1,220 @@
+.top9-sort-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding-bottom: calc(28rpx + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+.sort-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  margin-bottom: 18rpx;
+}
+
+.artist-heading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-top: 12rpx;
+}
+
+.artist-avatar {
+  flex: 0 0 auto;
+  width: 82rpx;
+  height: 82rpx;
+  margin-right: 18rpx;
+  border-radius: 50%;
+  background: rgba(23,21,18,.08);
+}
+
+.artist-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #2d2d30, #7f8f86);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.artist-name {
+  min-width: 0;
+  font-size: 56rpx;
+  line-height: 1.08;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step {
+  font-size: 54rpx;
+  font-weight: 800;
+}
+
+.step text {
+  display: block;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  text-align: center;
+}
+
+.sort-tip {
+  flex: 0 0 auto;
+  margin-bottom: 18rpx;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.top9-sort-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.top9-sort-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 66rpx 96rpx minmax(0, 1fr) 44rpx 52rpx;
+  align-items: center;
+  gap: 14rpx;
+  min-height: 122rpx;
+  margin-bottom: 12rpx;
+  padding: 12rpx 14rpx;
+  border: 1rpx solid rgba(23,21,18,.09);
+  border-radius: 8rpx;
+  background: rgba(255,255,255,.5);
+  box-sizing: border-box;
+  transform: translateZ(0);
+  will-change: transform;
+  transition:
+    transform 220ms cubic-bezier(.2, .8, .2, 1),
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.top9-sort-row.dragging {
+  z-index: 2;
+  opacity: .96;
+  background: rgba(223,238,227,.82);
+  box-shadow: 0 22rpx 44rpx rgba(23,21,18,.18);
+}
+
+.top9-sort-row.shifting {
+  background: rgba(255,255,255,.72);
+}
+
+.top9-rank {
+  color: #3d7f5a;
+  font-size: 26rpx;
+  font-weight: 900;
+}
+
+.top9-cover {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 8rpx;
+  background: rgba(23,21,18,.08);
+}
+
+.top9-copy {
+  min-width: 0;
+}
+
+.top9-copy view {
+  min-width: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 30rpx;
+  line-height: 1.28;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top9-copy text {
+  display: block;
+  margin-top: 6rpx;
+  color: #8c8a90;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  line-height: 1.28;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top9-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44rpx;
+  height: 44rpx;
+  color: #827b70;
+  border-radius: 50%;
+  background: rgba(23,21,18,.06);
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.top9-drag-handle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 52rpx;
+  height: 72rpx;
+  border-radius: 10rpx;
+  background: rgba(23,21,18,.045);
+}
+
+.top9-drag-handle view {
+  width: 24rpx;
+  height: 3rpx;
+  margin: 4rpx 0;
+  border-radius: 999rpx;
+  background: rgba(23,21,18,.42);
+}
+
+.top9-sort-row.dragging .top9-drag-handle {
+  background: rgba(31,122,72,.16);
+}
+
+.top9-sort-row.dragging .top9-drag-handle view {
+  background: #1f7a48;
+}
+
+.sort-actions {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr);
+  align-items: stretch;
+  gap: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 18rpx;
+  background: rgba(246,240,231,.9);
+}
+
+.sort-actions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 96rpx;
+  margin: 0;
+  padding: 0 16rpx;
+  box-sizing: border-box;
+  white-space: nowrap;
+}

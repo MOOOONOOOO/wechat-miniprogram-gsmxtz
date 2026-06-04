@@ -1,0 +1,43 @@
+<view class="page history-page">
+  <view class="history-head">
+    <view class="history-title-wrap">
+      <text class="label">History</text>
+      <view class="history-title">我发起/参与的</view>
+    </view>
+    <button class="refresh-button" disabled="{{loading}}" bindtap="refreshInbox">{{loading ? "刷新中" : "刷新结果"}}</button>
+  </view>
+
+  <view class="segment">
+    <text wx:for="{{filterItems}}" wx:key="key" class="{{item.activeClass}}" data-filter="{{item.key}}" bindtap="setFilter">{{item.text}}</text>
+  </view>
+
+  <view wx:if="{{items.length === 0 && !loading}}" class="empty">
+    <view>还没有本机历史记录</view>
+    <text>创建或参与挑战后会出现在这里。</text>
+  </view>
+
+  <view class="history-list">
+    <view wx:for="{{items}}" wx:key="id" class="history-card">
+      <view class="record-main">
+        <view class="record-avatar">
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>{{item.avatarText}}</text>
+        </view>
+        <view class="record-copy">
+          <view class="record-title-row">
+            <text class="record-name">{{item.counterpartName}}</text>
+            <text class="record-score">{{item.scoreText}}</text>
+          </view>
+          <view class="record-meta">{{item.title}} · {{item.typeText}}</view>
+          <view class="record-time">{{item.timeText}}</view>
+        </view>
+      </view>
+
+      <view class="record-actions {{item.actionClass}}">
+        <view wx:if="{{item.canView}}" class="mini-button primary-mini" data-type="{{item.type}}" data-challenge-id="{{item.challengeId}}" bindtap="viewRecord">查看结果</view>
+        <view wx:if="{{item.canShare}}" class="mini-button" data-challenge-id="{{item.challengeId}}" bindtap="shareRecord">继续分享</view>
+        <view class="mini-button danger" data-type="{{item.type}}" data-challenge-id="{{item.challengeId}}" bindtap="deleteRecord">删除记录</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,201 @@
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.search,
+.section-row,
+.tabs,
+.bottom-action {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.bottom-action button {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.bottom-action {
+  flex: 0 0 auto;
+}
+
+.section-row {
+  flex: 0 0 auto;
+  min-height: 64rpx;
+  align-items: center;
+  margin-bottom: 18rpx;
+}
+
+.tabs {
+  display: flex;
+  gap: 14rpx;
+  overflow-x: auto;
+  flex: 0 0 auto;
+  min-height: 66rpx;
+  margin-bottom: 24rpx;
+}
+
+.tabs text {
+  min-width: 58rpx;
+  height: 58rpx;
+  line-height: 58rpx;
+  text-align: center;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 999rpx;
+  background: rgba(255,255,255,.48);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-weight: 800;
+}
+
+.tabs .active {
+  color: #fff;
+  background: #171512;
+}
+
+.artist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.search-sections {
+  gap: 28rpx;
+}
+
+.result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.result-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4rpx 0 8rpx;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.result-heading label {
+  letter-spacing: 0;
+}
+
+.empty-result {
+  padding: 18rpx 0 22rpx;
+  color: #8c8a90;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+}
+
+.artist-row {
+  display: grid;
+  grid-template-columns: 92rpx minmax(0, 1fr);
+  gap: 22rpx;
+  align-items: center;
+  width: 100%;
+  min-height: 118rpx;
+  margin: 0;
+  padding: 12rpx 0;
+  border: 0;
+  border-radius: 0;
+  box-sizing: border-box;
+  color: #29292d;
+  text-align: left;
+  background: transparent;
+  line-height: 1.2;
+}
+
+.artist-row::after {
+  border: 0;
+}
+
+.artist-row.selected {
+  background: rgba(212,55,45,.06);
+}
+
+.artist-avatar {
+  width: 82rpx;
+  height: 82rpx;
+  border-radius: 50%;
+  background: rgba(23,21,18,.08);
+}
+
+.album-cover {
+  border-radius: 6rpx;
+}
+
+.artist-avatar-image {
+  display: block;
+}
+
+.artist-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #2d2d30, #7f8f86);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.artist-copy {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.artist-copy > view {
+  min-width: 0;
+}
+
+.artist-name {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 31rpx;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artist-meta {
+  display: block;
+  margin-top: 8rpx;
+  color: #8c8a90;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24rpx;
+  height: 24rpx;
+  margin-left: 10rpx;
+  color: #fff;
+  border-radius: 50%;
+  background: #d43a31;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 16rpx;
+  font-weight: 800;
+}

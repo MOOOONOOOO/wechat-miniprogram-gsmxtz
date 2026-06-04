@@ -1,0 +1,49 @@
+<view class="page top9-sort-page">
+  <view class="panel sort-head">
+    <view>
+      <text class="label">正在排序</text>
+      <view class="artist-heading">
+        <image wx:if="{{topArtist.avatarUrl}}" class="artist-avatar" src="{{topArtist.avatarUrl}}" mode="aspectFill"></image>
+        <view wx:else class="artist-avatar artist-avatar-fallback">{{topArtistAvatar}}</view>
+        <view class="artist-name">{{topArtist.name}}</view>
+      </view>
+    </view>
+    <view class="step">{{topSongs.length}}<text>/9</text></view>
+  </view>
+
+  <view class="sort-tip">按住右侧滑块上下拖动，调整你心里的 Top9 顺序。</view>
+
+  <scroll-view class="top9-sort-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{topSongs}}"
+      wx:key="trackId"
+      class="top9-sort-row {{item.dragClass}}"
+      style="{{item.dragStyle}}"
+    >
+      <view class="top9-rank">#{{index + 1}}</view>
+      <image class="top9-cover" src="{{item.cover}}" mode="aspectFill"></image>
+      <view class="top9-copy">
+        <view>{{item.name}}</view>
+        <text>{{item.album}}</text>
+      </view>
+      <view class="top9-remove" data-track-id="{{item.trackId}}" catchtap="removeTopSong">×</view>
+      <view
+        class="top9-drag-handle"
+        data-index="{{index}}"
+        catchtouchstart="onTopSongDragStart"
+        catchtouchmove="onTopSongDragMove"
+        catchtouchend="onTopSongDragEnd"
+        catchtouchcancel="onTopSongDragEnd"
+      >
+        <view></view>
+        <view></view>
+        <view></view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="bottom-action sort-actions">
+    <button class="secondary-button" bindtap="backToPick">返回换歌</button>
+    <button class="primary-button" disabled="{{!canProceed}}" bindtap="next">{{nextLabel}}</button>
+  </view>
+</view>

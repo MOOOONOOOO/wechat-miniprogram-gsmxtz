@@ -1,0 +1,101 @@
+<view class="page poster-page">
+  <view class="poster">
+    <view class="poster-head">
+      <view class="poster-avatars">
+        <view class="poster-avatar">
+          <image wx:if="{{creatorAvatarUrl}}" src="{{creatorAvatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>发</text>
+        </view>
+        <view class="poster-avatar friend-avatar">
+          <image wx:if="{{friendAvatarUrl}}" src="{{friendAvatarUrl}}" mode="aspectFill"></image>
+          <text wx:else class="avatar-placeholder">{{friendAvatarText}}</text>
+          <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar"></button>
+        </view>
+      </view>
+      <text>{{modeTitle}}</text>
+    </view>
+
+    <block wx:if="{{mode === 'top9'}}">
+      <view class="top9-poster-hero">
+        <view class="headline top9-poster-headline">{{posterHeadline}}</view>
+        <view class="top9-poster-hero-copy">
+          <view class="poster-score">{{score}}%</view>
+          <view class="quote">“{{resultCopy}}”</view>
+        </view>
+        <image wx:if="{{topArtistCover}}" class="top9-poster-artist-cover" src="{{topArtistCover}}" mode="aspectFill"></image>
+        <view wx:else class="top9-poster-artist-cover top9-poster-artist-fallback">{{topArtistAvatar}}</view>
+      </view>
+      <view class="top9-match-pill">共同选择 <text>{{matchedSongs.length}}/9</text></view>
+    </block>
+
+    <block wx:if="{{mode !== 'top9'}}">
+      <view class="headline">{{posterHeadline}}</view>
+      <view class="poster-score-row">
+        <view class="poster-score">{{score}}%</view>
+        <view class="quote">“{{resultCopy}}”</view>
+      </view>
+    </block>
+
+    <view wx:if="{{mode === 'top9'}}" class="top9-poster-summary">
+      <view>你们都选了</view>
+      <text wx:if="{{top9PosterMatches.length === 0}}">{{top9MatchedText}}</text>
+      <view wx:for="{{top9PosterMatches}}" wx:key="trackId" class="poster-match-row">
+        <image src="{{item.cover}}" mode="aspectFill"></image>
+        <view>
+          <text>{{item.name}}</text>
+          <label>你 #{{item.viewerRank}} / 友 #{{item.otherRank}}</label>
+          <label wx:if="{{item.rankHitText}}" class="poster-rank-hit">{{item.rankHitText}}</label>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{mode === 'top9'}}" class="top9-poster-compare">
+      <view class="top9-poster-column">
+        <view>{{top9LeftTitle}}</view>
+        <block wx:for="{{top9PosterLeftSongs}}" wx:key="trackId">
+          <view class="poster-top9-row {{item.matched ? 'matched' : ''}}">
+            <text>{{item.rank}}</text>
+            <image src="{{item.cover}}" mode="aspectFill"></image>
+            <label>{{item.name}}</label>
+          </view>
+        </block>
+      </view>
+      <view class="top9-poster-column">
+        <view>{{top9RightTitle}}</view>
+        <block wx:for="{{top9PosterRightSongs}}" wx:key="trackId">
+          <view class="poster-top9-row {{item.matched ? 'matched' : ''}}">
+            <text>{{item.rank}}</text>
+            <image src="{{item.cover}}" mode="aspectFill"></image>
+            <label>{{item.name}}</label>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view wx:if="{{mode !== 'top9'}}" class="poster-grid">
+      <view wx:for="{{comparisons}}" wx:key="index" class="poster-tile">
+        <view class="cover-wrap">
+          <image src="{{item.cover}}" mode="aspectFill"></image>
+          <text class="badge {{item.badgeClass}}">{{item.badgeText}}</text>
+        </view>
+        <view class="artist-name">{{item.artist.name}}</view>
+      </view>
+    </view>
+
+    <view class="poster-foot">
+      <view>在这个混乱的世代感谢还有音乐。</view>
+      <view class="qr">
+        <image wx:if="{{qrCodeUrl}}" src="{{qrCodeUrl}}" mode="aspectFit"></image>
+        <view wx:else class="qr-empty"></view>
+        <text>扫码和朋友一起玩</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-action poster-actions">
+    <button class="secondary-button" bindtap="createNew">创建新挑战</button>
+    <button class="primary-button" bindtap="savePoster">保存海报图片</button>
+  </view>
+
+  <canvas canvas-id="posterCanvas" class="poster-canvas"></canvas>
+</view>

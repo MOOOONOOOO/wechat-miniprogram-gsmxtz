@@ -1,0 +1,46 @@
+<view class="page">
+  <view class="panel share">
+    <text class="label">{{isInviteLanding ? "好友邀请" : "挑战已生成"}}</text>
+    <view class="serif-title">{{headline}}</view>
+    <view wx:if="{{isInviteLanding}}" class="muted">{{description}}</view>
+    <view wx:else class="muted share-description">
+      <text>点击分享给好友的按钮分享给朋友或群聊，也可以点击</text>
+      <text class="share-emphasis">右上角三个点</text>
+      <text>分享到朋友圈，让朋友一起来参与。</text>
+    </view>
+
+    <view class="profile-row">
+      <view class="profile-avatar">
+        <image wx:if="{{creatorAvatarUrl}}" src="{{creatorAvatarUrl}}" mode="aspectFill"></image>
+        <text wx:else class="avatar-placeholder">{{creatorInitial}}</text>
+      </view>
+      <view class="profile-name">{{creatorProfile.nickName || "匿名挑战者"}}</view>
+    </view>
+
+    <view class="share-preview">
+      <view wx:if="{{mode === 'qa'}}" class="question-stack">
+        <view>?</view>
+        <view>?</view>
+        <view>?</view>
+      </view>
+      <view wx:else class="cover-stack">
+        <image wx:for="{{covers}}" wx:key="*this" src="{{item}}" mode="aspectFill"></image>
+      </view>
+      <view class="share-copy">
+        <view wx:if="{{shareCopy}}">{{shareCopy}}</view>
+        <text>{{modeMeta}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{isInviteLanding}}" class="share-actions single">
+    <button class="primary-button" bindtap="startAnswer">开始作答</button>
+  </view>
+  <view wx:else class="share-actions">
+    <button class="secondary-button" bindtap="createNew">创建新挑战</button>
+    <button class="primary-button" open-type="share" disabled="{{!shareImageUrl}}">{{shareImageLoading ? "正在准备分享图" : "分享给好友"}}</button>
+  </view>
+
+  <canvas canvas-id="shareCanvas" class="share-canvas"></canvas>
+  <canvas canvas-id="timelineCanvas" class="timeline-canvas"></canvas>
+</view>

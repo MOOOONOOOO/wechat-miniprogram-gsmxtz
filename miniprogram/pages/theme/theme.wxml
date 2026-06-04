@@ -1,0 +1,37 @@
+<view class="page theme-page">
+  <view class="theme-head">
+    <text class="label">Theme</text>
+    <view class="serif-title">主题推歌</view>
+  </view>
+
+  <view class="template-list" style="{{templateListStyle}}">
+    <button
+      wx:for="{{templates}}"
+      wx:key="id"
+      class="template-card {{item.id}} {{item.readyClass}}"
+      style="{{templateCardStyle}}"
+      data-id="{{item.id}}"
+      bindtap="openTemplate"
+    >
+      <view class="template-visual">
+        <image
+          wx:if="{{item.coverImage}}"
+          class="template-cover"
+          src="{{item.coverImage}}"
+          mode="aspectFill"
+          data-id="{{item.id}}"
+          bindload="onCoverLoad"
+          binderror="onCoverError"
+        ></image>
+        <view wx:else class="template-cover-empty">{{coverStatus}}</view>
+      </view>
+      <view class="template-copy">
+        <view class="template-title-row">
+          <text class="template-title">{{item.name}}</text>
+          <label>{{item.typeText}}</label>
+        </view>
+        <view class="template-desc">{{item.description}}</view>
+      </view>
+    </button>
+  </view>
+</view>

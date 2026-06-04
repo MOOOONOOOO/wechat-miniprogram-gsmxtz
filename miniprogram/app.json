@@ -1,0 +1,32 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/theme/theme",
+    "pages/theme-qa/theme-qa",
+    "pages/theme-qa-sheet/theme-qa-sheet",
+    "pages/theme-qa-board/theme-qa-board",
+    "pages/theme-life/theme-life",
+    "pages/theme-heart/theme-heart",
+    "pages/artists/artists",
+    "pages/albums/albums",
+    "pages/colors/colors",
+    "pages/songs/songs",
+    "pages/top9-sort/top9-sort",
+    "pages/share/share",
+    "pages/friend/friend",
+    "pages/history/history",
+    "pages/notice/notice",
+    "pages/challenge-results/challenge-results",
+    "pages/result/result",
+    "pages/poster/poster"
+  ],
+  "window": {
+    "navigationBarTitleText": "音乐默契挑战",
+    "navigationBarBackgroundColor": "#f6f0e7",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f6f0e7"
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

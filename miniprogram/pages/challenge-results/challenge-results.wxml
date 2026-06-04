@@ -1,0 +1,50 @@
+<view class="page challenge-results-page">
+  <view class="result-head">
+    <view>
+      <text class="label">{{title}}</text>
+      <view class="result-title">{{countText}}</view>
+    </view>
+  </view>
+
+  <view class="result-top-actions">
+    <view class="share-button" bindtap="shareAgain">继续分享</view>
+  </view>
+
+  <view wx:if="{{showStats}}" class="stats-row">
+    <view>
+      <text>最高分</text>
+      <view>{{bestText}}</view>
+    </view>
+    <view>
+      <text>平均分</text>
+      <view>{{avgText}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{results.length === 0}}" class="empty">
+    <view>还没有朋友作答</view>
+    <text>可以继续分享这次挑战。</text>
+  </view>
+
+  <view class="friend-result-list">
+    <view wx:for="{{results}}" wx:key="resultId" class="friend-result-card">
+      <view class="friend-main">
+        <view class="friend-avatar">
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" data-index="{{index}}" binderror="onAvatarError"></image>
+          <text wx:else>{{item.avatarText}}</text>
+        </view>
+        <view class="friend-copy">
+          <view class="friend-title-row">
+            <text class="friend-name">{{item.friendName}}</text>
+            <text wx:if="{{item.scoreText}}" class="friend-score">{{item.scoreText}}</text>
+          </view>
+          <view class="friend-meta">{{item.metaText}}</view>
+        </view>
+      </view>
+      <view class="friend-actions">
+        <view class="mini-button primary-mini" data-result-id="{{item.resultId}}" bindtap="viewResult">查看结果</view>
+        <view class="mini-button danger" data-result-id="{{item.resultId}}" bindtap="deleteResult">删除记录</view>
+      </view>
+    </view>
+  </view>
+</view>
