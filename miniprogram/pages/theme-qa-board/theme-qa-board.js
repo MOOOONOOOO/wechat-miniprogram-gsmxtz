@@ -8,7 +8,12 @@ const {
   saveCreatedChallenge,
   saveParticipatedResult
 } = require("../../utils/history");
-const { ensureStableAccountProfile, readCachedProfile, resolveCloudFileUrl, saveAccountProfile } = require("../../utils/profile");
+const { ensureStableAccountProfile, readCachedProfile, resolveCloudFileUrl } = require("../../utils/profile");
+const {
+  creatorProfileGateData,
+  creatorProfileGateMethods,
+  prepareCreatorProfileForCreate
+} = require("../../utils/creatorProfileGate");
 
 function readChoices(role) {
   const app = getApp();
@@ -61,12 +66,6 @@ function pickTimelineImages(images) {
   if (!picked.length) return [];
   while (picked.length < 3) picked.push(picked[0]);
   return picked;
-}
-
-function prepareCreatorProfile() {
-  const app = getApp();
-  const profile = app.globalData.creatorProfile || readCachedProfile();
-  return saveAccountProfile(profile);
 }
 
 function friendProfileKey(challengeId) {
@@ -303,6 +302,7 @@ function makeTimelineImageKey(data, covers) {
 
 Page({
   data: {
+    ...creatorProfileGateData,
     role: "creator",
     prompts: [],
     selectedCount: 0,
@@ -405,7 +405,10 @@ Page({
         ? (app.globalData.friendProfile || readCachedProfile())
         : (app.globalData.creatorProfile || readCachedProfile())
     }, () => this.renderPrompts());
+    if (role === "creator") this.initCreatorProfileGate();
   },
+
+  ...creatorProfileGateMethods,
 
   onShow() {
     this.renderPrompts();
@@ -434,9 +437,6 @@ Page({
       selectedCount,
       isComplete: areAllFilled(basePrompts, choices)
     }, () => {
-      if (this.data.role === "creator" && !this.data.readonly && basePrompts.length === 9) {
-        this.ensureInviteChallenge(basePrompts).catch(() => {});
-      }
       this.prepareTimelineImage();
     });
   },
@@ -560,6 +560,7 @@ Page({
 
   createQaChallenge() {
     if (this.data.creating) return;
+    if (!this.ensureCreatorProfileForCreate("createQaChallenge")) return;
     const prompts = (getApp().globalData.draftQaPrompts || []).slice(0, 9);
     const choices = getApp().globalData.creatorChoices || {};
     if (!areAllFilled(prompts, choices)) {
@@ -570,7 +571,7 @@ Page({
     this.setData({ creating: true });
     wx.showLoading({ title: "创建中" });
     const app = getApp();
-    prepareCreatorProfile()
+    prepareCreatorProfileForCreate(this)
       .then((creatorProfile) => createChallenge({
         mode: "qa",
         qaOnly: true,
@@ -625,7 +626,7 @@ Page({
 
     if (this.inviteChallengePromise && this.invitePromptKey === promptKey) return this.inviteChallengePromise;
     this.invitePromptKey = promptKey;
-    this.inviteChallengePromise = prepareCreatorProfile()
+    this.inviteChallengePromise = prepareCreatorProfileForCreate(this)
       .then((creatorProfile) => createChallenge({
         mode: "qa",
         qaOnly: true,
@@ -764,9 +765,20 @@ Page({
 
   saveImage() {
     if (!this.data.isComplete || this.data.savingImage) return;
+    const needsCreatorProfile = this.data.role === "creator" && !this.data.readonly;
+    if (needsCreatorProfile && !this.ensureCreatorProfileForCreate("saveImage")) return;
     this.setData({ savingImage: true });
     wx.showLoading({ title: "绘制中..." });
-    this.drawQaCanvas()
+    const profileReady = needsCreatorProfile ? prepareCreatorProfileForCreate(this) : Promise.resolve();
+    profileReady
+      .then((creatorProfile) => new Promise((resolve) => {
+        if (creatorProfile) {
+          this.setData({ displayProfile: creatorProfile }, resolve);
+          return;
+        }
+        resolve();
+      }))
+      .then(() => this.drawQaCanvas())
       .then((filePath) => this.shareOrSaveImage(filePath))
       .then(() => {
         if (!this.usedImageShareMenu) wx.showToast({ title: "已保存到相册", icon: "success" });

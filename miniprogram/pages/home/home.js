@@ -93,10 +93,8 @@ Page({
     getAccountProfile().then((accountProfile) => {
       this.setData({
         profile: accountProfile,
-        showProfileModal: !isCompleteProfile(accountProfile)
-      }, () => {
-        if (isCompleteProfile(accountProfile)) this.tryShowAnnouncementPopup();
-      });
+        showProfileModal: false
+      }, () => this.tryShowAnnouncementPopup());
     });
     this.loadAnnouncementPopup();
   },
@@ -150,63 +148,53 @@ Page({
   },
 
   start(event) {
-    if (!this.ensureProfile()) return;
-    wx.showLoading({ title: "准备中" });
-    this.persistProfile()
-      .then(() => {
-        const mode = (event && event.currentTarget.dataset.mode) || "artist";
-        const app = getApp();
-        app.globalData.draftMode = mode;
-        app.globalData.draftArtists = [];
-        app.globalData.draftAlbums = [];
-        app.globalData.draftColors = [];
-        app.globalData.draftColorArtists = {};
-        app.globalData.draftThemeTemplate = "";
-        app.globalData.draftThemePrompts = [];
-        app.globalData.draftThemeChoices = {};
-        app.globalData.draftThemeArtists = {};
-        app.globalData.draftQaPrompts = [];
-        app.globalData.draftQaArtists = {};
-        app.globalData.currentThemeSlotId = "";
-        app.globalData.currentThemeSlotArtist = null;
-        app.globalData.currentQaSlotId = "";
-        app.globalData.currentQaSlotArtist = null;
-        app.globalData.currentColorId = "";
-        app.globalData.currentColorArtist = null;
-        app.globalData.draftTopArtist = null;
-        app.globalData.creatorChoices = {};
-        app.globalData.friendChoices = {};
-        app.globalData.creatorTopSongs = [];
-        app.globalData.friendTopSongs = [];
-        if (mode === "color") {
-          wx.navigateTo({ url: "/pages/colors/colors?role=creator" });
-          return;
-        }
-        wx.navigateTo({ url: `/pages/artists/artists?mode=${mode}` });
-      })
-      .finally(() => wx.hideLoading());
+    this.saveProfile();
+    const mode = (event && event.currentTarget.dataset.mode) || "artist";
+    const app = getApp();
+    app.globalData.draftMode = mode;
+    app.globalData.draftArtists = [];
+    app.globalData.draftAlbums = [];
+    app.globalData.draftColors = [];
+    app.globalData.draftColorArtists = {};
+    app.globalData.draftThemeTemplate = "";
+    app.globalData.draftThemePrompts = [];
+    app.globalData.draftThemeChoices = {};
+    app.globalData.draftThemeArtists = {};
+    app.globalData.draftQaPrompts = [];
+    app.globalData.draftQaArtists = {};
+    app.globalData.currentThemeSlotId = "";
+    app.globalData.currentThemeSlotArtist = null;
+    app.globalData.currentQaSlotId = "";
+    app.globalData.currentQaSlotArtist = null;
+    app.globalData.currentColorId = "";
+    app.globalData.currentColorArtist = null;
+    app.globalData.draftTopArtist = null;
+    app.globalData.creatorChoices = {};
+    app.globalData.friendChoices = {};
+    app.globalData.creatorTopSongs = [];
+    app.globalData.friendTopSongs = [];
+    if (mode === "color") {
+      wx.navigateTo({ url: "/pages/colors/colors?role=creator" });
+      return;
+    }
+    wx.navigateTo({ url: `/pages/artists/artists?mode=${mode}` });
   },
 
   startTheme() {
-    if (!this.ensureProfile()) return;
-    wx.showLoading({ title: "准备中" });
-    this.persistProfile()
-      .then(() => {
-        const app = getApp();
-        app.globalData.draftMode = "theme";
-        app.globalData.draftThemeTemplate = "";
-        app.globalData.draftThemePrompts = [];
-        app.globalData.draftThemeChoices = {};
-        app.globalData.draftThemeArtists = {};
-        app.globalData.draftQaPrompts = [];
-        app.globalData.draftQaArtists = {};
-        app.globalData.currentThemeSlotId = "";
-        app.globalData.currentThemeSlotArtist = null;
-        app.globalData.currentQaSlotId = "";
-        app.globalData.currentQaSlotArtist = null;
-        wx.navigateTo({ url: "/pages/theme/theme" });
-      })
-      .finally(() => wx.hideLoading());
+    this.saveProfile();
+    const app = getApp();
+    app.globalData.draftMode = "theme";
+    app.globalData.draftThemeTemplate = "";
+    app.globalData.draftThemePrompts = [];
+    app.globalData.draftThemeChoices = {};
+    app.globalData.draftThemeArtists = {};
+    app.globalData.draftQaPrompts = [];
+    app.globalData.draftQaArtists = {};
+    app.globalData.currentThemeSlotId = "";
+    app.globalData.currentThemeSlotArtist = null;
+    app.globalData.currentQaSlotId = "";
+    app.globalData.currentQaSlotArtist = null;
+    wx.navigateTo({ url: "/pages/theme/theme" });
   },
 
   persistProfile() {
@@ -230,7 +218,6 @@ Page({
   tryShowAnnouncementPopup() {
     const popup = this.pendingAnnouncementPopup;
     if (!popup || this.data.showProfileModal || this.data.showAnnouncementPopup) return;
-    if (!isCompleteProfile(this.data.profile)) return;
     if (wx.getStorageSync(popup.seenKey)) return;
     this.setData({
       announcementPopup: popup,

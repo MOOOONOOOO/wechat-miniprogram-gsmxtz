@@ -55,7 +55,7 @@ Page({
       this.setData({
         friendProfile: nextProfile,
         friendAvatar: nextProfile.avatarUrl || "",
-        showProfileModal: !isCompleteProfile(nextProfile)
+        showProfileModal: false
       }, () => this.resolveFriendAvatar(nextProfile.avatarUrl || ""));
     });
     this.loadChallenge(challengeId);

@@ -1,6 +1,11 @@
 const { getThemeTemplate } = require("../../data/themeTemplates");
 const { getMiniProgramCode } = require("../../utils/api");
 const { readCachedProfile, resolveCloudFileUrl } = require("../../utils/profile");
+const {
+  creatorProfileGateData,
+  creatorProfileGateMethods,
+  prepareCreatorProfileForCreate
+} = require("../../utils/creatorProfileGate");
 
 const SAVE_LABEL = "组成我人生的几分之几";
 const HEART_TITLE = "心形专辑挑战";
@@ -193,6 +198,7 @@ function drawCircleImage(ctx, image, x, y, size, fallbackText) {
 
 Page({
   data: {
+    ...creatorProfileGateData,
     title: HEART_TITLE,
     slots: [],
     selectedCount: 0,
@@ -214,8 +220,11 @@ Page({
     app.globalData.draftAlbums = app.globalData.draftAlbums || [];
     app.globalData.draftThemeAlbumTarget = HEART_LAYOUT.length;
     this.setData({ title: template.name || HEART_TITLE });
+    this.initCreatorProfileGate();
     this.renderSlots();
   },
+
+  ...creatorProfileGateMethods,
 
   onShow() {
     this.renderSlots();
@@ -386,9 +395,11 @@ Page({
 
   saveImage() {
     if (!this.data.isComplete || this.data.savingImage) return;
+    if (!this.ensureCreatorProfileForCreate("saveImage")) return;
     this.setData({ savingImage: true });
     wx.showLoading({ title: "绘制中..." });
-    this.drawHeartCanvas()
+    prepareCreatorProfileForCreate(this)
+      .then(() => this.drawHeartCanvas())
       .then((filePath) => this.shareOrSaveImage(filePath))
       .then(() => {
         if (!this.usedImageShareMenu) wx.showToast({ title: "已保存到相册", icon: "success" });

@@ -135,3 +135,114 @@ button {
   text-align: center;
   white-space: nowrap;
 }
+
+.creator-profile-modal-mask {
+  position: fixed;
+  z-index: 999;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  box-sizing: border-box;
+  background: rgba(23,21,18,.34);
+}
+
+.creator-profile-modal {
+  width: 100%;
+  max-width: 640rpx;
+  padding: 42rpx 36rpx 36rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 16rpx;
+  background: #fffdfa;
+  text-align: center;
+}
+
+.creator-profile-modal-title {
+  color: #171512;
+  font-size: 42rpx;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.creator-profile-modal-copy {
+  margin-top: 14rpx;
+  color: #5c554d;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.creator-profile-modal .creator-modal-avatar,
+.creator-profile-modal button.creator-modal-avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 132rpx;
+  width: 132rpx !important;
+  height: 132rpx !important;
+  min-width: 132rpx !important;
+  min-height: 132rpx !important;
+  max-width: 132rpx !important;
+  max-height: 132rpx !important;
+  margin: 30rpx auto 24rpx !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+  overflow: hidden !important;
+  border: 0;
+  border-radius: 50% !important;
+  background: #171512;
+  color: #fffdfa;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.creator-profile-modal .creator-modal-avatar::after {
+  border: 0;
+}
+
+.creator-profile-modal .creator-modal-avatar image {
+  display: block;
+  width: 132rpx;
+  height: 132rpx;
+  min-width: 132rpx;
+  min-height: 132rpx;
+  max-width: 132rpx;
+  max-height: 132rpx;
+  border-radius: 50%;
+}
+
+.creator-profile-modal .creator-modal-avatar text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: 50%;
+}
+
+.creator-modal-input {
+  width: 100%;
+  height: 88rpx;
+  margin-bottom: 24rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(23,21,18,.14);
+  border-radius: 10rpx;
+  background: rgba(246,240,231,.72);
+  color: #171512;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 28rpx;
+  text-align: left;
+}
+
+.creator-modal-confirm {
+  width: 100%;
+}

@@ -2,7 +2,11 @@ const { searchSongs, searchAlbumSongs, createChallenge } = require("../../utils/
 const { ensureChallenge, needsChallenge } = require("../../utils/challengeState");
 const { readFriendDraft, saveFriendDraft } = require("../../utils/friendDraft");
 const { saveCreatedChallenge } = require("../../utils/history");
-const { readCachedProfile, saveAccountProfile } = require("../../utils/profile");
+const {
+  creatorProfileGateData,
+  creatorProfileGateMethods,
+  prepareCreatorProfileForCreate
+} = require("../../utils/creatorProfileGate");
 const { getColorSubjects } = require("../../data/colors");
 const {
   cacheDefaultSongList,
@@ -76,14 +80,9 @@ function stableInsertIndex(song, length) {
   return 1 + (total % Math.min(length, 8));
 }
 
-function prepareCreatorProfile() {
-  const app = getApp();
-  const profile = app.globalData.creatorProfile || readCachedProfile();
-  return saveAccountProfile(profile);
-}
-
 Page({
   data: {
+    ...creatorProfileGateData,
     role: "creator",
     mode: "artist",
     challengeId: "",
@@ -183,8 +182,11 @@ Page({
     if (mode === "color" && !(app.globalData.draftColors || []).length) {
       app.globalData.draftColors = getColorSubjects();
     }
+    if (role === "creator") this.initCreatorProfileGate();
     this.setData({ role, mode, challengeId, artists, choices, topSongs, colorId, slotId, targetCount }, () => this.setCurrent(0));
   },
+
+  ...creatorProfileGateMethods,
 
   onShow() {
     if (this.data.mode !== "top9") return;
@@ -636,6 +638,7 @@ Page({
   },
 
   create() {
+    if (!this.ensureCreatorProfileForCreate("create")) return;
     wx.showLoading({ title: "创建中" });
     const app = getApp();
     const mode = app.globalData.draftMode || this.data.mode || "artist";
@@ -647,7 +650,7 @@ Page({
       app.globalData.draftTopArtist = topArtist;
       app.globalData.creatorTopSongs = creatorTopSongs;
     }
-    prepareCreatorProfile()
+    prepareCreatorProfileForCreate(this)
       .then((creatorProfile) => createChallenge({
         mode,
         artists: app.globalData.draftArtists,

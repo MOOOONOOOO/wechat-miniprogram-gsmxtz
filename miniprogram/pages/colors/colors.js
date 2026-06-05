@@ -2,7 +2,12 @@ const { createChallenge, getMiniProgramCode } = require("../../utils/api");
 const { ensureChallenge, needsChallenge } = require("../../utils/challengeState");
 const { readFriendDraft } = require("../../utils/friendDraft");
 const { saveCreatedChallenge } = require("../../utils/history");
-const { readCachedProfile, resolveCloudFileUrl, saveAccountProfile } = require("../../utils/profile");
+const { resolveCloudFileUrl } = require("../../utils/profile");
+const {
+  creatorProfileGateData,
+  creatorProfileGateMethods,
+  prepareCreatorProfileForCreate
+} = require("../../utils/creatorProfileGate");
 const { getColorSubjects } = require("../../data/colors");
 
 function readChoices(role) {
@@ -27,12 +32,6 @@ function getSongName(song) {
 
 function getSongAlbumName(song) {
   return song.album || song.collectionName || "";
-}
-
-function prepareCreatorProfile() {
-  const app = getApp();
-  const profile = app.globalData.creatorProfile || readCachedProfile();
-  return saveAccountProfile(profile);
 }
 
 function getImageInfo(src) {
@@ -187,6 +186,7 @@ function drawCircleImage(ctx, image, x, y, size, fallbackText) {
 
 Page({
   data: {
+    ...creatorProfileGateData,
     role: "creator",
     challengeId: "",
     colors: [],
@@ -238,6 +238,7 @@ Page({
       }
     } else {
       app.globalData.creatorChoices = app.globalData.creatorChoices || {};
+      this.initCreatorProfileGate();
     }
     this.setData({
       role,
@@ -246,6 +247,8 @@ Page({
       primaryLabel: role === "friend" ? "查看结果" : "分享挑战"
     }, () => this.renderColors());
   },
+
+  ...creatorProfileGateMethods,
 
   onShow() {
     this.renderColors();
@@ -307,6 +310,7 @@ Page({
 
   createColorChallenge() {
     if (this.data.creating) return;
+    if (!this.ensureCreatorProfileForCreate("createColorChallenge")) return;
     const colors = (getApp().globalData.draftColors || []).length ? getApp().globalData.draftColors : getColorSubjects();
     const choices = getApp().globalData.creatorChoices || {};
     if (!areAllColorsFilled(colors, choices)) {
@@ -317,7 +321,7 @@ Page({
     this.setData({ creating: true });
     wx.showLoading({ title: "创建中" });
     const app = getApp();
-    prepareCreatorProfile()
+    prepareCreatorProfileForCreate(this)
       .then((creatorProfile) => createChallenge({
         mode: "color",
         colors,
@@ -347,9 +351,12 @@ Page({
 
   saveImage() {
     if (!this.data.isComplete || this.data.savingImage) return;
+    if (this.data.role !== "friend" && !this.ensureCreatorProfileForCreate("saveImage")) return;
     this.setData({ savingImage: true });
     wx.showLoading({ title: "绘制中..." });
-    this.drawColorCanvas()
+    const profileReady = this.data.role === "friend" ? Promise.resolve() : prepareCreatorProfileForCreate(this);
+    profileReady
+      .then(() => this.drawColorCanvas())
       .then((filePath) => this.shareOrSaveImage(filePath))
       .then(() => {
         if (!this.usedImageShareMenu) wx.showToast({ title: "已保存到相册", icon: "success" });

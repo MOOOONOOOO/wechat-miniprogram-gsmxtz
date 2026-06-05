@@ -2,7 +2,11 @@ const { createChallenge } = require("../../utils/api");
 const { ensureChallenge, needsChallenge } = require("../../utils/challengeState");
 const { readFriendDraft, saveFriendDraft } = require("../../utils/friendDraft");
 const { saveCreatedChallenge } = require("../../utils/history");
-const { readCachedProfile, saveAccountProfile } = require("../../utils/profile");
+const {
+  creatorProfileGateData,
+  creatorProfileGateMethods,
+  prepareCreatorProfileForCreate
+} = require("../../utils/creatorProfileGate");
 
 function cleanTopSong(song, index) {
   const {
@@ -22,14 +26,9 @@ function getTopSongs(role) {
   return role === "friend" ? (app.globalData.friendTopSongs || []) : (app.globalData.creatorTopSongs || []);
 }
 
-function prepareCreatorProfile() {
-  const app = getApp();
-  const profile = app.globalData.creatorProfile || readCachedProfile();
-  return saveAccountProfile(profile);
-}
-
 Page({
   data: {
+    ...creatorProfileGateData,
     role: "creator",
     challengeId: "",
     topArtist: {},
@@ -75,6 +74,7 @@ Page({
     }
     const topSongs = getTopSongs(role).map(cleanTopSong);
     const topArtist = app.globalData.draftTopArtist || (app.globalData.challenge || {}).topArtist || {};
+    if (role === "creator") this.initCreatorProfileGate();
     this.setData({
       role,
       challengeId,
@@ -86,6 +86,8 @@ Page({
     });
     this.persistTopSongs(topSongs);
   },
+
+  ...creatorProfileGateMethods,
 
   decorateTopSongs(topSongs, dragState = null) {
     return (topSongs || []).map((song, index) => {
@@ -235,6 +237,7 @@ Page({
   },
 
   create() {
+    if (!this.ensureCreatorProfileForCreate("create")) return;
     wx.showLoading({ title: "创建中" });
     const app = getApp();
     const topArtist = app.globalData.draftTopArtist || this.data.topArtist;
@@ -243,7 +246,7 @@ Page({
     app.globalData.draftTopArtist = topArtist;
     app.globalData.creatorTopSongs = creatorTopSongs;
 
-    prepareCreatorProfile()
+    prepareCreatorProfileForCreate(this)
       .then((creatorProfile) => createChallenge({
         mode: "top9",
         artists: app.globalData.draftArtists,

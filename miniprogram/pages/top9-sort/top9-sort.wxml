@@ -46,4 +46,27 @@
     <button class="secondary-button" bindtap="backToPick">返回换歌</button>
     <button class="primary-button" disabled="{{!canProceed}}" bindtap="next">{{nextLabel}}</button>
   </view>
+
+  <view wx:if="{{showCreatorProfileModal}}" class="creator-profile-modal-mask">
+    <view class="creator-profile-modal">
+      <view class="creator-profile-modal-title">先设置你的资料</view>
+      <view class="creator-profile-modal-copy">{{creatorProfileModalCopy}}</view>
+      <button class="creator-modal-avatar" open-type="chooseAvatar" bindchooseavatar="onChooseCreatorAvatar">
+        <image wx:if="{{creatorProfileDraft.avatarUrl}}" src="{{creatorProfileDraft.avatarUrl}}" mode="aspectFill"></image>
+        <text wx:else>头像</text>
+      </button>
+      <input
+        class="creator-modal-input"
+        type="nickname"
+        value="{{creatorProfileDraft.nickName}}"
+        bindinput="onCreatorNicknameInput"
+        placeholder="填写昵称"
+      />
+      <button
+        class="primary-button creator-modal-confirm"
+        disabled="{{!creatorProfileDraft.avatarUrl || !creatorProfileDraft.nickName}}"
+        bindtap="confirmCreatorProfileModal"
+      >{{creatorProfileModalConfirmText}}</button>
+    </view>
+  </view>
 </view>

@@ -1,6 +1,11 @@
 const { getThemeTemplate } = require("../../data/themeTemplates");
 const { getMiniProgramCode } = require("../../utils/api");
 const { readCachedProfile, resolveCloudFileUrl } = require("../../utils/profile");
+const {
+  creatorProfileGateData,
+  creatorProfileGateMethods,
+  prepareCreatorProfileForCreate
+} = require("../../utils/creatorProfileGate");
 
 const SAVE_LABEL = "组成我人生的几分之几";
 
@@ -222,6 +227,7 @@ function drawCircleImage(ctx, image, x, y, size, fallbackText) {
 
 Page({
   data: {
+    ...creatorProfileGateData,
     templateId: "life9",
     title: "人生九专",
     prompts: [],
@@ -248,7 +254,10 @@ Page({
       title: template.name,
       prompts: template.prompts || []
     }, () => this.renderPrompts());
+    this.initCreatorProfileGate();
   },
+
+  ...creatorProfileGateMethods,
 
   onShow() {
     this.renderPrompts();
@@ -295,9 +304,11 @@ Page({
 
   saveImage() {
     if (!this.data.isComplete || this.data.savingImage) return;
+    if (!this.ensureCreatorProfileForCreate("saveImage")) return;
     this.setData({ savingImage: true });
     wx.showLoading({ title: "绘制中..." });
-    this.drawThemeCanvas()
+    prepareCreatorProfileForCreate(this)
+      .then(() => this.drawThemeCanvas())
       .then((filePath) => this.shareOrSaveImage(filePath))
       .then(() => {
         if (!this.usedImageShareMenu) wx.showToast({ title: "已保存到相册", icon: "success" });

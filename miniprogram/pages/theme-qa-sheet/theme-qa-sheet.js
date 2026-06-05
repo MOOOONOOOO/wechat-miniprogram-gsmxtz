@@ -1,6 +1,11 @@
 const { createChallenge, getChallenge } = require("../../utils/api");
 const { saveCreatedChallenge } = require("../../utils/history");
-const { readCachedProfile, saveAccountProfile } = require("../../utils/profile");
+const { readCachedProfile } = require("../../utils/profile");
+const {
+  creatorProfileGateData,
+  creatorProfileGateMethods,
+  prepareCreatorProfileForCreate
+} = require("../../utils/creatorProfileGate");
 
 function showPageShareMenu() {
   if (!wx.showShareMenu) return;
@@ -47,12 +52,6 @@ function hydrateQaChallenge(challenge) {
   app.globalData.creatorProfile = challenge.creatorProfile || {};
 }
 
-function prepareCreatorProfile() {
-  const app = getApp();
-  const profile = app.globalData.creatorProfile || readCachedProfile();
-  return saveAccountProfile(profile);
-}
-
 function normalizePrompt(prompt = {}, index = 0) {
   const promptText = String(prompt.prompt || prompt.title || "").trim();
   const title = String(prompt.title || promptText || `题目 ${index + 1}`).trim();
@@ -65,6 +64,7 @@ function normalizePrompt(prompt = {}, index = 0) {
 
 Page({
   data: {
+    ...creatorProfileGateData,
     prompts: [],
     creating: false,
     shareChallengeId: "",
@@ -82,8 +82,11 @@ Page({
       return;
     }
     hidePageShareMenu();
+    this.initCreatorProfileGate();
     this.renderPrompts();
   },
+
+  ...creatorProfileGateMethods,
 
   onShow() {
     if (this.data.isInviteLanding) return;
@@ -152,7 +155,6 @@ Page({
       hidePageShareMenu();
       return;
     }
-    this.ensureQaShareChallenge().catch(() => {});
   },
 
   selfFill() {
@@ -162,6 +164,7 @@ Page({
 
   inviteFill() {
     if (this.data.prompts.length !== 9 || this.data.creating) return;
+    if (!this.ensureCreatorProfileForCreate("inviteFill")) return;
     this.setData({ creating: true });
     wx.showLoading({ title: "创建中" });
     this.ensureQaShareChallenge()
@@ -207,7 +210,7 @@ Page({
     app.globalData.draftArtists = [];
     app.globalData.draftAlbums = [];
     this.creatingSharePromptsKey = promptsKey;
-    this.qaSharePromise = prepareCreatorProfile()
+    this.qaSharePromise = prepareCreatorProfileForCreate(this)
       .then((creatorProfile) => createChallenge({
         mode: "qa",
         qaOnly: true,
