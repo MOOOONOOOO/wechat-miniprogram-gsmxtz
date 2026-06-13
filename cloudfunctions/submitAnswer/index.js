@@ -6,6 +6,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const _ = db.command;
 const RESULT_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+const MAX_CHALLENGE_PARTICIPANTS = 99;
 
 function makeResultId(challengeId, openId) {
   return `${challengeId}_${openId}`.replace(/[^\w-]/g, "_");
@@ -13,6 +14,26 @@ function makeResultId(challengeId, openId) {
 
 function makeShareToken() {
   return crypto.randomBytes(16).toString("hex");
+}
+
+async function checkParticipantCapacity(challengeId, openId) {
+  const resultId = makeResultId(challengeId, openId);
+  const existingResult = await db.collection("challengeResults").doc(resultId).get()
+    .then(() => true)
+    .catch(() => false);
+  if (existingResult) return { ok: true };
+
+  const countRes = await db.collection("challengeResults").where({
+    challengeId
+  }).count();
+  const participantCount = Number(countRes.total || 0);
+  if (participantCount >= MAX_CHALLENGE_PARTICIPANTS) {
+    return {
+      ok: false,
+      message: `本挑战最多支持 ${MAX_CHALLENGE_PARTICIPANTS} 位朋友参与`
+    };
+  }
+  return { ok: true };
 }
 
 function isCloudFileUrl(url) {
@@ -237,10 +258,14 @@ exports.main = async (event) => {
   const now = new Date();
 
   if (!challengeId) return { ok: false, message: "缺少 challengeId" };
+  if (!wxContext.OPENID) return { ok: false, message: "缺少 openid" };
 
   await cleanupExpiredSubmissions(now);
 
   const challenge = await db.collection("challenges").doc(challengeId).get();
+  const capacity = await checkParticipantCapacity(challengeId, wxContext.OPENID);
+  if (!capacity.ok) return capacity;
+
   const mode = challenge.data.mode || "artist";
   const items = mode === "album"
     ? (challenge.data.albums || [])

@@ -1,4 +1,4 @@
-const { getChallenge, getRecentSubmission } = require("../../utils/api");
+const { getChallenge, getChallengeParticipants, getRecentSubmission } = require("../../utils/api");
 const { hydrateChallenge } = require("../../utils/challengeState");
 const { resetFriendDraft } = require("../../utils/friendDraft");
 const {
@@ -23,6 +23,30 @@ function pickInitialProfile(accountProfile, challengeProfile) {
   return (accountProfile.avatarUrl || accountProfile.nickName) ? accountProfile : challengeProfile;
 }
 
+function formatParticipant(profile, index) {
+  const safeProfile = profile || {};
+  const nickName = String(safeProfile.nickName || "").trim();
+  const avatarUrl = safeProfile.avatarUrl || "";
+  return {
+    id: `${nickName || "friend"}-${index}`,
+    nickName,
+    avatarUrl,
+    originalAvatarUrl: avatarUrl,
+    initial: (nickName || "友").slice(0, 1)
+  };
+}
+
+function buildParticipantPreview(participants, total) {
+  const safeParticipants = Array.isArray(participants) ? participants : [];
+  const count = Number(total || safeParticipants.length) || 0;
+  const visibleCount = count > 5 ? 4 : Math.min(5, count);
+  return {
+    total: count,
+    visible: safeParticipants.slice(0, visibleCount).map((item, index) => formatParticipant(item.profile || item, index)),
+    extraCount: count > 5 ? count - 4 : 0
+  };
+}
+
 Page({
   data: {
     challengeId: "",
@@ -35,7 +59,12 @@ Page({
     friendAvatar: "",
     friendProfile: emptyProfile(),
     showProfileModal: false,
-    hasSavedResult: false
+    hasSavedResult: false,
+    participantTotal: 0,
+    participantCountText: "",
+    participantPreview: [],
+    participantExtraCount: 0,
+    showParticipants: false
   },
 
   onLoad(options) {
@@ -76,6 +105,7 @@ Page({
         }, () => {
           this.resolveCreatorAvatar(creatorAvatar);
           this.detectSavedResult(challengeId);
+          this.loadParticipants(challengeId);
         });
       })
       .catch(() => {
@@ -98,6 +128,30 @@ Page({
       .catch(() => {});
   },
 
+  loadParticipants(challengeId) {
+    if (!challengeId) return;
+    getChallengeParticipants(challengeId)
+      .then((res) => {
+        const preview = buildParticipantPreview(res.participants || [], res.total);
+        this.setData({
+          participantTotal: preview.total,
+          participantCountText: `${preview.total} 位朋友已加入`,
+          participantPreview: preview.visible,
+          participantExtraCount: preview.extraCount,
+          showParticipants: preview.total >= 2
+        }, () => this.resolveParticipantAvatars());
+      })
+      .catch(() => {
+        this.setData({
+          participantTotal: 0,
+          participantCountText: "",
+          participantPreview: [],
+          participantExtraCount: 0,
+          showParticipants: false
+        });
+      });
+  },
+
   resolveCreatorAvatar(avatarUrl) {
     if (!isCloudFileUrl(avatarUrl)) return;
 
@@ -116,6 +170,46 @@ Page({
       if (tempUrl && friendProfile.avatarUrl === avatarUrl) {
         this.setData({ friendAvatar: tempUrl });
       }
+    });
+  },
+
+  resolveParticipantAvatars() {
+    if (!wx.cloud || !wx.cloud.getTempFileURL) return;
+
+    const fileList = Array.from(new Set(
+      (this.data.participantPreview || [])
+        .map((item) => item.originalAvatarUrl || item.avatarUrl)
+        .filter(isCloudFileUrl)
+    ));
+    if (!fileList.length) return;
+
+    wx.cloud.getTempFileURL({ fileList })
+      .then((res) => {
+        const tempUrlMap = (res.fileList || []).reduce((map, item) => {
+          if (item.fileID && item.tempFileURL) map[item.fileID] = item.tempFileURL;
+          return map;
+        }, {});
+        this.setData({
+          participantPreview: (this.data.participantPreview || []).map((item) => {
+            const sourceUrl = item.originalAvatarUrl || item.avatarUrl || "";
+            const tempUrl = tempUrlMap[sourceUrl] || "";
+            return {
+              ...item,
+              avatarUrl: tempUrl || (isCloudFileUrl(sourceUrl) ? "" : sourceUrl)
+            };
+          })
+        });
+      })
+      .catch(() => {});
+  },
+
+  onParticipantAvatarError(event) {
+    const index = Number((event.currentTarget || {}).dataset.index);
+    if (Number.isNaN(index)) return;
+    this.setData({
+      participantPreview: (this.data.participantPreview || []).map((item, itemIndex) => (
+        itemIndex === index ? { ...item, avatarUrl: "" } : item
+      ))
     });
   },
 

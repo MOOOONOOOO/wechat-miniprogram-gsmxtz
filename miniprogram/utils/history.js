@@ -146,7 +146,7 @@ function slimChallenge(challenge = {}) {
 
 function compactHistory(history, limits = {}) {
   const createdLimit = Number(limits.createdLimit || 30);
-  const resultLimit = Number(limits.resultLimit || 20);
+  const resultLimit = Number(limits.resultLimit || 99);
   const participatedLimit = Number(limits.participatedLimit || 30);
   return {
     created: (history.created || []).slice(0, createdLimit).map((record) => ({
@@ -185,7 +185,7 @@ function writeHistory(history) {
     try {
       wx.setStorageSync(HISTORY_KEY, compactHistory(value, {
         createdLimit: 12,
-        resultLimit: 8,
+        resultLimit: 50,
         participatedLimit: 12
       }));
       return true;
@@ -193,7 +193,7 @@ function writeHistory(history) {
       try {
         wx.setStorageSync(HISTORY_KEY, compactHistory(value, {
           createdLimit: 6,
-          resultLimit: 4,
+          resultLimit: 20,
           participatedLimit: 6
         }));
         return true;

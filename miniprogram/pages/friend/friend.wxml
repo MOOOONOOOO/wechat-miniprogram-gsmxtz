@@ -14,6 +14,20 @@
     <view class="serif-title">{{inviteTitle}}</view>
     <view class="muted">{{inviteCopy}}</view>
 
+    <view wx:if="{{showParticipants}}" class="joined-panel">
+      <view class="joined-copy">
+        <view>已加入挑战的人</view>
+        <text>{{participantCountText}}</text>
+      </view>
+      <view class="joined-avatars">
+        <view wx:for="{{participantPreview}}" wx:key="id" class="joined-avatar">
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" data-index="{{index}}" binderror="onParticipantAvatarError"></image>
+          <text wx:else>{{item.initial}}</text>
+        </view>
+        <view wx:if="{{participantExtraCount}}" class="joined-avatar joined-extra">+{{participantExtraCount}}</view>
+      </view>
+    </view>
+
     <view class="profile-row">
       <view class="profile-avatar">
         <image wx:if="{{friendAvatar}}" src="{{friendAvatar}}" mode="aspectFill"></image>

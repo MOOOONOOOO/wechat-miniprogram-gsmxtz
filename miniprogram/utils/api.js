@@ -330,6 +330,10 @@ function getRecentSubmission(challengeId) {
   return call("getRecentSubmission", { challengeId });
 }
 
+function getChallengeParticipants(challengeId) {
+  return call("getChallengeParticipants", { challengeId });
+}
+
 function getCreatorInbox(payload = {}) {
   return call("getCreatorInbox", payload);
 }
@@ -360,6 +364,7 @@ module.exports = {
   getChallenge,
   submitAnswer,
   getRecentSubmission,
+  getChallengeParticipants,
   getCreatorInbox,
   updateChallengeProfile,
   getMiniProgramCode,
