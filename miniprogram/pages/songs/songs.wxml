@@ -40,8 +40,8 @@
     <view wx:for="{{progressDots}}" wx:key="id" class="dot {{item.doneClass}}"></view>
   </view>
 
-  <view class="bottom-action nav-actions {{mode === 'top9' ? 'top9-actions' : ''}}">
-    <button wx:if="{{mode !== 'top9'}}" class="secondary-button" disabled="{{!canPrev}}" bindtap="prev">上一位</button>
+  <view class="bottom-action nav-actions {{mode === 'top9' || mode === 'lyrics' ? 'top9-actions' : ''}}">
+    <button wx:if="{{mode !== 'top9' && mode !== 'lyrics'}}" class="secondary-button" disabled="{{!canPrev}}" bindtap="prev">上一位</button>
     <button class="primary-button" disabled="{{!canProceed}}" bindtap="next">{{nextLabel}}</button>
   </view>
 

@@ -102,6 +102,7 @@ function slimResult(result = {}) {
     mode: result.mode || "",
     score: result.score || 0,
     matchCount: result.matchCount || 0,
+    totalCount: result.totalCount || 0,
     resultCopy: result.resultCopy || "",
     topArtist: result.topArtist ? slimSubject(result.topArtist) : null,
     creatorTopSongs: (result.creatorTopSongs || []).map(slimSong).filter(Boolean),
@@ -130,6 +131,7 @@ function slimChallenge(challenge = {}) {
   return {
     challengeId: challenge.challengeId || "",
     mode,
+    targetCount: challenge.targetCount || 9,
     artists: (challenge.artists || []).map(slimSubject),
     albums: (challenge.albums || []).map(slimSubject),
     colors: (challenge.colors || []).map(slimSubject),
@@ -206,7 +208,7 @@ function writeHistory(history) {
 }
 
 function modeTitle(mode) {
-  if (mode === "top9") return "同担 Top9 挑战";
+  if (mode === "top9") return "同担 Top 挑战";
   if (mode === "color") return "颜色推歌挑战";
   if (mode === "qa") return "歌单问答";
   return mode === "album" ? "专辑默契挑战" : "歌手默契挑战";
@@ -332,6 +334,7 @@ function saveReceivedResult(entry) {
     resultCopy: entry.resultCopy || (entry.result || {}).resultCopy || "",
     score: (entry.result || {}).score || 0,
     matchCount: (entry.result || {}).matchCount || 0,
+    totalCount: (entry.result || {}).totalCount || 0,
     createdAt,
     receivedAt: normalizeTime(entry.receivedAt)
   };

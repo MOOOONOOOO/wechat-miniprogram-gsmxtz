@@ -7,6 +7,24 @@ const db = cloud.database();
 const _ = db.command;
 const RESULT_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const MAX_CHALLENGE_PARTICIPANTS = 99;
+const DEFAULT_TARGET_COUNT = 9;
+const MIN_TARGET_COUNT = 3;
+const MAX_TARGET_COUNT = 18;
+const TARGET_COUNT_STEP = 3;
+
+function isValidTargetCount(count) {
+  const value = Number(count || 0);
+  return Number.isInteger(value)
+    && value >= MIN_TARGET_COUNT
+    && value <= MAX_TARGET_COUNT
+    && value % TARGET_COUNT_STEP === 0;
+}
+
+function normalizeTargetCount(count, fallback = DEFAULT_TARGET_COUNT) {
+  const value = Number(count || 0);
+  if (isValidTargetCount(value)) return value;
+  return isValidTargetCount(fallback) ? Number(fallback) : DEFAULT_TARGET_COUNT;
+}
 
 function makeResultId(challengeId, openId) {
   return `${challengeId}_${openId}`.replace(/[^\w-]/g, "_");
@@ -208,8 +226,8 @@ function compareQaAnswers(prompts, creatorChoices, friendChoices) {
 }
 
 function compareTopSongs(topArtist, creatorTopSongs, friendTopSongs) {
-  const creatorSongs = Array.isArray(creatorTopSongs) ? creatorTopSongs.slice(0, 9) : [];
-  const friendSongs = Array.isArray(friendTopSongs) ? friendTopSongs.slice(0, 9) : [];
+  const creatorSongs = Array.isArray(creatorTopSongs) ? creatorTopSongs.slice(0, 18) : [];
+  const friendSongs = Array.isArray(friendTopSongs) ? friendTopSongs.slice(0, 18) : [];
   const friendRankMap = friendSongs.reduce((map, song, index) => {
     if (song && song.trackId) map[song.trackId] = index + 1;
     return map;
@@ -227,6 +245,7 @@ function compareTopSongs(topArtist, creatorTopSongs, friendTopSongs) {
     }))
     .filter((song) => song.matched);
   const topRankMatches = matchedSongs.filter((song) => song.creatorRank <= 3 && song.creatorRank === song.friendRank);
+  const totalCount = Math.max(creatorSongs.length, friendSongs.length, 1);
   return {
     mode: "top9",
     topArtist: topArtist || {},
@@ -243,8 +262,17 @@ function compareTopSongs(topArtist, creatorTopSongs, friendTopSongs) {
     matchedSongs,
     topRankMatches,
     matchCount: matchedSongs.length,
-    score: Math.round((matchedSongs.length / 9) * 100)
+    totalCount,
+    score: Math.round((matchedSongs.length / totalCount) * 100)
   };
+}
+
+function countCompleteChoices(subjects, choices) {
+  const safeChoices = choices || {};
+  return (subjects || []).filter((item) => {
+    const song = safeChoices[item.id];
+    return song && song.trackId && (song.name || song.trackName);
+  }).length;
 }
 
 exports.main = async (event) => {
@@ -252,7 +280,7 @@ exports.main = async (event) => {
   const challengeId = event.challengeId;
   const friendChoices = event.friendChoices || {};
   const friendTopSongs = Array.isArray(event.friendTopSongs)
-    ? event.friendTopSongs.slice(0, 9).map(normalizeTopSong).filter((song) => song.trackId && song.name)
+    ? event.friendTopSongs.slice(0, 18).map(normalizeTopSong).filter((song) => song.trackId && song.name)
     : [];
   const rawFriendProfile = event.friendProfile || {};
   const now = new Date();
@@ -270,6 +298,15 @@ exports.main = async (event) => {
   const items = mode === "album"
     ? (challenge.data.albums || [])
     : (mode === "color" ? (challenge.data.colors || []) : (mode === "qa" ? (challenge.data.qaPrompts || []) : (challenge.data.artists || [])));
+  const targetCount = mode === "top9"
+    ? normalizeTargetCount(challenge.data.targetCount, (challenge.data.creatorTopSongs || []).length)
+    : (mode === "artist" || mode === "album" ? normalizeTargetCount(challenge.data.targetCount, items.length) : DEFAULT_TARGET_COUNT);
+  if ((mode === "artist" || mode === "album") && countCompleteChoices(items, friendChoices) !== targetCount) {
+    return { ok: false, message: `需要填满 ${targetCount} 个选择` };
+  }
+  if (mode === "top9" && friendTopSongs.length !== targetCount) {
+    return { ok: false, message: `需要选择 ${targetCount} 首歌曲` };
+  }
   const result = mode === "top9"
     ? compareTopSongs(challenge.data.topArtist, challenge.data.creatorTopSongs, friendTopSongs)
     : (mode === "qa" ? compareQaAnswers(items, challenge.data.creatorChoices || {}, friendChoices)
@@ -277,7 +314,9 @@ exports.main = async (event) => {
 
   const resultSummary = {
     score: result.score,
-    matchCount: result.matchCount
+    matchCount: result.matchCount,
+    totalCount: result.totalCount || (items || []).length || 0,
+    targetCount
   };
   const savedFriendProfile = await readUserProfile(wxContext.OPENID);
   const friendProfile = mergeFriendProfile(rawFriendProfile, savedFriendProfile);
@@ -364,7 +403,9 @@ exports.main = async (event) => {
       friendProfile: submission.friendProfile,
       result: {
         score: result.score,
-        matchCount: result.matchCount
+        matchCount: result.matchCount,
+        totalCount: resultSummary.totalCount,
+        targetCount
       },
       createdAt: now,
       expiresAt: new Date(now.getTime() + RESULT_TTL_MS)

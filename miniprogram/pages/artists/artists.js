@@ -1,8 +1,15 @@
 const { artists } = require("../../data/artists");
 const { searchArtists, searchAlbumsByQuery, searchSongs } = require("../../utils/api");
 const { readArtistCovers } = require("../../utils/itunesCache");
+const {
+  MAX_TARGET_COUNT,
+  getTargetCountHint,
+  getTargetCountStartText,
+  isValidTargetCount
+} = require("../../utils/targetCount");
 
 function getAlbumTargetCount(mode) {
+  if (mode === "album") return MAX_TARGET_COUNT;
   if (mode !== "themeAlbum") return 9;
   const app = getApp();
   return Number(app.globalData.draftThemeAlbumTarget || (app.globalData.draftThemePrompts || []).length || 9);
@@ -96,7 +103,9 @@ Page({
     albumTargetCount: 9,
     themeAlbumDoneText: "完成：组成我的人生九专",
     titleText: "",
-    targetCount: 9
+    targetCount: 9,
+    targetHint: "",
+    nextButtonText: "下一步"
   },
 
   onLoad(options = {}) {
@@ -114,6 +123,7 @@ Page({
     const slotId = options.slotId || (mode === "qa" ? app.globalData.currentQaSlotId : app.globalData.currentThemeSlotId) || "";
     const themeArtist = slotId ? ((app.globalData.draftThemeArtists || {})[slotId] || app.globalData.currentThemeSlotArtist) : null;
     const qaArtist = slotId ? ((app.globalData.draftQaArtists || {})[slotId] || app.globalData.currentQaSlotArtist) : null;
+    const lyricsArtist = mode === "lyrics" ? app.globalData.lyricsShareArtist : null;
     const letters = this.buildLetters(this.data.localArtists);
     this.setData({
       mode,
@@ -121,7 +131,7 @@ Page({
       challengeId,
       colorId,
       slotId,
-      selected: mode === "top9" && topArtist ? [topArtist] : (mode === "color" && colorArtist ? [colorArtist] : (mode === "theme" && themeArtist ? [themeArtist] : (mode === "qa" && qaArtist ? [qaArtist] : []))),
+      selected: mode === "top9" && topArtist ? [topArtist] : (mode === "color" && colorArtist ? [colorArtist] : (mode === "theme" && themeArtist ? [themeArtist] : (mode === "qa" && qaArtist ? [qaArtist] : (mode === "lyrics" && lyricsArtist ? [lyricsArtist] : [])))),
       albumCount: (app.globalData.draftAlbums || []).length,
       isAlbumMode,
       albumTargetCount,
@@ -137,7 +147,7 @@ Page({
     this.setData({
       albumCount,
       albumTargetCount,
-      canNext: this.data.isAlbumMode ? albumCount === albumTargetCount : this.data.canNext
+      canNext: this.data.isAlbumMode ? this.canUseAlbumCount(albumCount) : this.data.canNext
     }, () => {
       if (this.data.isAlbumMode) this.renderArtists();
     });
@@ -236,16 +246,38 @@ Page({
     const visibleAlbums = showSearchSections ? searchedAlbums.map(decorateItem) : [];
     const visibleArtistResults = showSearchSections ? searchedArtists.map(decorateItem) : [];
 
-    const targetCount = this.data.isAlbumMode ? this.data.albumTargetCount : (this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? 1 : 9);
-    const titleText = this.data.isAlbumMode ? "选择专辑或歌手" : (targetCount === 1 ? "选择 1 位歌手" : "选择 9 位歌手");
+    const isSingleArtistMode = this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" || this.data.mode === "lyrics";
+    const selectedCount = this.data.isAlbumMode ? this.data.albumCount : selected.length;
+    const targetCount = this.data.isAlbumMode
+      ? this.data.albumTargetCount
+      : (isSingleArtistMode ? 1 : MAX_TARGET_COUNT);
+    const canNext = this.data.isAlbumMode
+      ? this.canUseAlbumCount(this.data.albumCount)
+      : (isSingleArtistMode ? selected.length === 1 : isValidTargetCount(selected.length));
+    const titleText = this.data.isAlbumMode
+      ? "选择几张专辑"
+      : (targetCount === 1 ? "选择 1 位歌手" : "选择几位歌手");
+    const targetHint = this.data.isAlbumMode
+      ? (this.data.mode === "themeAlbum" ? "" : getTargetCountHint(selectedCount, "张"))
+      : (isSingleArtistMode ? "" : getTargetCountHint(selected.length, "位"));
+    const nextButtonText = this.data.isAlbumMode
+      ? (this.data.mode === "themeAlbum" ? this.data.themeAlbumDoneText : getTargetCountStartText(selectedCount, "张", "专辑"))
+        : (this.data.mode === "top9" ? "下一步：选择 Top 歌曲"
+          : (this.data.mode === "color" ? "下一步：为这个颜色选歌"
+            : (this.data.mode === "qa" ? "下一步：为这个问题选歌"
+              : (this.data.mode === "theme" ? "下一步：为这个题目选歌"
+                : (this.data.mode === "lyrics" ? "下一步：选择歌曲"
+                  : getTargetCountStartText(selected.length, "位", "歌手"))))));
     this.setData({
       visibleArtists,
       visibleAlbums,
       visibleArtistResults,
       showSearchSections,
-      canNext: this.data.isAlbumMode ? this.data.albumCount === this.data.albumTargetCount : selected.length === (this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? 1 : 9),
+      canNext,
       titleText,
       targetCount,
+      targetHint,
+      nextButtonText,
       letterItems: this.data.letters.map((key) => ({
         key,
         activeClass: key === activeLetter && shouldShowLetterArtists ? "active" : ""
@@ -408,12 +440,20 @@ Page({
       return;
     }
 
+    if (this.data.mode === "lyrics") {
+      const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
+      this.setData({ selected }, () => this.renderArtists());
+      return;
+    }
+
     let selected = [...this.data.selected];
 
     if (selected.some((item) => item.id === id)) {
       selected = selected.filter((item) => item.id !== id);
-    } else if (selected.length < 9 && artist) {
+    } else if (selected.length < MAX_TARGET_COUNT && artist) {
       selected.push(artist);
+    } else if (artist) {
+      wx.showToast({ title: `最多选择 ${MAX_TARGET_COUNT} 位歌手`, icon: "none" });
     }
 
     this.setData({ selected }, () => this.renderArtists());
@@ -436,8 +476,14 @@ Page({
     getApp().globalData.draftAlbums = selected;
     this.setData({
       albumCount: selected.length,
-      canNext: selected.length === this.data.albumTargetCount
+      canNext: this.canUseAlbumCount(selected.length)
     }, () => this.renderArtists());
+  },
+
+  canUseAlbumCount(count) {
+    return this.data.mode === "themeAlbum"
+      ? Number(count || 0) === this.data.albumTargetCount
+      : isValidTargetCount(count);
   },
 
   next() {
@@ -500,16 +546,34 @@ Page({
       const app = getApp();
       app.globalData.draftTopArtist = this.data.selected[0];
       app.globalData.draftMode = "top9";
+      app.globalData.draftTargetCount = 9;
       app.globalData.creatorTopSongs = [];
       wx.navigateTo({ url: "/pages/songs/songs?role=creator&mode=top9" });
       return;
     }
 
-    if (this.data.mode === "album") {
-      if ((getApp().globalData.draftAlbums || []).length !== 9) {
-        wx.showToast({ title: "请选择 9 张专辑", icon: "none" });
+    if (this.data.mode === "lyrics") {
+      if (this.data.selected.length !== 1) {
+        wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
         return;
       }
+      const app = getApp();
+      app.globalData.draftMode = "lyrics";
+      app.globalData.draftArtists = this.data.selected;
+      app.globalData.lyricsShareArtist = this.data.selected[0];
+      app.globalData.lyricsShareSong = null;
+      app.globalData.lyricsShareSelectedLyrics = [];
+      wx.navigateTo({ url: "/pages/songs/songs?role=creator&mode=lyrics" });
+      return;
+    }
+
+    if (this.data.mode === "album") {
+      const albumCount = (getApp().globalData.draftAlbums || []).length;
+      if (!isValidTargetCount(albumCount)) {
+        wx.showToast({ title: `请选择 3、6、9、12、15 或 ${MAX_TARGET_COUNT} 张专辑`, icon: "none" });
+        return;
+      }
+      getApp().globalData.draftTargetCount = albumCount;
       getApp().globalData.creatorChoices = {};
       wx.navigateTo({ url: "/pages/songs/songs?role=creator&mode=album" });
       return;
@@ -526,8 +590,13 @@ Page({
       return;
     }
 
+    if (!isValidTargetCount(this.data.selected.length)) {
+      wx.showToast({ title: `请选择 3、6、9、12、15 或 ${MAX_TARGET_COUNT} 位歌手`, icon: "none" });
+      return;
+    }
     getApp().globalData.draftArtists = this.data.selected;
     getApp().globalData.draftMode = "artist";
+    getApp().globalData.draftTargetCount = this.data.selected.length;
     getApp().globalData.creatorChoices = {};
     wx.navigateTo({ url: "/pages/songs/songs?role=creator" });
   }

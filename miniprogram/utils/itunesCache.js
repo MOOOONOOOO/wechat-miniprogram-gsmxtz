@@ -3,12 +3,15 @@ const COVER_ASSET_COLLECTION = "coverAssetCache";
 const ARTIST_SONG_LIST_COLLECTION = "artistSongListCache";
 const ALBUM_SONG_LIST_COLLECTION = "albumSongListCache";
 const LOCAL_ARTIST_COVER_KEY = "artistCoverCacheLocal:v1";
+const LOCAL_ARTIST_COVER_MISS_KEY = "artistCoverMissLocal:v1";
 const LOCAL_COVER_ASSET_KEY = "coverAssetCacheLocal:v1";
 const LOCAL_ARTIST_SONG_LIST_KEY = "artistSongListCacheLocal:v1";
 const LOCAL_ALBUM_SONG_LIST_KEY = "albumSongListCacheLocal:v1";
 const BATCH_SIZE = 20;
 const DEFAULT_SONG_LIST_TIMEOUT_MS = 250;
 const SONG_LIST_CACHE_VERSION = 2;
+const LOCAL_MISS_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+const LOCAL_MISS_CACHE_MAX = 600;
 
 function safeGetStorage(key) {
   try {
@@ -137,6 +140,13 @@ function getArtistNames(artist) {
   return unique(names.concat(equivalentNames));
 }
 
+function getArtistCoverCacheKeys(artist) {
+  return unique(
+    getArtistIds(artist).map((id) => `artistId:${id}`)
+      .concat(getArtistNames(artist).map((name) => `artistName:${name}`))
+  );
+}
+
 function getEquivalentArtistGroupForTarget(artist) {
   const ids = unique([
     artist && artist.artistId,
@@ -181,6 +191,54 @@ function interleaveByArtist(items, artistIds) {
     });
   }
   return mixed.concat(rest);
+}
+
+function pruneMissCache(cache) {
+  const now = Date.now();
+  const entries = Object.keys(cache || {})
+    .map((key) => ({ key, record: cache[key] || {} }))
+    .filter((item) => Number(item.record.expiresAt || 0) > now)
+    .sort((a, b) => Number(b.record.updatedAt || 0) - Number(a.record.updatedAt || 0));
+  return entries.slice(0, LOCAL_MISS_CACHE_MAX).reduce((map, item) => {
+    map[item.key] = item.record;
+    return map;
+  }, {});
+}
+
+function hasRecentArtistCoverMiss(artist) {
+  const keys = getArtistCoverCacheKeys(artist);
+  if (!keys.length) return false;
+  const cache = safeGetStorage(LOCAL_ARTIST_COVER_MISS_KEY);
+  const now = Date.now();
+  return keys.some((key) => Number((cache[key] || {}).expiresAt || 0) > now);
+}
+
+function rememberArtistCoverMiss(artist) {
+  const keys = getArtistCoverCacheKeys(artist);
+  if (!keys.length) return;
+  const now = Date.now();
+  const cache = pruneMissCache(safeGetStorage(LOCAL_ARTIST_COVER_MISS_KEY));
+  keys.forEach((key) => {
+    cache[key] = {
+      updatedAt: now,
+      expiresAt: now + LOCAL_MISS_TTL_MS
+    };
+  });
+  safeSetStorage(LOCAL_ARTIST_COVER_MISS_KEY, pruneMissCache(cache));
+}
+
+function clearArtistCoverMiss(artist) {
+  const keys = getArtistCoverCacheKeys(artist);
+  if (!keys.length) return;
+  const cache = safeGetStorage(LOCAL_ARTIST_COVER_MISS_KEY);
+  let changed = false;
+  keys.forEach((key) => {
+    if (cache[key]) {
+      delete cache[key];
+      changed = true;
+    }
+  });
+  if (changed) safeSetStorage(LOCAL_ARTIST_COVER_MISS_KEY, cache);
 }
 
 function hasArtistTarget(context) {
@@ -234,13 +292,11 @@ function getLocalArtistCover(artist) {
 function rememberArtistCover(record) {
   if (!record || !record.coverUrl) return;
   const cache = safeGetStorage(LOCAL_ARTIST_COVER_KEY);
-  getArtistIds(record).forEach((id) => {
-    cache[`artistId:${id}`] = record;
-  });
-  getArtistNames(record).forEach((name) => {
-    cache[`artistName:${name}`] = record;
+  getArtistCoverCacheKeys(record).forEach((key) => {
+    cache[key] = record;
   });
   safeSetStorage(LOCAL_ARTIST_COVER_KEY, cache);
+  clearArtistCoverMiss(record);
 }
 
 function rememberCoverAssets(records) {
@@ -350,6 +406,7 @@ function isFallbackSong(song) {
 function normalizeSongForList(song) {
   if (!song || !song.trackId) return null;
   if (isFallbackSong(song)) return null;
+  const duration = Number(song.duration || 0) || (song.trackTimeMillis ? Math.round(Number(song.trackTimeMillis) / 1000) : 0);
   return {
     trackId: String(song.trackId),
     name: song.name || song.trackName || "",
@@ -360,7 +417,9 @@ function normalizeSongForList(song) {
     collectionName: song.collectionName || song.album || "",
     album: song.album || song.collectionName || "",
     cover: artwork600(song.cover || song.artworkUrl600 || song.artworkUrl100 || ""),
-    trackNumber: song.trackNumber || 0
+    trackNumber: song.trackNumber || 0,
+    trackTimeMillis: song.trackTimeMillis || (duration ? duration * 1000 : 0),
+    duration
   };
 }
 
@@ -658,6 +717,7 @@ async function readArtistCovers(artists) {
   safeArtists.forEach((artist) => {
     const hit = getLocalArtistCover(artist);
     if (hit) localHits[artist.id] = hit;
+    else if (hasRecentArtistCoverMiss(artist)) localHits[artist.id] = { _miss: true };
     else missing.push(artist);
   });
 
@@ -674,7 +734,10 @@ async function readArtistCovers(artists) {
 
   missing.forEach((artist) => {
     const hit = cloudRows.find((row) => matchArtistRecord(artist, row) && isTrustedArtistCover(artist, row));
-    if (!hit) return;
+    if (!hit) {
+      rememberArtistCoverMiss(artist);
+      return;
+    }
     const cover = {
       ...hit,
       coverUrl: hit.coverUrl || hit.avatarUrl || "",

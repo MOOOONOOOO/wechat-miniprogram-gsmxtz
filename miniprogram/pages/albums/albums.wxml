@@ -10,6 +10,7 @@
     </view>
     <view class="album-count">{{selected.length}}<text>/{{targetCount}}</text></view>
   </view>
+  <view wx:if="{{targetHint}}" class="target-hint">{{targetHint}}</view>
 
   <view wx:if="{{loading}}" class="loading">正在从 iTunes 准备专辑...</view>
 
@@ -34,6 +35,6 @@
 
   <view class="bottom-action album-actions">
     <button class="secondary-button" bindtap="backToArtists">返回歌手列表</button>
-    <button class="primary-button" disabled="{{!canNext}}" bindtap="next">{{mode === "themeAlbum" ? themeAlbumDoneText : "下一步：每张专辑选 1 首"}}</button>
+    <button class="primary-button" disabled="{{!canNext}}" bindtap="next">{{nextButtonText}}</button>
   </view>
 </view>

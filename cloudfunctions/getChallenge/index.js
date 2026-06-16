@@ -37,6 +37,7 @@ exports.main = async (event) => {
     challenge: {
       challengeId,
       mode: res.data.mode || "artist",
+      targetCount: res.data.targetCount || 9,
       artists: res.data.artists,
       albums: res.data.albums || [],
       colors: res.data.colors || [],

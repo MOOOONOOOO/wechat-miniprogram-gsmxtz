@@ -10,10 +10,26 @@
   <view wx:if="{{mode === 'top9'}}" class="top9-result-page">
     <view class="summary top9-summary">
       <view class="top9-summary-copy">
-        <text class="label">同担 Top9 挑战</text>
+        <view class="top9-title-row">
+          <text class="label">同担 Top 挑战</text>
+          <view wx:if="{{pairMode && pairTitle}}" class="pair-summary top9-pair-summary">
+            <view class="pair-head">
+              <view class="pair-head-avatar">
+                <image wx:if="{{creatorAvatar}}" src="{{creatorAvatar}}" mode="aspectFill"></image>
+                <text wx:else>{{creatorInitial}}</text>
+              </view>
+              <view class="pair-head-mark">×</view>
+              <view class="pair-head-avatar friend">
+                <image wx:if="{{friendAvatar}}" src="{{friendAvatar}}" mode="aspectFill"></image>
+                <text wx:else>{{friendInitial}}</text>
+              </view>
+            </view>
+            <view>{{creatorName}} × {{friendName}}</view>
+          </view>
+        </view>
         <view class="top9-artist">{{topArtist.name}}</view>
         <view class="score">{{score}}% 默契度</view>
-        <view class="muted">共同选择 {{matchCount}}/9</view>
+        <view class="muted">共同选择 {{matchCount}}/{{matchTotal}}</view>
         <view class="muted top9-result-copy">{{resultCopy}}</view>
       </view>
       <image wx:if="{{topArtistCover}}" class="top9-artist-cover" src="{{topArtistCover}}" mode="aspectFill"></image>
@@ -27,7 +43,7 @@
         <image src="{{item.cover}}" mode="aspectFill"></image>
         <view>
           <text>{{item.name}}</text>
-          <label>你 #{{item.viewerRank}} / 友 #{{item.otherRank}}</label>
+          <label>{{pairMode ? creatorName : "你"}} #{{item.viewerRank}} / {{pairMode ? friendName : "友"}} #{{item.otherRank}}</label>
           <label wx:if="{{item.rankHitText}}" class="rank-hit-inline">{{item.rankHitText}}</label>
         </view>
       </view>
@@ -52,7 +68,7 @@
       </view>
     </view>
 
-    <view class="bottom-actions">
+    <view class="bottom-actions {{showPoster ? '' : 'single-action'}}">
       <button class="secondary-button" bindtap="createNew">创建新挑战</button>
       <button wx:if="{{showPoster}}" class="primary-button" bindtap="toPoster">生成结果海报</button>
     </view>
@@ -165,7 +181,20 @@
 
   <block wx:else>
   <view class="summary">
-    <text class="label">结果</text>
+    <view wx:if="{{pairMode && pairTitle}}" class="pair-summary">
+      <view class="pair-head">
+        <view class="pair-head-avatar">
+          <image wx:if="{{creatorAvatar}}" src="{{creatorAvatar}}" mode="aspectFill"></image>
+          <text wx:else>{{creatorInitial}}</text>
+        </view>
+        <view class="pair-head-mark">×</view>
+        <view class="pair-head-avatar friend">
+          <image wx:if="{{friendAvatar}}" src="{{friendAvatar}}" mode="aspectFill"></image>
+          <text wx:else>{{friendInitial}}</text>
+        </view>
+      </view>
+      <view>{{creatorName}} × {{friendName}}</view>
+    </view>
     <view class="score">{{score}}% 音乐品味契合度</view>
     <view class="muted">{{resultCopy}}</view>
   </view>
@@ -195,12 +224,12 @@
       <view>未契合{{subjectLabel}}</view>
       <block wx:for="{{missed}}" wx:key="index">
         <text>{{item.artist.name}}</text>
-        <label>你：{{item.viewerSongName}} / 友：{{item.otherSongName}}</label>
+        <label>{{pairMode ? creatorName : "你"}}：{{item.viewerSongName}} / {{pairMode ? friendName : "友"}}：{{item.otherSongName}}</label>
       </block>
     </view>
   </view>
 
-  <view class="bottom-actions">
+  <view class="bottom-actions {{showPoster ? '' : 'single-action'}}">
     <button class="secondary-button" bindtap="createNew">创建新挑战</button>
     <button wx:if="{{showPoster}}" class="primary-button" bindtap="toPoster">生成结果海报</button>
   </view>

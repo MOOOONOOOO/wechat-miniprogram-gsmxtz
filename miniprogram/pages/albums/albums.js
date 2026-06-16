@@ -1,4 +1,10 @@
 const { searchAlbums } = require("../../utils/api");
+const {
+  MAX_TARGET_COUNT,
+  getTargetCountHint,
+  getTargetCountStartText,
+  isValidTargetCount
+} = require("../../utils/targetCount");
 
 function albumSortTime(album) {
   const releaseDate = Date.parse(album.releaseDate || "");
@@ -8,6 +14,7 @@ function albumSortTime(album) {
 }
 
 function getAlbumTargetCount(mode) {
+  if (mode === "album") return MAX_TARGET_COUNT;
   if (mode !== "themeAlbum") return 9;
   const app = getApp();
   return Number(app.globalData.draftThemeAlbumTarget || (app.globalData.draftThemePrompts || []).length || 9);
@@ -35,6 +42,8 @@ Page({
     themeAlbumDoneText: "完成：组成我的人生九专",
     themeAlbumPickText: "正在为人生九专选专辑",
     canNext: false,
+    targetHint: "",
+    nextButtonText: "下一步：每张专辑选 1 首",
     loading: false,
     showEmpty: false
   },
@@ -55,7 +64,9 @@ Page({
         avatar: artist.name ? artist.name.slice(0, 1) : "?"
       },
       selected,
-      canNext: selected.length === targetCount
+      canNext: this.canUseCount(selected.length, targetCount, mode),
+      targetHint: mode === "themeAlbum" ? "" : getTargetCountHint(selected.length, "张"),
+      nextButtonText: mode === "themeAlbum" ? getThemeAlbumDoneText() : getTargetCountStartText(selected.length, "张", "专辑")
     }, () => this.loadAlbums());
   },
 
@@ -105,7 +116,9 @@ Page({
     getApp().globalData.draftAlbums = selected;
     this.setData({
       selected,
-      canNext: selected.length === this.data.targetCount,
+      canNext: this.canUseCount(selected.length, this.data.targetCount, this.data.mode),
+      targetHint: this.data.mode === "themeAlbum" ? "" : getTargetCountHint(selected.length, "张"),
+      nextButtonText: this.data.mode === "themeAlbum" ? this.data.themeAlbumDoneText : getTargetCountStartText(selected.length, "张", "专辑"),
       albums: this.data.albums.map((item) => ({
         ...item,
         selectedClass: selected.some((selectedAlbum) => selectedAlbum.id === item.id) ? "selected" : ""
@@ -113,12 +126,18 @@ Page({
     });
   },
 
+  canUseCount(count, targetCount, mode) {
+    return mode === "themeAlbum"
+      ? Number(count || 0) === Number(targetCount || 0)
+      : isValidTargetCount(count);
+  },
+
   backToArtists() {
     wx.navigateBack();
   },
 
   next() {
-    if (this.data.selected.length !== this.data.targetCount) return;
+    if (!this.canUseCount(this.data.selected.length, this.data.targetCount, this.data.mode)) return;
     const app = getApp();
     if (this.data.mode === "themeAlbum") {
       app.globalData.draftMode = "theme";
@@ -126,6 +145,7 @@ Page({
       return;
     }
     app.globalData.draftMode = "album";
+    app.globalData.draftTargetCount = this.data.selected.length;
     app.globalData.creatorChoices = {};
     wx.navigateTo({ url: "/pages/songs/songs?role=creator&mode=album" });
   }

@@ -7,6 +7,7 @@ function hydrateChallenge(challenge, options = {}) {
 
   app.globalData.challenge = challenge;
   app.globalData.draftMode = mode;
+  app.globalData.draftTargetCount = challenge.targetCount || 9;
   app.globalData.draftArtists = mode === "album"
     ? []
     : (mode === "top9"

@@ -3,6 +3,11 @@ const {
   cacheSongsFromSearch
 } = require("./itunesCache");
 
+const ITUNES_CALL_CACHE_KEY = "itunesCloudCallCache:v1";
+const ITUNES_CALL_CACHE_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+const ITUNES_CALL_CACHE_MAX = 240;
+const pendingItunesCalls = {};
+
 const EQUIVALENT_ARTIST_GROUPS = [
   {
     ids: ["1297155868", "300117902"],
@@ -19,10 +24,78 @@ function call(name, data = {}) {
   return wx.cloud.callFunction({ name, data }).then((res) => {
     const result = res.result || {};
     if (result.ok === false) {
-      return Promise.reject(new Error(result.message || "云函数调用失败"));
+      const error = new Error(result.message || "云函数调用失败");
+      error.result = result;
+      error.reason = result.reason || "";
+      error.debug = result.debug || null;
+      return Promise.reject(error);
     }
     return result;
   });
+}
+
+function stableStringify(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+}
+
+function readItunesCallCache() {
+  try {
+    return wx.getStorageSync(ITUNES_CALL_CACHE_KEY) || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeItunesCallCache(cache) {
+  try {
+    wx.setStorageSync(ITUNES_CALL_CACHE_KEY, cache || {});
+  } catch (error) {}
+}
+
+function pruneItunesCallCache(cache) {
+  const entries = Object.keys(cache || {})
+    .map((key) => ({ key, updatedAt: Number((cache[key] || {}).updatedAt || 0) }))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  const keep = entries.slice(0, ITUNES_CALL_CACHE_MAX).reduce((map, item) => {
+    map[item.key] = cache[item.key];
+    return map;
+  }, {});
+  return keep;
+}
+
+function cachedItunesCall(data = {}) {
+  const key = stableStringify({
+    name: "itunesSearch",
+    data
+  });
+  const now = Date.now();
+  const cache = readItunesCallCache();
+  const hit = cache[key];
+  if (hit && hit.expiresAt > now && hit.result) {
+    return Promise.resolve(hit.result);
+  }
+  if (pendingItunesCalls[key]) return pendingItunesCalls[key];
+
+  pendingItunesCalls[key] = call("itunesSearch", data)
+    .then((result) => {
+      const savedAt = Date.now();
+      const nextCache = pruneItunesCallCache({
+        ...readItunesCallCache(),
+        [key]: {
+          result,
+          updatedAt: savedAt,
+          expiresAt: savedAt + ITUNES_CALL_CACHE_TTL_MS
+        }
+      });
+      writeItunesCallCache(nextCache);
+      return result;
+    })
+    .finally(() => {
+      delete pendingItunesCalls[key];
+    });
+  return pendingItunesCalls[key];
 }
 
 function normalizeName(value) {
@@ -163,7 +236,7 @@ function interleaveByArtist(items, artistIds) {
 }
 
 function searchArtists(query) {
-  return call("itunesSearch", {
+  return cachedItunesCall({
     type: "artist",
     query,
     limit: 6
@@ -205,7 +278,7 @@ function searchSongs(artist, query = "") {
   const artistInfo = normalizeArtistInput(artist);
   const group = findEquivalentArtistGroup(artistInfo);
   const requests = group
-    ? group.searchTerms.map((term, index) => call("itunesSearch", {
+    ? group.searchTerms.map((term, index) => cachedItunesCall({
         type: "song",
         artistName: artistInfo.artistName || artistInfo.name || term,
         searchTerm: term,
@@ -214,15 +287,15 @@ function searchSongs(artist, query = "") {
         query,
         limit: 49
       }).catch(() => ({ songs: [] })))
-    : [call("itunesSearch", {
-    type: "song",
-    artistName: artistInfo.artistName || artistInfo.name || artistInfo.searchTerm,
-    searchTerm: artistInfo.searchTerm || artistInfo.artistName || artistInfo.name,
-    artistId: artistInfo.itunesArtistId || artistInfo.artistId || "",
-    trustedArtistId: artistInfo.trustedArtistId,
-    query,
-    limit: 49
-  })];
+    : [cachedItunesCall({
+        type: "song",
+        artistName: artistInfo.artistName || artistInfo.name || artistInfo.searchTerm,
+        searchTerm: artistInfo.searchTerm || artistInfo.artistName || artistInfo.name,
+        artistId: artistInfo.itunesArtistId || artistInfo.artistId || "",
+        trustedArtistId: artistInfo.trustedArtistId,
+        query,
+        limit: 49
+      })];
 
   return Promise.all(requests).then((results) => {
     const primary = results.find((res) => res && res.artistId) || results[0] || {};
@@ -250,14 +323,14 @@ function searchAlbums(artist, limit = 200) {
   const artistInfo = normalizeArtistInput(artist);
   const group = findEquivalentArtistGroup(artistInfo);
   const requests = group
-    ? group.searchTerms.map((term, index) => call("itunesSearch", {
+    ? group.searchTerms.map((term, index) => cachedItunesCall({
         type: "album",
         artistName: term,
         searchTerm: term,
         artistId: group.ids[index] || "",
         limit
       }).catch(() => ({ albums: [] })))
-    : [call("itunesSearch", {
+    : [cachedItunesCall({
         type: "album",
         artistName: artist.searchTerm || artist.name || artist.artistName || "",
         artistId: artist.itunesArtistId || artist.artistId || "",
@@ -287,7 +360,7 @@ function searchAlbums(artist, limit = 200) {
 }
 
 function searchAlbumsByQuery(query, limit = 49) {
-  return call("itunesSearch", {
+  return cachedItunesCall({
     type: "albumSearch",
     query,
     limit
@@ -298,7 +371,7 @@ function searchAlbumsByQuery(query, limit = 49) {
 }
 
 function searchAlbumSongs(collectionId, query = "") {
-  return call("itunesSearch", {
+  return cachedItunesCall({
     type: "albumSongs",
     collectionId,
     query
@@ -311,6 +384,17 @@ function searchAlbumSongs(collectionId, query = "") {
       ...res,
       songs
     };
+  });
+}
+
+function searchSongsByQuery(query, limit = 30) {
+  return cachedItunesCall({
+    type: "songSearch",
+    query,
+    limit
+  }).then((res) => {
+    cacheSongsFromSearch(res.songs);
+    return res;
   });
 }
 
@@ -334,6 +418,10 @@ function getChallengeParticipants(challengeId) {
   return call("getChallengeParticipants", { challengeId });
 }
 
+function getChallengeMultiplayer(payload = {}) {
+  return call("getChallengeMultiplayer", payload);
+}
+
 function getCreatorInbox(payload = {}) {
   return call("getCreatorInbox", payload);
 }
@@ -354,9 +442,14 @@ function getSharedResult(payload) {
   return call("getSharedResult", payload);
 }
 
+function getLyrics(payload) {
+  return call("getLyrics", payload);
+}
+
 module.exports = {
   searchArtists,
   searchSongs,
+  searchSongsByQuery,
   searchAlbums,
   searchAlbumsByQuery,
   searchAlbumSongs,
@@ -365,9 +458,11 @@ module.exports = {
   submitAnswer,
   getRecentSubmission,
   getChallengeParticipants,
+  getChallengeMultiplayer,
   getCreatorInbox,
   updateChallengeProfile,
   getMiniProgramCode,
   publishSharedResult,
-  getSharedResult
+  getSharedResult,
+  getLyrics
 };

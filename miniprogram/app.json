@@ -10,6 +10,8 @@
     "pages/artists/artists",
     "pages/albums/albums",
     "pages/colors/colors",
+    "pages/lyrics-select/lyrics-select",
+    "pages/lyrics-share/lyrics-share",
     "pages/songs/songs",
     "pages/top9-sort/top9-sort",
     "pages/share/share",

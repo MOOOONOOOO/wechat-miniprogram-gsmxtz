@@ -29,21 +29,21 @@
     <button class="mode-card" data-mode="artist" bindtap="start">
       <view>
         <text>歌手默契挑战</text>
-        <label>选 9 位歌手，每位 1 首最爱</label>
+        <label>选几位歌手，每位 1 首最爱</label>
       </view>
       <text class="mode-arrow">›</text>
     </button>
     <button class="mode-card" data-mode="album" bindtap="start">
       <view>
         <text>专辑默契挑战</text>
-        <label>选 9 张专辑，每张 1 首最爱</label>
+        <label>选几张专辑，每位 1 首最爱</label>
       </view>
       <text class="mode-arrow">›</text>
     </button>
     <button class="mode-card" data-mode="top9" bindtap="start">
       <view>
-        <text>同担 Top9 挑战</text>
-        <label>选 1 位歌手，排出你最爱的 9 首歌</label>
+        <text>同担 Top 挑战</text>
+        <label>选 1 位歌手，排出自己的最爱</label>
       </view>
       <text class="mode-arrow">›</text>
     </button>
@@ -58,6 +58,13 @@
       <view>
         <text>主题推歌</text>
         <label>心形专辑挑战、人生九专、歌单问答</label>
+      </view>
+      <text class="mode-arrow">›</text>
+    </button>
+    <button class="mode-card lyrics-mode-card" bindtap="startLyricsShare">
+      <view>
+        <text>歌词分享</text>
+        <label>选一首歌，截几句歌词做成卡片（实验功能）</label>
       </view>
       <text class="mode-arrow">›</text>
     </button>

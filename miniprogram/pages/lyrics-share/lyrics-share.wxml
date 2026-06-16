@@ -1,0 +1,111 @@
+<view class="page lyrics-page">
+  <view class="hero-copy">
+    <text class="label">Lyrics Card</text>
+    <view class="serif-title">歌词卡片</view>
+  </view>
+
+  <view wx:if="{{selectedSong}}" class="selected-song panel">
+    <image src="{{selectedSong.cover}}" mode="aspectFill"></image>
+    <view>
+      <text class="label">当前歌曲</text>
+      <view>{{selectedSong.name}}</view>
+      <label>{{selectedSong.artistName}} - {{selectedSong.album}}</label>
+    </view>
+  </view>
+
+  <view wx:if="{{selectedLyrics.length}}" class="style-block">
+    <view class="style-tabs">
+      <button
+        wx:for="{{styles}}"
+        wx:key="id"
+        class="style-tab {{item.activeClass}}"
+        data-style="{{item.id}}"
+        bindtap="setStyle"
+      >{{item.name}}</button>
+    </view>
+
+    <view class="preview-wrap">
+      <view class="lyrics-preview style-{{activeStyle}}" style="{{previewPaletteStyle}}">
+        <block wx:if="{{activeStyle === 'apple'}}">
+          <view class="apple-card" style="{{appleCardStyle}}">
+            <view class="apple-lyrics">
+              <text wx:for="{{appleLyricsLines}}" wx:key="index">{{item}}</text>
+            </view>
+            <view class="apple-song">
+              <image src="{{selectedSong.cover}}" mode="aspectFill"></image>
+              <view>
+                <text>{{selectedSong.name}}</text>
+                <label>{{selectedSong.artistName}}</label>
+              </view>
+            </view>
+          </view>
+        </block>
+
+        <block wx:elif="{{activeStyle === 'liquid'}}">
+          <view class="liquid-card">
+            <view class="liquid-song">
+              <image src="{{selectedSong.cover}}" mode="aspectFill"></image>
+              <view>
+                <text>{{selectedSong.name}}</text>
+                <label>{{selectedSong.artistName}}</label>
+              </view>
+            </view>
+            <view class="liquid-lyrics">{{selectedLyricsText}}</view>
+          </view>
+        </block>
+
+        <block wx:elif="{{activeStyle === 'netease'}}">
+          <view class="netease-card">
+            <view class="netease-song">
+              <image src="{{selectedSong.cover}}" mode="aspectFill"></image>
+              <view>
+                <text>{{selectedSong.name}}</text>
+                <label>{{selectedSong.artistName}}</label>
+              </view>
+            </view>
+            <view class="netease-divider"></view>
+            <view class="netease-lyrics">
+              <text wx:for="{{selectedLyrics}}" wx:key="index">{{item}}</text>
+            </view>
+          </view>
+        </block>
+
+        <block wx:elif="{{activeStyle === 'mla'}}">
+          <view class="mla-card">
+            <view class="mla-title">{{selectedSong.name}}</view>
+            <view class="mla-lyrics">{{selectedLyricsText}}</view>
+            <view class="mla-song">
+              <image src="{{selectedSong.cover}}" mode="aspectFill"></image>
+              <view>
+                <text>{{selectedSong.name}}</text>
+                <label>{{selectedSong.artistName}}</label>
+              </view>
+            </view>
+          </view>
+        </block>
+
+        <block wx:else>
+          <view class="poem-card">
+            <view class="poem-song">
+              <image src="{{selectedSong.cover}}" mode="aspectFill"></image>
+              <text>{{selectedSong.artistName}} - {{selectedSong.name}}</text>
+            </view>
+            <view class="poem-lyrics">
+              <block wx:for="{{poemLyricSegments}}" wx:key="index">
+                <text class="poem-segment {{item.highlightClass}}">{{item.text}}</text>
+                <text wx:if="{{index < poemLyricSegments.length - 1}}" class="poem-separator"> / </text>
+              </block>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="bottom-action save-action">
+      <button class="secondary-button" bindtap="reselectLyrics">重选歌词</button>
+      <button class="primary-button" disabled="{{!canSave}}" bindtap="saveImage">保存海报图片</button>
+    </view>
+  </view>
+
+  <canvas type="2d" id="lyricsPosterCanvas" class="lyrics-canvas" style="{{canvasStyle}}"></canvas>
+</view>

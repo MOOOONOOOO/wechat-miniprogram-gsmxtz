@@ -74,6 +74,7 @@ function slimChallenge(challenge = {}) {
   return {
     challengeId: challenge.challengeId || "",
     mode: challenge.mode || "artist",
+    targetCount: challenge.targetCount || 9,
     artists: (challenge.artists || []).map(slimSubject),
     albums: (challenge.albums || []).map(slimSubject),
     colors: (challenge.colors || []).map(slimSubject),

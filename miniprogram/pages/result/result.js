@@ -1,9 +1,10 @@
-const { getMiniProgramCode, getRecentSubmission, getSharedResult, publishSharedResult, submitAnswer } = require("../../utils/api");
+const { getChallengeMultiplayer, getMiniProgramCode, getRecentSubmission, getSharedResult, publishSharedResult, submitAnswer } = require("../../utils/api");
 const { ensureChallenge, needsChallenge } = require("../../utils/challengeState");
 const { readFriendDraft } = require("../../utils/friendDraft");
 const { compareByItems, compareQaAnswers, compareTopSongs } = require("../../utils/result");
 const { getResultCopyPool, pickResultCopy } = require("../../utils/resultCopy");
 const { getResultSnapshot, saveResultSnapshot } = require("../../utils/resultSnapshot");
+const { getMockPair, normalizeMode } = require("../../utils/multiplayerMock");
 const { getColorSubjects } = require("../../data/colors");
 const { ensureStableAccountProfile, readCachedProfile, resolveCloudFileUrl } = require("../../utils/profile");
 const {
@@ -21,7 +22,7 @@ function hasChoices(choices) {
 }
 
 function hasTopSongs(songs) {
-  return Array.isArray(songs) && songs.length === 9;
+  return Array.isArray(songs) && songs.length >= 3 && songs.length <= 18 && songs.length % 3 === 0;
 }
 
 function hasCompleteTop9Result(result) {
@@ -118,7 +119,7 @@ function getResultIdFromSubmission(submission) {
 
 function getShareTitle(mode, score, nickName) {
   const name = String(nickName || "我").trim() || "我";
-  if (mode === "top9") return `${name}和友的同担 Top9 挑战结果`;
+  if (mode === "top9") return `${name}和友的同担 Top 挑战结果`;
   if (mode === "color") return `${name}和友的颜色推歌挑战结果`;
   if (mode === "qa") return `${name}和友的歌单问答挑战结果`;
   return `${name}和朋友有${Number(score) || 0}%音乐品味契合度`;
@@ -156,6 +157,10 @@ function makeSharedResultQuery(resultId, shareToken) {
   return shareToken ? `${query}&shareToken=${encodeURIComponent(shareToken)}` : query;
 }
 
+function formatTopLabel(prefix) {
+  return `${prefix}排序`;
+}
+
 function isPlaceholderName(name) {
   const value = String(name || "").trim();
   return !value || ["我", "友", "匿名", "匿名挑战者"].indexOf(value) >= 0;
@@ -167,6 +172,7 @@ function hydrateAppFromChallenge(challenge, friendChoices, friendProfile, friend
   app.globalData.challenge = challenge;
   app.globalData.creatorProfile = challenge.creatorProfile || app.globalData.creatorProfile || {};
   app.globalData.draftMode = challenge.mode || "artist";
+  app.globalData.draftTargetCount = challenge.targetCount || 9;
   app.globalData.draftArtists = (challenge.mode || "artist") === "album"
     ? (challenge.albums || [])
     : ((challenge.mode || "artist") === "top9" ? [challenge.topArtist].filter(Boolean) : ((challenge.mode || "artist") === "color" ? (challenge.colors || []) : ((challenge.mode || "artist") === "qa" ? (challenge.qaPrompts || []) : (challenge.artists || []))));
@@ -385,13 +391,14 @@ Page({
     creatorTopSongs: [],
     friendTopSongs: [],
     topArtistCover: "",
-    top9LeftTitle: "我的 Top9",
-    top9RightTitle: "友的 Top9",
+    top9LeftTitle: "我的排序",
+    top9RightTitle: "友的排序",
     top9LeftSongs: [],
     top9RightSongs: [],
     matchedSongs: [],
     topRankMatches: [],
     matchCount: 0,
+    matchTotal: 9,
     colorResults: [],
     qaResults: [],
     creatorName: "我",
@@ -409,12 +416,29 @@ Page({
     homeQrCodeUrl: "",
     timelineImageUrl: "",
     friendAvatarSubmitStatus: null,
-    showPoster: true
+    showPoster: true,
+    pairMode: false,
+    pairTitle: "",
+    mockMultiplayer: false
   },
 
   onLoad(options) {
     hidePageShareMenu();
     const safeOptions = options || {};
+    if (safeOptions.mock === "multiplayer") {
+      this.renderMockMultiplayer(safeOptions);
+      return;
+    }
+
+    if (safeOptions.pair === "1" && safeOptions.challengeId) {
+      this.restorePairResult(
+        decodeURIComponent(safeOptions.challengeId),
+        safeOptions.leftParticipantId ? decodeURIComponent(safeOptions.leftParticipantId) : "",
+        safeOptions.rightParticipantId ? decodeURIComponent(safeOptions.rightParticipantId) : ""
+      );
+      return;
+    }
+
     if (safeOptions.sharedResultId) {
       this.restoreSharedResult(
         decodeURIComponent(safeOptions.sharedResultId),
@@ -479,6 +503,99 @@ Page({
     }
 
     this.renderCurrentResult(safeOptions, challengeId);
+  },
+
+  renderMockMultiplayer(options = {}) {
+    const mode = normalizeMode(options.mode);
+    const leftParticipantId = options.leftParticipantId ? decodeURIComponent(options.leftParticipantId) : "";
+    const rightParticipantId = options.rightParticipantId ? decodeURIComponent(options.rightParticipantId) : "";
+    if (options.pair === "1") {
+      this.restoreMockPairResult(mode, leftParticipantId, rightParticipantId);
+      return;
+    }
+
+    this.restoreMockPairResult(mode, "creator", options.viewerParticipantId || "mock-r-001");
+  },
+
+  restoreMockPairResult(mode, leftParticipantId, rightParticipantId) {
+    const res = getMockPair(mode, leftParticipantId || "mock-r-001", rightParticipantId || "creator");
+    const pair = res.pair || {};
+    hydrateAppFromChallenge(res.challenge, res.friendChoices, res.friendProfile, res.friendTopSongs);
+    this.currentResultId = pair.pairId || "mock-pair";
+    this.setData({
+      mode: res.mode,
+      resultId: "",
+      sharedResultId: "",
+      shareToken: "",
+      subjectLabel: subjectLabelForMode(res.mode),
+      viewerRole: "creator",
+      showPoster: shouldShowPoster(res.mode),
+      pairMode: true,
+      pairTitle: `${pair.leftName || "TA"}和${pair.rightName || "TA"}的音乐默契`,
+      sharedResultLoading: false,
+      sharedResultError: "",
+      mockMultiplayer: true
+    });
+    this.applyResult(res.result, { persist: false });
+  },
+
+  restorePairResult(challengeId, leftParticipantId, rightParticipantId) {
+    if (!leftParticipantId || !rightParticipantId) {
+      this.setData({ sharedResultLoading: false, sharedResultError: "参与者信息缺失" });
+      wx.showToast({ title: "参与者信息缺失", icon: "none" });
+      return;
+    }
+
+    this.setData({
+      sharedResultLoading: true,
+      sharedResultError: "",
+      pairMode: true,
+      pairTitle: "",
+      showPoster: false,
+    });
+    wx.showLoading({ title: "读取结果" });
+    getChallengeMultiplayer({
+      action: "pair",
+      challengeId,
+      leftParticipantId,
+      rightParticipantId
+    }).then((res) => {
+      if (!res.supported || !res.challenge || !res.result) {
+        this.setData({
+          sharedResultLoading: false,
+          sharedResultError: "这场挑战暂不支持多人对比"
+        });
+        wx.showToast({ title: "暂不支持多人对比", icon: "none" });
+        return;
+      }
+
+      const mode = res.mode || (res.challenge || {}).mode || "artist";
+      const pair = res.pair || {};
+      const leftName = pair.leftName || ((res.challenge.creatorProfile || {}).nickName) || "TA";
+      const rightName = pair.rightName || ((res.friendProfile || {}).nickName) || "TA";
+      hydrateAppFromChallenge(res.challenge, res.friendChoices, res.friendProfile, res.friendTopSongs);
+      this.currentResultId = pair.pairId || `${leftParticipantId}__${rightParticipantId}`;
+      this.setData({
+        mode,
+        resultId: "",
+        sharedResultId: "",
+        shareToken: "",
+        subjectLabel: subjectLabelForMode(mode),
+        viewerRole: "creator",
+        showPoster: shouldShowPoster(mode),
+        pairMode: true,
+        pairTitle: `${leftName}和${rightName}的音乐默契`,
+        sharedResultLoading: false,
+        sharedResultError: "",
+      });
+      this.applyResult(res.result, { persist: false });
+    }).catch(() => {
+      this.setData({
+        sharedResultLoading: false,
+        sharedResultError: "这场挑战暂时读取失败"
+      });
+      wx.showToast({ title: "结果读取失败", icon: "none" });
+    }).finally(() => wx.hideLoading());
   },
 
   renderCurrentResult(options, challengeId) {
@@ -726,6 +843,7 @@ Page({
       : [];
     const matched = comparisons.filter((item) => item.matched);
     const missed = comparisons.filter((item) => !item.matched);
+    const totalCount = Number(result.totalCount) || comparisons.length || 0;
     const copyStorageKey = `resultCopy:${Math.max(0, Math.min(9, Number(result.matchCount) || 0))}`;
     const copyHistoryKey = `${copyStorageKey}:history`;
     let copyHistory = [];
@@ -744,7 +862,7 @@ Page({
       console.warn("save result copy failed", error);
     }
 
-    const finalResult = { ...result, resultCopy, comparisons, matched, missed };
+    const finalResult = { ...result, totalCount, resultCopy, comparisons, matched, missed };
     getApp().globalData.lastResult = finalResult;
     const app = getApp();
     const challenge = app.globalData.challenge || {};
@@ -752,6 +870,8 @@ Page({
     const friendProfile = normalizeProfile(app.globalData.friendProfile || readStoredFriendProfile(challenge.challengeId), "友");
     this.setData({
       score: result.score,
+      matchCount: result.matchCount || matched.length,
+      matchTotal: totalCount,
       mode: this.data.mode,
       resultCopy,
       comparisons,
@@ -805,6 +925,7 @@ Page({
       comparisons,
       qaResults: comparisons,
       matchCount: fallbackResult.matchCount || 0,
+      matchTotal: Number(fallbackResult.totalCount) || comparisons.length || 0,
       creatorName: creatorProfile.nickName,
       creatorAvatar: avatarForDisplay(creatorProfile.avatarUrl),
       creatorInitial: creatorProfile.initial,
@@ -870,6 +991,7 @@ Page({
     const isCreatorViewer = this.data.viewerRole === "creator";
     const creatorTopSongs = result.creatorTopSongs || [];
     const friendTopSongs = result.friendTopSongs || [];
+    const totalCount = Number(result.totalCount) || Math.max(creatorTopSongs.length, friendTopSongs.length, 1);
     const matchedSongs = (result.matchedSongs || []).map((item) => ({
       ...item,
       viewerRank: isCreatorViewer ? item.creatorRank : item.friendRank,
@@ -884,15 +1006,22 @@ Page({
     const topArtistCover = pickTopArtistCover(topArtist, creatorTopSongs, friendTopSongs, matchedSongs);
     const creatorProfile = normalizeProfile(challenge.creatorProfile || app.globalData.creatorProfile, "我");
     const friendProfile = normalizeProfile(app.globalData.friendProfile || readStoredFriendProfile(challenge.challengeId), "友");
+    const leftTitle = this.data.pairMode
+      ? formatTopLabel(`${creatorProfile.nickName}的`, creatorTopSongs)
+      : formatTopLabel("我的", creatorTopSongs);
+    const rightTitle = this.data.pairMode
+      ? formatTopLabel(`${friendProfile.nickName}的`, friendTopSongs)
+      : formatTopLabel("友的", friendTopSongs);
     const finalResult = {
       ...result,
+      totalCount,
       topArtist,
       topArtistCover,
       resultCopy,
       viewerRole: this.data.viewerRole,
       matchedSongs,
-      top9LeftTitle: "我的 Top9",
-      top9RightTitle: "友的 Top9",
+      top9LeftTitle: leftTitle,
+      top9RightTitle: rightTitle,
       top9LeftSongs,
       top9RightSongs
     };
@@ -906,20 +1035,21 @@ Page({
       topArtistCover,
       creatorTopSongs,
       friendTopSongs,
-      top9LeftTitle: "我的 Top9",
-      top9RightTitle: "友的 Top9",
       top9LeftSongs,
       top9RightSongs,
       matchedSongs,
       topRankMatches: result.topRankMatches || [],
       matchCount: result.matchCount || 0,
+      matchTotal: totalCount,
       creatorName: creatorProfile.nickName,
       creatorAvatar: avatarForDisplay(creatorProfile.avatarUrl),
       creatorInitial: creatorProfile.initial,
       friendName: friendProfile.nickName,
       friendAvatar: avatarForDisplay(friendProfile.avatarUrl),
       friendInitial: friendProfile.initial,
-      showPoster: true
+      top9LeftTitle: leftTitle,
+      top9RightTitle: rightTitle,
+      showPoster: shouldShowPoster("top9")
     }, () => this.prepareResultTimelineImage());
     this.resolveProfileAvatars(creatorProfile.avatarUrl, friendProfile.avatarUrl);
 

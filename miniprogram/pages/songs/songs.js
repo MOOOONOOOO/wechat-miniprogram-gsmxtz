@@ -12,6 +12,13 @@ const {
   cacheDefaultSongList,
   readDefaultSongListWithTimeout
 } = require("../../utils/itunesCache");
+const {
+  getNextValidTargetCount,
+  getTargetCountStartText,
+  getTargetCountFromChallenge,
+  isValidTargetCount,
+  normalizeTargetCount
+} = require("../../utils/targetCount");
 
 const SONG_LIST_CACHE_VERSION = 2;
 const MIN_LEGACY_DEFAULT_SONGS = 24;
@@ -34,13 +41,20 @@ function cleanTopSong(song, index) {
 }
 
 function hasTopSongs(songs) {
-  return Array.isArray(songs) && songs.length === 9;
+  return Array.isArray(songs) && isValidTargetCount(songs.length);
 }
 
-function buildTop9ProgressDots(count) {
+function getTopNextLabel(role, count) {
+  if (role !== "creator") return "下一步：排序 Top";
+  return getTargetCountStartText(count, "首", "歌曲");
+}
+
+function buildScaledProgressDots(count, targetCount) {
+  const total = Math.max(1, Number(targetCount || 0));
+  const filled = Math.max(0, Math.min(total, Number(count || 0))) / total * 9;
   return Array.from({ length: 9 }).map((_, index) => ({
-    id: `top9-${index + 1}`,
-    doneClass: index < count ? "done" : ""
+    id: `progress-${index + 1}`,
+    doneClass: filled >= index + 1 ? "done" : (filled > index ? "half" : "")
   }));
 }
 
@@ -66,6 +80,21 @@ function getSongKey(song) {
   return artistName || songName ? `name:${artistName}:${songName}` : "";
 }
 
+function normalizeLyricsSong(song = {}) {
+  const duration = Number(song.duration || 0) || (song.trackTimeMillis ? Math.round(Number(song.trackTimeMillis) / 1000) : 0);
+  return {
+    ...song,
+    trackName: song.trackName || song.name || "",
+    name: song.name || song.trackName || "",
+    artistName: song.artistName || "",
+    album: song.album || song.collectionName || "",
+    collectionName: song.collectionName || song.album || "",
+    cover: song.cover || song.artworkUrl600 || song.artworkUrl100 || song.albumCover || "",
+    duration,
+    trackTimeMillis: song.trackTimeMillis || (duration ? duration * 1000 : 0)
+  };
+}
+
 function getChoiceKeyForData(data) {
   if (data.mode === "color") return data.colorId;
   if (data.mode === "theme" || data.mode === "qa") return data.slotId;
@@ -78,6 +107,19 @@ function stableInsertIndex(song, length) {
   const total = seed.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
   if (length <= 3) return Math.min(length, 1);
   return 1 + (total % Math.min(length, 8));
+}
+
+function getChallengeTargetCount(mode, app, fallbackItems = []) {
+  const challenge = app.globalData.challenge || {};
+  if (mode === "lyrics") return 1;
+  if (mode === "theme") return (app.globalData.draftThemePrompts || []).length || 9;
+  if (mode === "qa") return (app.globalData.draftQaPrompts || []).length || 9;
+  if (mode === "color") return (app.globalData.draftColors || getColorSubjects()).length || 9;
+  if (mode === "top9") return getTargetCountFromChallenge(challenge, app.globalData.draftTargetCount || 9);
+  if (mode === "artist" || mode === "album") {
+    return normalizeTargetCount(app.globalData.draftTargetCount || getTargetCountFromChallenge(challenge, fallbackItems.length || 9), fallbackItems.length || 9);
+  }
+  return 9;
 }
 
 Page({
@@ -139,20 +181,19 @@ Page({
     const colorArtist = mode === "color" ? (app.globalData.currentColorArtist || ((app.globalData.draftColorArtists || {})[colorId])) : null;
     const themeArtist = mode === "theme" ? (app.globalData.currentThemeSlotArtist || ((app.globalData.draftThemeArtists || {})[slotId])) : null;
     const qaArtist = mode === "qa" ? (app.globalData.currentQaSlotArtist || ((app.globalData.draftQaArtists || {})[slotId])) : null;
+    const lyricsArtist = mode === "lyrics" ? (app.globalData.lyricsShareArtist || (app.globalData.draftArtists || [])[0]) : null;
     const artists = mode === "album"
       ? (app.globalData.draftAlbums || [])
       : (mode === "top9"
           ? [app.globalData.draftTopArtist || (app.globalData.challenge || {}).topArtist].filter(Boolean)
-          : (mode === "color" ? [colorArtist].filter(Boolean) : (mode === "theme" ? [themeArtist].filter(Boolean) : (mode === "qa" ? [qaArtist].filter(Boolean) : (app.globalData.draftArtists || [])))));
-    const targetCount = mode === "theme"
-      ? ((app.globalData.draftThemePrompts || []).length || 9)
-      : (mode === "qa" ? ((app.globalData.draftQaPrompts || []).length || 9) : 9);
+          : (mode === "lyrics" ? [lyricsArtist].filter(Boolean) : (mode === "color" ? [colorArtist].filter(Boolean) : (mode === "theme" ? [themeArtist].filter(Boolean) : (mode === "qa" ? [qaArtist].filter(Boolean) : (app.globalData.draftArtists || []))))));
+    const targetCount = getChallengeTargetCount(mode, app, artists);
     if (role === "friend" && challengeId) {
       const draft = readFriendDraft(challengeId);
       if (!Object.keys(app.globalData.friendChoices || {}).length && Object.keys(draft.friendChoices || {}).length) {
         app.globalData.friendChoices = draft.friendChoices;
       }
-      if (!hasTopSongs(app.globalData.friendTopSongs) && hasTopSongs(draft.friendTopSongs)) {
+      if (!(app.globalData.friendTopSongs || []).length && Array.isArray(draft.friendTopSongs) && draft.friendTopSongs.length) {
         app.globalData.friendTopSongs = draft.friendTopSongs;
       }
       if (draft.friendProfile && (draft.friendProfile.nickName || draft.friendProfile.avatarUrl)) {
@@ -189,6 +230,22 @@ Page({
   ...creatorProfileGateMethods,
 
   onShow() {
+    if (this.data.mode === "lyrics") {
+      const selectedSong = getApp().globalData.lyricsShareSong || null;
+      const selectedTrackId = selectedSong && selectedSong.trackId ? String(selectedSong.trackId) : "";
+      this.setData({
+        selectedTrackId,
+        stepText: selectedSong ? 1 : 0,
+        targetCount: 1,
+        canProceed: Boolean(selectedSong),
+        songs: this.data.songs.map((item) => ({
+          ...item,
+          selectedClass: selectedTrackId && String(item.trackId) === selectedTrackId ? "selected" : ""
+        })),
+        progressDots: buildScaledProgressDots(selectedSong ? 1 : 0, 1)
+      });
+      return;
+    }
     if (this.data.mode !== "top9") return;
     const topSongs = getApp().globalData[this.data.role === "friend" ? "friendTopSongs" : "creatorTopSongs"] || [];
     const selectedMap = topSongs.reduce((map, song) => {
@@ -198,13 +255,14 @@ Page({
     this.setData({
       topSongs: topSongs.map(cleanTopSong),
       stepText: topSongs.length,
-      canProceed: topSongs.length === 9,
-      nextLabel: "下一步：排序 Top9",
+      targetCount: this.getTopTargetCount(topSongs.length),
+      canProceed: this.canUseTopSongs(topSongs.length),
+      nextLabel: getTopNextLabel(this.data.role, topSongs.length),
       songs: this.data.songs.map((item) => ({
         ...item,
         selectedClass: selectedMap[item.trackId] ? "selected" : ""
       })),
-      progressDots: buildTop9ProgressDots(topSongs.length)
+      progressDots: buildScaledProgressDots(topSongs.length, this.getTopTargetCount(topSongs.length))
     });
   },
 
@@ -218,8 +276,15 @@ Page({
       displayName: this.data.mode === "album" ? truncateText(artist.name, 12) : artist.name
     };
     const choiceKey = this.data.mode === "color" ? this.data.colorId : (this.data.mode === "theme" || this.data.mode === "qa" ? this.data.slotId : currentArtist.id);
-    const selected = this.data.mode === "top9" ? null : this.data.choices[choiceKey];
+    const selected = this.data.mode === "lyrics"
+      ? (getApp().globalData.lyricsShareSong || null)
+      : (this.data.mode === "top9" ? null : this.data.choices[choiceKey]);
     const selectedCount = Object.keys(this.data.choices || {}).length;
+    const topTargetCount = this.getTopTargetCount(this.data.topSongs.length);
+    const targetCount = this.data.mode === "top9"
+      ? topTargetCount
+      : getChallengeTargetCount(this.data.mode, getApp(), this.data.artists);
+    const isLastSubject = index >= targetCount - 1;
     this.setData({
       currentIndex: index,
       currentArtist,
@@ -227,16 +292,18 @@ Page({
       query: "",
       songs: [],
       selectedTrackId: selected ? selected.trackId : "",
-      stepText: this.data.mode === "top9" ? this.data.topSongs.length : (this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? selectedCount : index + 1),
-      targetCount: this.data.mode === "theme" ? ((getApp().globalData.draftThemePrompts || []).length || 9) : (this.data.mode === "qa" ? ((getApp().globalData.draftQaPrompts || []).length || 9) : 9),
-      canPrev: this.data.mode === "top9" ? false : index > 0,
-      canProceed: this.data.mode === "top9" ? this.data.topSongs.length === 9 : Boolean(selected),
-      nextLabel: this.data.mode === "top9" ? "下一步：排序 Top9" : (this.data.mode === "color" ? "回到颜色格" : (this.data.mode === "theme" ? "回到题目格" : (this.data.mode === "qa" ? "回到问答格" : (index === 8 ? (this.data.role === "friend" ? "查看结果" : "创建挑战") : (this.data.mode === "album" ? "下一张" : "下一位"))))),
+      stepText: this.data.mode === "top9" ? this.data.topSongs.length : (this.data.mode === "lyrics" ? (selected ? 1 : 0) : (this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? selectedCount : index + 1)),
+      targetCount,
+      canPrev: this.data.mode === "top9" || this.data.mode === "lyrics" ? false : index > 0,
+      canProceed: this.data.mode === "top9" ? this.canUseTopSongs(this.data.topSongs.length) : Boolean(selected),
+      nextLabel: this.data.mode === "top9" ? getTopNextLabel(this.data.role, this.data.topSongs.length) : (this.data.mode === "lyrics" ? "下一步：选择歌词" : (this.data.mode === "color" ? "回到颜色格" : (this.data.mode === "theme" ? "回到题目格" : (this.data.mode === "qa" ? "回到问答格" : (isLastSubject ? (this.data.role === "friend" ? "查看结果" : "创建挑战") : (this.data.mode === "album" ? "下一张" : "下一位")))))),
       showEmpty: false,
       emptyText: this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? "没有找到这位歌手的歌曲，换个关键词试试。" : "没有找到相关歌曲，换个关键词试试。",
-      progressDots: this.data.mode === "top9"
-        ? buildTop9ProgressDots(this.data.topSongs.length)
-        : this.buildProgressDots(this.data.mode === "color" ? (getApp().globalData.draftColors || getColorSubjects()) : (this.data.mode === "theme" ? (getApp().globalData.draftThemePrompts || []) : (this.data.mode === "qa" ? (getApp().globalData.draftQaPrompts || []) : this.data.artists)), this.data.choices)
+      progressDots: this.data.mode === "lyrics"
+        ? buildScaledProgressDots(selected ? 1 : 0, 1)
+        : (this.data.mode === "top9"
+          ? buildScaledProgressDots(this.data.topSongs.length, topTargetCount)
+          : this.buildProgressDots(this.data.mode === "color" ? (getApp().globalData.draftColors || getColorSubjects()) : (this.data.mode === "theme" ? (getApp().globalData.draftThemePrompts || []) : (this.data.mode === "qa" ? (getApp().globalData.draftQaPrompts || []) : this.data.artists)), this.data.choices, targetCount))
     }, () => {
       this.loadSongs();
     });
@@ -395,6 +462,9 @@ Page({
         ...(app.globalData.draftQaArtists || {}),
         [this.data.slotId]: currentArtist
       };
+    } else if (this.data.mode === "lyrics") {
+      app.globalData.lyricsShareArtist = currentArtist;
+      app.globalData.draftArtists = (app.globalData.draftArtists || []).map(patch);
     }
     this.setData({ artists, currentArtist });
   },
@@ -406,6 +476,26 @@ Page({
 
     if (this.data.mode === "top9") {
       this.toggleTopSong(song);
+      return;
+    }
+
+    if (this.data.mode === "lyrics") {
+      const selectedSong = normalizeLyricsSong(song);
+      const app = getApp();
+      app.globalData.lyricsShareArtist = this.data.currentArtist;
+      app.globalData.lyricsShareSong = selectedSong;
+      app.globalData.lyricsShareSelectedLyrics = [];
+      this.setData({
+        selectedTrackId: String(trackId),
+        stepText: 1,
+        canProceed: true,
+        progressDots: buildScaledProgressDots(1, 1),
+        songs: this.data.songs.map((item) => ({
+          ...item,
+          selectedClass: String(item.trackId) === String(trackId) ? "selected" : ""
+        }))
+      });
+      wx.navigateTo({ url: "/pages/lyrics-select/lyrics-select" });
       return;
     }
 
@@ -446,8 +536,9 @@ Page({
     let topSongs = exists
       ? this.data.topSongs.filter((item) => item.trackId !== song.trackId)
       : [...this.data.topSongs, song];
-    if (!exists && topSongs.length > 9) {
-      wx.showToast({ title: "最多选择 9 首歌", icon: "none" });
+    const maxCount = this.data.role === "friend" ? this.getTopTargetCount(topSongs.length) : 18;
+    if (!exists && topSongs.length > maxCount) {
+      wx.showToast({ title: `最多选择 ${maxCount} 首歌`, icon: "none" });
       return;
     }
     topSongs = topSongs.map(cleanTopSong);
@@ -495,12 +586,14 @@ Page({
     this.setData({
       topSongs: displaySongs,
       stepText: cleanSongs.length,
-      canProceed: cleanSongs.length === 9,
+      targetCount: this.getTopTargetCount(cleanSongs.length),
+      canProceed: this.canUseTopSongs(cleanSongs.length),
+      nextLabel: getTopNextLabel(this.data.role, cleanSongs.length),
       songs: this.data.songs.map((item) => ({
         ...item,
         selectedClass: selectedMap[item.trackId] ? "selected" : ""
       })),
-      progressDots: buildTop9ProgressDots(cleanSongs.length)
+      progressDots: buildScaledProgressDots(cleanSongs.length, this.getTopTargetCount(cleanSongs.length))
     });
 
     if (options.reflow) {
@@ -582,11 +675,31 @@ Page({
     }
   },
 
-  buildProgressDots(artists, choices) {
+  buildProgressDots(artists, choices, targetCount) {
+    if (this.data.mode === "lyrics") {
+      return buildScaledProgressDots(getApp().globalData.lyricsShareSong ? 1 : 0, 1);
+    }
+    if (this.data.mode === "artist" || this.data.mode === "album") {
+      return buildScaledProgressDots(Object.keys(choices || {}).length, targetCount || (artists || []).length || 9);
+    }
     return artists.map((artist) => ({
       id: artist.id,
       doneClass: choices[artist.id] ? "done" : ""
     }));
+  },
+
+  getTopTargetCount(count = this.data.topSongs.length) {
+    if (this.data.role === "friend") {
+      return normalizeTargetCount(this.data.targetCount || getTargetCountFromChallenge(getApp().globalData.challenge || {}, 9));
+    }
+    return isValidTargetCount(count)
+      ? Number(count)
+      : getNextValidTargetCount(count);
+  },
+
+  canUseTopSongs(count = this.data.topSongs.length) {
+    if (this.data.role === "friend") return Number(count || 0) === this.getTopTargetCount(count);
+    return isValidTargetCount(count);
   },
 
   prev() {
@@ -595,6 +708,15 @@ Page({
   },
 
   next() {
+    if (this.data.mode === "lyrics") {
+      if (!getApp().globalData.lyricsShareSong) {
+        wx.showToast({ title: "先选一首歌", icon: "none" });
+        return;
+      }
+      wx.navigateTo({ url: "/pages/lyrics-select/lyrics-select" });
+      return;
+    }
+
     if (this.data.mode === "theme") {
       wx.navigateBack();
       return;
@@ -611,15 +733,17 @@ Page({
     }
 
     if (this.data.mode === "top9") {
-      if (this.data.topSongs.length !== 9) {
-        wx.showToast({ title: "请选择 9 首歌", icon: "none" });
+      if (!this.canUseTopSongs(this.data.topSongs.length)) {
+        const targetCount = this.getTopTargetCount(this.data.topSongs.length);
+        wx.showToast({ title: `请选择 ${targetCount} 首歌`, icon: "none" });
         return;
       }
+      getApp().globalData.draftTargetCount = this.getTopTargetCount(this.data.topSongs.length);
       wx.navigateTo({ url: `/pages/top9-sort/top9-sort?role=${this.data.role}&challengeId=${encodeURIComponent(this.data.challengeId || "")}` });
       return;
     }
 
-    if (this.data.currentIndex < 8) {
+    if (this.data.currentIndex < this.data.targetCount - 1) {
       this.setCurrent(this.data.currentIndex + 1);
       return;
     }
@@ -658,6 +782,7 @@ Page({
         topArtist,
         creatorChoices: app.globalData.creatorChoices,
         creatorTopSongs,
+        targetCount: mode === "top9" ? creatorTopSongs.length : this.data.targetCount,
         creatorProfile
       }))
       .then((res) => {
@@ -669,6 +794,7 @@ Page({
           topArtist,
           creatorChoices: app.globalData.creatorChoices,
           creatorTopSongs,
+          targetCount: mode === "top9" ? creatorTopSongs.length : this.data.targetCount,
           creatorProfile: app.globalData.creatorProfile || wx.getStorageSync("creatorProfile") || {},
           createdAt: Date.now()
         };

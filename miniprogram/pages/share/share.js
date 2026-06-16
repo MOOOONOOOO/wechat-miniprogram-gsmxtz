@@ -19,7 +19,7 @@ function pickShareCopy() {
 function getInviteShareTitle(mode, nickName) {
   const name = String(nickName || "我").trim() || "我";
   if (mode === "album") return `来做${name}的专辑默契挑战`;
-  if (mode === "top9") return `来做${name}的同担 Top9 挑战`;
+  if (mode === "top9") return `来做${name}的同担 Top 挑战`;
   if (mode === "color") return `来做${name}的颜色推歌挑战`;
   if (mode === "qa") return `来填${name}的歌单问答`;
   return `来做${name}的音乐默契挑战`;
@@ -124,7 +124,7 @@ function hydrateAppFromChallenge(challenge) {
 
 function getModeTitle(mode) {
   if (mode === "album") return "专辑默契挑战";
-  if (mode === "top9") return "同担 Top9 挑战";
+  if (mode === "top9") return "同担 Top 挑战";
   if (mode === "color") return "颜色推歌挑战";
   if (mode === "qa") return "歌单问答";
   return "歌手默契挑战";
@@ -132,7 +132,7 @@ function getModeTitle(mode) {
 
 function getModeMeta(mode, isInviteLanding) {
   if (mode === "qa") return isInviteLanding ? "9 个音乐题目，快来接受挑战" : "9 个问题，来填一张歌单问答";
-  return "只有9道题，快来测测看";
+  return "只有几道题，快来测测看";
 }
 
 function getShareCopy(mode, isInviteLanding) {
@@ -143,16 +143,16 @@ function getShareCopy(mode, isInviteLanding) {
 
 function getShareHeadline(mode, isInviteLanding) {
   if (isInviteLanding) {
-    if (mode === "top9") return "来完成这个同担 Top9 挑战。";
+    if (mode === "top9") return "来完成这个同担 Top 挑战。";
     if (mode === "color") return "来完成这个颜色推歌挑战。";
     if (mode === "qa") return "朋友发来了9个音乐题目。";
     if (mode === "album") return "来完成这组专辑选择。";
     return "来完成这组音乐选择题。";
   }
-  if (mode === "top9") return "把你的同担 Top9 发给朋友。";
+  if (mode === "top9") return "把你的同担 Top 发给朋友。";
   if (mode === "color") return "把你的颜色推歌发给朋友。";
   if (mode === "qa") return "把这张歌单问答发给朋友。";
-  return "把这 9 个音乐选择题发给朋友。";
+  return "把这几个音乐选择题发给朋友。";
 }
 
 function getShareDescription(mode, isInviteLanding) {
@@ -412,7 +412,7 @@ Page({
     challengeId: "",
     mode: "artist",
     modeTitle: "歌手默契挑战",
-    modeMeta: "只有9道题，快来测测看",
+    modeMeta: "只有几道题，快来测测看",
     shareCopy: "",
     covers: [],
     creatorProfile: {
@@ -422,7 +422,7 @@ Page({
     creatorInitial: "音",
     creatorAvatarUrl: "",
     isInviteLanding: false,
-    headline: "把这 9 个音乐选择题发给朋友。",
+    headline: "把这几个音乐选择题发给朋友。",
     description: "点击分享给好友的按钮分享给朋友或群聊，也可以点击右上角三个点分享到朋友圈，让朋友一起来参与。",
     shareImageUrl: "",
     timelineImageUrl: "",
@@ -684,10 +684,10 @@ Page({
     fillRoundRect(ctx, 684, 118, 204, 50, 8, "#dfeee3");
     ctx.setFillStyle("#1f7a48");
     ctx.setFontSize(23);
-    ctx.fillText("同担 Top9 挑战", 704, 151);
+    ctx.fillText("同担 Top 挑战", 704, 151);
 
     ctx.setFontSize(60);
-    const top9TitleLines = getWrappedLines(ctx, `${artistName} Top9`, 358, 2);
+    const top9TitleLines = getWrappedLines(ctx, `${artistName} Top`, 358, 2);
     ctx.save();
     ctx.setFillStyle("#171512");
     ctx.setFontSize(60);
@@ -706,7 +706,7 @@ Page({
       drawCoverCard(ctx, card.image, card.x, card.y, 196, card.label);
     });
 
-    drawShareMeta(ctx, "只有9道题，快来测测看", 112, 552);
+    drawShareMeta(ctx, "只有几道题，快来测测看", 112, 552);
 
     ctx.draw(false, () => {
       wx.canvasToTempFilePath({

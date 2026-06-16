@@ -21,6 +21,85 @@
     </view>
   </view>
 
+  <view wx:if="{{showMultiplayerOverview}}" class="multiplayer-card">
+    <view class="multiplayer-section-title">全场最佳拍档</view>
+    <view
+      wx:if="{{multiplayerBestPair}}"
+      class="best-pair-row"
+      data-left-id="{{multiplayerBestPair.leftParticipantId}}"
+      data-right-id="{{multiplayerBestPair.rightParticipantId}}"
+      bindtap="viewPairResult"
+    >
+      <view class="pair-avatar-stack">
+        <view class="pair-avatar">
+          <image wx:if="{{multiplayerBestPair.leftAvatarUrl}}" src="{{multiplayerBestPair.leftAvatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>{{multiplayerBestPair.leftInitial}}</text>
+        </view>
+        <view class="pair-avatar right">
+          <image wx:if="{{multiplayerBestPair.rightAvatarUrl}}" src="{{multiplayerBestPair.rightAvatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>{{multiplayerBestPair.rightInitial}}</text>
+        </view>
+      </view>
+      <view class="best-pair-copy">
+        <view>{{multiplayerBestPair.namesText}}</view>
+        <text>{{multiplayerBestPair.matchText}}</text>
+      </view>
+      <view class="best-pair-score">{{multiplayerBestPair.scoreText}}</view>
+    </view>
+
+    <view wx:if="{{multiplayerMyBestPair}}" class="multiplayer-section-title my-best-title">和我最合拍</view>
+    <view
+      wx:if="{{multiplayerMyBestPair}}"
+      class="best-pair-row my-best-row"
+      data-left-id="{{multiplayerMyBestPair.leftParticipantId}}"
+      data-right-id="{{multiplayerMyBestPair.rightParticipantId}}"
+      bindtap="viewPairResult"
+    >
+      <view class="pair-avatar-stack">
+        <view class="pair-avatar">
+          <image wx:if="{{multiplayerMyBestPair.leftAvatarUrl}}" src="{{multiplayerMyBestPair.leftAvatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>{{multiplayerMyBestPair.leftInitial}}</text>
+        </view>
+        <view class="pair-avatar right">
+          <image wx:if="{{multiplayerMyBestPair.rightAvatarUrl}}" src="{{multiplayerMyBestPair.rightAvatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>{{multiplayerMyBestPair.rightInitial}}</text>
+        </view>
+      </view>
+      <view class="best-pair-copy">
+        <view>{{multiplayerMyBestPair.namesText}}</view>
+        <text>{{multiplayerMyBestPair.matchText}}</text>
+      </view>
+      <view class="best-pair-score">{{multiplayerMyBestPair.scoreText}}</view>
+    </view>
+
+    <view class="multiplayer-section-title board-title">全场默契榜</view>
+    <view
+      wx:for="{{multiplayerPairRows}}"
+      wx:key="pairId"
+      class="pair-board-row"
+      data-left-id="{{item.leftParticipantId}}"
+      data-right-id="{{item.rightParticipantId}}"
+      bindtap="viewPairResult"
+    >
+      <text class="pair-rank">#{{item.rank}}</text>
+      <view class="pair-mini-avatars">
+        <view>
+          <image wx:if="{{item.leftAvatarUrl}}" src="{{item.leftAvatarUrl}}" mode="aspectFill" data-index="{{index}}" data-side="left" binderror="onMultiplayerPairAvatarError"></image>
+          <text wx:else>{{item.leftInitial}}</text>
+        </view>
+        <view>
+          <image wx:if="{{item.rightAvatarUrl}}" src="{{item.rightAvatarUrl}}" mode="aspectFill" data-index="{{index}}" data-side="right" binderror="onMultiplayerPairAvatarError"></image>
+          <text wx:else>{{item.rightInitial}}</text>
+        </view>
+      </view>
+      <view class="pair-board-copy">
+        <view>{{item.namesText}}</view>
+        <text>{{item.matchText}}</text>
+      </view>
+      <text class="pair-board-score">{{item.scoreText}}</text>
+    </view>
+  </view>
+
   <view wx:if="{{results.length === 0}}" class="empty">
     <view>还没有朋友作答</view>
     <text>可以继续分享这次挑战。</text>

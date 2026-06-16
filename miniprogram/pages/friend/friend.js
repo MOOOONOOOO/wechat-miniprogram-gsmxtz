@@ -47,6 +47,25 @@ function buildParticipantPreview(participants, total) {
   };
 }
 
+function getInviteTitle(challenge = {}) {
+  const mode = challenge.mode || "artist";
+  if (mode === "album") return "好友邀请你完成同一组专辑选择。";
+  if (mode === "top9") return "好友邀请你完成同担 Top 挑战。";
+  if (mode === "color") return "好友邀请你完成颜色推歌挑战。";
+  if (mode === "qa") return "好友邀请你填写一张歌单问答。";
+  return "好友邀请你完成同一组歌手选择。";
+}
+
+function getInviteCopy(challenge = {}) {
+  const mode = challenge.mode || "artist";
+  const targetCount = Number(challenge.targetCount || 9) || 9;
+  if (mode === "album") return "每张专辑选 1 首最喜欢的歌。提交后会看到你们两个人的音乐品味契合度。";
+  if (mode === "top9") return `选出这位歌手你最爱的 ${targetCount} 首歌，拖动排出你的 Top。`;
+  if (mode === "color") return "按 9 个颜色各推荐 1 首歌，提交后看看你们的封面颜色默契。";
+  if (mode === "qa") return "回答同一组 9 个音乐问题，只看彼此的答案，不算默契分。";
+  return "每位歌手选 1 首最喜欢的歌。提交后会看到你们两个人的音乐品味契合度。";
+}
+
 Page({
   data: {
     challengeId: "",
@@ -98,8 +117,8 @@ Page({
         const creatorAvatar = creatorProfile.avatarUrl || "";
         this.setData({
           mode: res.challenge.mode || "artist",
-          inviteTitle: (res.challenge.mode || "artist") === "album" ? "好友邀请你完成同一组专辑选择。" : ((res.challenge.mode || "artist") === "top9" ? "好友邀请你完成同担 Top9 挑战。" : ((res.challenge.mode || "artist") === "color" ? "好友邀请你完成颜色推歌挑战。" : ((res.challenge.mode || "artist") === "qa" ? "好友邀请你填写一张歌单问答。" : "好友邀请你完成同一组歌手选择。"))),
-          inviteCopy: (res.challenge.mode || "artist") === "album" ? "每张专辑选 1 首最喜欢的歌。提交后会看到你们两个人的音乐品味契合度。" : ((res.challenge.mode || "artist") === "top9" ? "选出这位歌手你最爱的 9 首歌，拖动排出你的 Top9。" : ((res.challenge.mode || "artist") === "color" ? "按 9 个颜色各推荐 1 首歌，提交后看看你们的封面颜色默契。" : ((res.challenge.mode || "artist") === "qa" ? "回答同一组 9 个音乐问题，只看彼此的答案，不算默契分。" : "每位歌手选 1 首最喜欢的歌。提交后会看到你们两个人的音乐品味契合度。"))),
+          inviteTitle: getInviteTitle(res.challenge || {}),
+          inviteCopy: getInviteCopy(res.challenge || {}),
           creatorAvatar,
           creatorName: creatorProfile.nickName || ""
         }, () => {

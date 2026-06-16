@@ -8,10 +8,10 @@
         <view class="artist-name">{{topArtist.name}}</view>
       </view>
     </view>
-    <view class="step">{{topSongs.length}}<text>/9</text></view>
+    <view class="step">{{topSongs.length}}<text>/{{targetCount}}</text></view>
   </view>
 
-  <view class="sort-tip">按住右侧滑块上下拖动，调整你心里的 Top9 顺序。</view>
+  <view class="sort-tip">按住右侧滑块上下拖动，调整你心里的 Top 顺序。</view>
 
   <scroll-view class="top9-sort-list" scroll-y enhanced show-scrollbar="{{false}}">
     <view

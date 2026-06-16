@@ -3,6 +3,12 @@ const { ensureChallenge, needsChallenge } = require("../../utils/challengeState"
 const { readFriendDraft, saveFriendDraft } = require("../../utils/friendDraft");
 const { saveCreatedChallenge } = require("../../utils/history");
 const {
+  getNextValidTargetCount,
+  getTargetCountFromChallenge,
+  isValidTargetCount,
+  normalizeTargetCount
+} = require("../../utils/targetCount");
+const {
   creatorProfileGateData,
   creatorProfileGateMethods,
   prepareCreatorProfileForCreate
@@ -34,6 +40,7 @@ Page({
     topArtist: {},
     topArtistAvatar: "?",
     topSongs: [],
+    targetCount: 9,
     canProceed: false,
     nextLabel: "创建挑战"
   },
@@ -74,14 +81,16 @@ Page({
     }
     const topSongs = getTopSongs(role).map(cleanTopSong);
     const topArtist = app.globalData.draftTopArtist || (app.globalData.challenge || {}).topArtist || {};
+    const targetCount = this.getTopTargetCount(topSongs.length, role);
     if (role === "creator") this.initCreatorProfileGate();
     this.setData({
       role,
       challengeId,
       topArtist,
       topArtistAvatar: topArtist.name ? topArtist.name.slice(0, 1) : "?",
+      targetCount,
       topSongs: this.decorateTopSongs(topSongs),
-      canProceed: topSongs.length === 9,
+      canProceed: this.canUseTopSongs(topSongs.length, role, targetCount),
       nextLabel: role === "friend" ? "查看结果" : "创建挑战"
     });
     this.persistTopSongs(topSongs);
@@ -129,10 +138,26 @@ Page({
       });
     } else app.globalData.creatorTopSongs = cleanSongs;
 
+    const targetCount = this.getTopTargetCount(cleanSongs.length);
     this.setData({
       topSongs: this.decorateTopSongs(cleanSongs),
-      canProceed: cleanSongs.length === 9
+      targetCount,
+      canProceed: this.canUseTopSongs(cleanSongs.length, this.data.role, targetCount)
     });
+  },
+
+  getTopTargetCount(count = this.data.topSongs.length, role = this.data.role) {
+    if (role === "friend") {
+      return normalizeTargetCount(this.data.targetCount || getTargetCountFromChallenge(getApp().globalData.challenge || {}, 9));
+    }
+    return isValidTargetCount(count)
+      ? Number(count)
+      : getNextValidTargetCount(count);
+  },
+
+  canUseTopSongs(count = this.data.topSongs.length, role = this.data.role, targetCount = this.data.targetCount) {
+    if (role === "friend") return Number(count || 0) === Number(targetCount || 0);
+    return isValidTargetCount(count);
   },
 
   removeTopSong(event) {
@@ -217,8 +242,8 @@ Page({
   },
 
   next() {
-    if (this.data.topSongs.length !== 9) {
-      wx.showToast({ title: "请补满 9 首歌", icon: "none" });
+    if (!this.canUseTopSongs(this.data.topSongs.length)) {
+      wx.showToast({ title: `请补满 ${this.getTopTargetCount(this.data.topSongs.length)} 首歌`, icon: "none" });
       return;
     }
     this.persistTopSongs(this.data.topSongs.map(cleanTopSong));
@@ -245,6 +270,7 @@ Page({
     app.globalData.draftMode = "top9";
     app.globalData.draftTopArtist = topArtist;
     app.globalData.creatorTopSongs = creatorTopSongs;
+    app.globalData.draftTargetCount = creatorTopSongs.length;
 
     prepareCreatorProfileForCreate(this)
       .then((creatorProfile) => createChallenge({
@@ -254,6 +280,7 @@ Page({
         topArtist,
         creatorChoices: app.globalData.creatorChoices,
         creatorTopSongs,
+        targetCount: creatorTopSongs.length,
         creatorProfile
       }))
       .then((res) => {
@@ -265,6 +292,7 @@ Page({
           topArtist,
           creatorChoices: app.globalData.creatorChoices,
           creatorTopSongs,
+          targetCount: creatorTopSongs.length,
           creatorProfile: app.globalData.creatorProfile || wx.getStorageSync("creatorProfile") || {},
           createdAt: Date.now()
         };

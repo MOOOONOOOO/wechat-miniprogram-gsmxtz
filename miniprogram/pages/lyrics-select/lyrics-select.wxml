@@ -1,0 +1,40 @@
+<view class="page lyrics-select-page">
+  <view class="player-head">
+    <view class="song-copy">
+      <text>歌词纸片</text>
+      <view class="song-title">{{song.name}}</view>
+      <view class="song-meta">{{song.artistName}}</view>
+    </view>
+    <image class="song-cover" src="{{song.cover}}" mode="aspectFill"></image>
+  </view>
+
+  <view class="lyric-toolbar">
+    <text>点选歌词行 {{selectedCountText}}</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">正在查找歌词，请等待...失败了请从上一个页面重新进入</view>
+  <view wx:if="{{error}}" class="loading">
+    <view>{{error}}</view>
+    <view wx:if="{{debugText}}" class="lyrics-debug">{{debugText}}</view>
+  </view>
+
+  <scroll-view wx:if="{{lyricLines.length}}" class="lyrics-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="line-cloud">
+      <view
+        wx:for="{{lyricLines}}"
+        wx:key="key"
+        class="player-line {{item.selectedClass}}"
+        style="{{item.paperStyle}}"
+        data-key="{{item.key}}"
+        bindtap="toggleLine"
+      >
+        <view>{{item.text}}</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="bottom-action lyrics-actions">
+    <button class="secondary-button" bindtap="chooseAnotherSong">返回选歌</button>
+    <button class="primary-button" disabled="{{!canNext}}" bindtap="continueToShare">生成卡片。</button>
+  </view>
+</view>

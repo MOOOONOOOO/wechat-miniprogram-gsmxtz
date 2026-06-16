@@ -28,7 +28,16 @@
   flex: 0 0 auto;
   min-height: 64rpx;
   align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.target-hint {
+  flex: 0 0 auto;
   margin-bottom: 18rpx;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 1.35;
 }
 
 .tabs {

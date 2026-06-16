@@ -1,0 +1,205 @@
+.lyrics-select-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 28rpx 28rpx calc(30rpx + env(safe-area-inset-bottom));
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255,255,255,.58), transparent 28%),
+    linear-gradient(145deg, #e9e6dd 0%, #d8d5cc 48%, #b8bbb2 100%);
+  box-sizing: border-box;
+}
+
+.lyrics-select-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .42;
+  background-image:
+    linear-gradient(rgba(23,21,18,.035) 1rpx, transparent 1rpx),
+    linear-gradient(90deg, rgba(23,21,18,.03) 1rpx, transparent 1rpx);
+  background-size: 34rpx 34rpx;
+}
+
+.player-head {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18rpx;
+  align-items: center;
+  min-height: 88rpx;
+  margin-bottom: 16rpx;
+}
+
+.song-copy {
+  min-width: 0;
+}
+
+.song-copy > text {
+  display: block;
+  color: rgba(23,21,18,.38);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 21rpx;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.song-title,
+.song-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+
+.song-title {
+  margin-top: 8rpx;
+  color: #222;
+  font-size: 34rpx;
+  line-height: 1.18;
+  font-weight: 900;
+}
+
+.song-meta {
+  margin-top: 5rpx;
+  color: rgba(23,21,18,.48);
+  font-size: 23rpx;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.song-cover {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 12rpx;
+  background: rgba(23,21,18,.08);
+  box-shadow: 0 8rpx 24rpx rgba(23,21,18,.12);
+}
+
+.lyric-toolbar {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 48rpx;
+  margin-bottom: 12rpx;
+}
+
+.lyric-toolbar text {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 23rpx;
+  line-height: 1;
+  font-weight: 900;
+  color: rgba(23,21,18,.42);
+}
+
+.loading {
+  position: relative;
+  z-index: 2;
+  margin-top: 36rpx;
+  padding: 22rpx;
+  border: 1rpx solid rgba(23,21,18,.1);
+  border-radius: 18rpx;
+  border-color: rgba(23,21,18,.12);
+  background: rgba(255,255,255,.66);
+  color: rgba(23,21,18,.52);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.lyrics-debug {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid rgba(23,21,18,.08);
+  color: rgba(23,21,18,.46);
+  font-size: 21rpx;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.lyrics-scroll {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.line-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 18rpx 16rpx;
+  min-height: 100%;
+  padding: 18rpx 4rpx 26rpx;
+  box-sizing: border-box;
+}
+
+.player-line {
+  max-width: 100%;
+  padding: 16rpx 28rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(23,21,18,.08);
+  border-radius: 18rpx;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.96), rgba(246,244,238,.9));
+  box-shadow:
+    0 10rpx 22rpx rgba(23,21,18,.1),
+    0 1rpx 0 rgba(255,255,255,.8) inset;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.player-line view {
+  color: #333;
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+  font-size: 30rpx;
+  line-height: 1.42;
+  font-weight: 800;
+  letter-spacing: 0;
+  word-break: break-all;
+}
+
+.player-line.selected {
+  border-color: rgba(61,127,90,.34);
+  background: #3d7f5a;
+  box-shadow:
+    0 16rpx 34rpx rgba(61,127,90,.22),
+    0 1rpx 0 rgba(255,255,255,.28) inset;
+}
+
+.player-line.selected view {
+  color: #fff;
+}
+
+.lyrics-actions {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18rpx;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 18rpx;
+  padding: 20rpx;
+  overflow: hidden;
+}
+
+.lyrics-actions button {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0 18rpx;
+  box-sizing: border-box;
+}

@@ -11,6 +11,7 @@
 - `cloudfunctions/submitAnswer`：好友提交答案并按歌手粒度计算契合度
 - `cloudfunctions/getRecentSubmission`：读取当前用户 3 天内的提交结果，并清理过期提交
 - `cloudfunctions/getChallengeParticipants`：读取某个挑战已提交朋友的头像昵称，用于邀请页多人头像墙
+- `cloudfunctions/getChallengeMultiplayer`：读取歌手/专辑/Top9 挑战的多人同频榜和两两对比结果
 - `cloudfunctions/getCreatorInbox`：读取发起者 3 天内收到的朋友提交结果，兼容旧收件中转
 - `cloudfunctions/publishSharedResult`：用户触发分享后，把三天结果缓存标记为公开可读
 - `cloudfunctions/getSharedResult`：通过公开 `resultId` 读取朋友圈/好友分享结果
@@ -91,6 +92,8 @@
 - 分享路径进入 `/pages/friend/friend?challengeId=...`。
 - 好友作答后按歌手粒度计算契合度；同一个挑战最多支持 99 位不同朋友提交，同一朋友重复提交会覆盖自己的结果。
 - 邀请页在已有 2 位及以上朋友提交后，会显示「已加入挑战的人」头像墙；头像墙只展示已提交的朋友，不包含发起人。
+- 歌手默契、专辑默契、同担 Top9 支持多人同频 MVP：参与者结果页展示“你和大家的同频排行”，发起记录页在 2 位及以上朋友提交后展示“全场最佳拍档”和“全场默契榜”，并可点进任意两人的单独对比。颜色推歌、歌单问答、人生九专、心形专辑暂不进入多人榜。
+- 多人同频前端可用本地 mock 预览，不依赖云函数或数据库。结果页：`/pages/result/result?mock=multiplayer&mode=artist`；发起记录页：`/pages/challenge-results/challenge-results?mock=multiplayer&mode=artist`。`mode` 可换成 `album` 或 `top9`。
 - 好友结果会永久保存到本机 storage；云端 `challengeResults` 保留 3 天，默认 `private`，用户分享到好友/群聊/朋友圈时由 `publishSharedResult` 标为 `public`，公开链接通过 `getSharedResult` 读取。旧中转集合 `submissions`、`creatorInboxes` 仍用于兼容读取，并会在提交/读取时及定时云函数中清理过期记录。
 - 「我发起/参与的」展示本机保存的历史；小程序切回前台、进入首页、进入历史页、点击历史页刷新按钮时会同步发起者收到的朋友提交，不做常驻轮询。
 - 海报页和聊天分享卡片已接 Canvas 导出图片；颜色结果保存会进入海报页，颜色海报使用首页小程序码。海报保存优先调用 `wx.showShareImageMenu`，让用户在系统菜单里选择保存/分享，失败时回退保存相册。普通/专辑/颜色结果海报保持固定封面尺寸，按每行文字实际高度自适应排版，长文本最多两行并省略。

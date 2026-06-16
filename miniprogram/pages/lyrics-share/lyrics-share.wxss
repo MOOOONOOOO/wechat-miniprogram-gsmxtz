@@ -1,0 +1,659 @@
+.lyrics-page {
+  padding-bottom: calc(42rpx + env(safe-area-inset-bottom));
+}
+
+.hero-copy {
+  margin: 12rpx 0 24rpx;
+}
+
+.hero-copy .serif-title {
+  margin-top: 10rpx;
+  font-size: 58rpx;
+}
+
+.lyric-search {
+  margin-bottom: 18rpx;
+}
+
+.lyric-search text {
+  margin-right: 16rpx;
+  color: #827b70;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.song-results {
+  max-height: 456rpx;
+  margin-bottom: 22rpx;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 12rpx;
+  background: rgba(255,255,255,.46);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.song-row {
+  display: grid;
+  grid-template-columns: 88rpx minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18rpx;
+  min-height: 112rpx;
+  padding: 12rpx 18rpx;
+  border-bottom: 1rpx solid rgba(23,21,18,.08);
+  box-sizing: border-box;
+}
+
+.song-row:last-child {
+  border-bottom: 0;
+}
+
+.song-cover {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 8rpx;
+  background: rgba(23,21,18,.08);
+}
+
+.song-copy {
+  min-width: 0;
+}
+
+.song-copy view {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #171512;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 30rpx;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.song-copy text,
+.song-duration {
+  display: block;
+  margin-top: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.song-duration {
+  margin-top: 0;
+}
+
+.selected-song {
+  display: grid;
+  grid-template-columns: 112rpx minmax(0, 1fr);
+  gap: 18rpx;
+  align-items: center;
+  margin: 22rpx 0;
+}
+
+.selected-song image {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 10rpx;
+  background: rgba(23,21,18,.08);
+}
+
+.selected-song view view {
+  margin-top: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 34rpx;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.selected-song label {
+  display: block;
+  margin-top: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.selected-song .manual-button {
+  white-space: nowrap;
+}
+
+.lyrics-block {
+  margin-top: 18rpx;
+}
+
+.lyrics-section-row {
+  align-items: center;
+}
+
+.manual-button {
+  min-height: 0;
+  margin: 0;
+  padding: 14rpx 22rpx;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 999rpx;
+  background: rgba(255,255,255,.58);
+  color: #171512;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.manual-button::after {
+  border: 0;
+}
+
+.manual-panel {
+  display: grid;
+  gap: 16rpx;
+  margin-bottom: 22rpx;
+}
+
+.manual-panel textarea {
+  width: 100%;
+  min-height: 220rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 12rpx;
+  background: rgba(255,255,255,.58);
+  color: #171512;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+.lyric-list {
+  max-height: 560rpx;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 12rpx;
+  background: rgba(255,255,255,.46);
+  overflow: hidden;
+}
+
+.lyric-line {
+  display: grid;
+  grid-template-columns: 82rpx minmax(0, 1fr);
+  gap: 12rpx;
+  align-items: start;
+  padding: 20rpx 22rpx;
+  border-bottom: 1rpx solid rgba(23,21,18,.08);
+}
+
+.lyric-line:last-child {
+  border-bottom: 0;
+}
+
+.lyric-line.selected {
+  background: rgba(227,239,230,.82);
+}
+
+.lyric-line text {
+  color: #3d7f5a;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 21rpx;
+  line-height: 1.55;
+  font-weight: 900;
+}
+
+.lyric-line view {
+  color: #171512;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 29rpx;
+  line-height: 1.55;
+  font-weight: 800;
+}
+
+.style-block {
+  margin-top: 18rpx;
+}
+
+.style-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 12rpx 10rpx;
+  width: 100%;
+  margin-bottom: 12rpx;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.style-tab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  min-width: 96rpx;
+  height: 56rpx;
+  min-height: 56rpx;
+  margin: 0;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(23,21,18,.12);
+  border-radius: 999rpx;
+  background: rgba(255,255,255,.72);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 56rpx;
+  font-weight: 800;
+  color: #5f584f;
+}
+
+.style-tab::after {
+  border: 0;
+}
+
+.style-tab.active {
+  color: #fffdfa;
+  border-color: #171512;
+  background: #171512;
+}
+
+.preview-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10rpx 0 6rpx;
+}
+
+.lyrics-preview {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 620rpx;
+  min-height: 620rpx;
+  box-shadow: 0 20rpx 52rpx rgba(23,21,18,.12);
+}
+
+.style-apple {
+  aspect-ratio: 3 / 4;
+  background:
+    radial-gradient(circle at 78% 16%, rgba(var(--lyrics-bg-b), .38), transparent 48%),
+    radial-gradient(circle at 18% 88%, rgba(var(--lyrics-bg-c), .46), transparent 52%),
+    linear-gradient(150deg, rgb(var(--lyrics-bg-a)) 0%, rgba(var(--lyrics-bg-a), .92) 35%, rgb(var(--lyrics-bg-c)) 100%);
+}
+
+.style-apple::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.10), transparent 24%, rgba(0,0,0,.16)),
+    linear-gradient(180deg, rgba(255,255,255,.06), transparent 44%, rgba(0,0,0,.12));
+}
+
+.apple-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: calc(100% - 64rpx);
+  box-sizing: border-box;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  border-radius: 28rpx;
+  background: rgba(34,38,48,.66);
+  box-shadow:
+    0 26rpx 70rpx rgba(0,0,0,.18),
+    inset 0 1rpx 0 rgba(255,255,255,.08);
+}
+
+.apple-lyrics {
+  min-height: 210rpx;
+  padding: 40rpx 34rpx;
+  box-sizing: border-box;
+  color: #fffdfa;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 38rpx;
+  line-height: 1.36;
+  font-weight: 900;
+  white-space: pre-line;
+}
+
+.apple-lyrics text {
+  display: block;
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+.apple-song {
+  display: grid;
+  grid-template-columns: 92rpx minmax(0, 1fr);
+  gap: 20rpx;
+  align-items: center;
+  padding: 28rpx 34rpx 32rpx;
+  background: rgba(28,49,67,.34);
+}
+
+.apple-song image,
+.netease-song image,
+.mla-song image,
+.poem-song image {
+  width: 100%;
+  height: 100%;
+  background: rgba(23,21,18,.08);
+}
+
+.apple-song image {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 8rpx;
+}
+
+.apple-song text,
+.apple-song label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fffdfa;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 32rpx;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.style-liquid {
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(var(--lyrics-bg-b), .50), transparent 36%),
+    radial-gradient(circle at 84% 12%, rgba(255,255,255,.54), transparent 40%),
+    radial-gradient(circle at 76% 86%, rgba(var(--lyrics-bg-c), .46), transparent 46%),
+    linear-gradient(160deg, rgba(var(--lyrics-bg-a), .22), rgba(255,253,250,.78) 50%, rgba(var(--lyrics-bg-c), .30));
+}
+
+.liquid-card {
+  position: relative;
+  z-index: 1;
+  width: 78%;
+  padding: 34rpx 36rpx 40rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(255,255,255,.72);
+  border-radius: 42rpx;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.74), rgba(255,255,255,.40)),
+    radial-gradient(circle at 16% 10%, rgba(255,255,255,.78), transparent 36%);
+  box-shadow:
+    0 26rpx 70rpx rgba(30,38,56,.16),
+    inset 0 2rpx 0 rgba(255,255,255,.72),
+    inset 0 -1rpx 0 rgba(255,255,255,.34);
+  backdrop-filter: blur(22rpx);
+  -webkit-backdrop-filter: blur(22rpx);
+  overflow: hidden;
+}
+
+.liquid-song {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 62rpx minmax(0, 1fr);
+  gap: 18rpx;
+  align-items: center;
+}
+
+.liquid-song image {
+  width: 62rpx;
+  height: 62rpx;
+  border-radius: 14rpx;
+  background: rgba(23,21,18,.08);
+  box-shadow: 0 8rpx 18rpx rgba(30,38,56,.12);
+}
+
+.liquid-song text,
+.liquid-song label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(17,17,17,.88);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 27rpx;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.liquid-song label {
+  margin-top: 6rpx;
+  color: rgba(17,17,17,.46);
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.liquid-lyrics {
+  position: relative;
+  z-index: 1;
+  margin-top: 42rpx;
+  color: rgba(17,17,17,.86);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 38rpx;
+  line-height: 1.42;
+  font-weight: 900;
+  white-space: pre-line;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+.style-netease {
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #777;
+}
+
+.netease-card {
+  width: 75%;
+  padding: 28rpx 30rpx 34rpx;
+  box-sizing: border-box;
+  border-radius: 28rpx;
+  background: #c7c7c7;
+  overflow: hidden;
+}
+
+.netease-song {
+  display: grid;
+  grid-template-columns: 56rpx minmax(0, 1fr);
+  gap: 16rpx;
+  align-items: center;
+}
+
+.netease-song image {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 8rpx;
+}
+
+.netease-song text,
+.netease-song label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #222;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 25rpx;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.netease-song label {
+  margin-top: 5rpx;
+  color: rgba(0,0,0,.48);
+  font-weight: 500;
+}
+
+.netease-divider {
+  height: 1rpx;
+  margin: 18rpx 0 20rpx;
+  border-top: 1rpx dashed rgba(0,0,0,.12);
+}
+
+.netease-lyrics text {
+  display: block;
+  margin-bottom: 5rpx;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.24;
+  font-weight: 900;
+}
+
+.style-mla {
+  aspect-ratio: 3 / 2;
+  padding: 64rpx 48rpx;
+  background: #f4f4f4;
+}
+
+.mla-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #000;
+  font-size: 58rpx;
+  line-height: 1.04;
+  font-weight: 900;
+}
+
+.mla-lyrics {
+  margin-top: 52rpx;
+  color: #070707;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 34rpx;
+  line-height: 1.68;
+  font-weight: 400;
+  white-space: pre-line;
+}
+
+.mla-song {
+  display: grid;
+  grid-template-columns: 92rpx minmax(0, 1fr);
+  gap: 22rpx;
+  align-items: center;
+  margin-top: 48rpx;
+  width: 72%;
+}
+
+.mla-song image {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 8rpx;
+}
+
+.mla-song text,
+.mla-song label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #050505;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.2;
+}
+
+.style-poem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 680rpx;
+  padding: 42rpx;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(61,127,90,.18), transparent 34%),
+    linear-gradient(180deg, rgba(227,239,230,.56), rgba(255,253,250,.82), rgba(231,224,214,.42));
+}
+
+.poem-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 34rpx;
+  border: 1rpx solid rgba(255,255,255,.78);
+  border-radius: 34rpx;
+  background: rgba(255,255,255,.76);
+  box-shadow: 0 16rpx 42rpx rgba(30,38,56,.10);
+  overflow: hidden;
+}
+
+.poem-song {
+  display: grid;
+  grid-template-columns: 72rpx minmax(0, 1fr);
+  gap: 18rpx;
+  align-items: center;
+}
+
+.poem-song image {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 8rpx;
+}
+
+.poem-song text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 30rpx;
+  font-weight: 900;
+}
+
+.poem-lyrics {
+  margin-top: 28rpx;
+  color: rgba(0,0,0,.42);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 31rpx;
+  line-height: 1.72;
+  font-weight: 800;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+.poem-segment {
+  color: rgba(0,0,0,.42);
+  font-weight: 800;
+}
+
+.poem-segment.highlight {
+  color: #111;
+  font-weight: 900;
+}
+
+.poem-separator {
+  color: rgba(0,0,0,.24);
+}
+
+.save-action {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18rpx;
+  margin-top: 24rpx;
+}
+
+.save-action button {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.lyrics-canvas {
+  position: fixed;
+  left: -2600px;
+  top: -2600px;
+}

@@ -9,7 +9,16 @@
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  margin-bottom: 22rpx;
+  margin-bottom: 10rpx;
+}
+
+.target-hint {
+  flex: 0 0 auto;
+  margin-bottom: 18rpx;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 1.35;
 }
 
 .artist-heading {

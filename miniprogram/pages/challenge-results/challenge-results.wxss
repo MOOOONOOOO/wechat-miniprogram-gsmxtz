@@ -81,6 +81,170 @@
   font-weight: 900;
 }
 
+.multiplayer-card {
+  margin-bottom: 22rpx;
+  padding: 22rpx;
+  border: 1rpx solid rgba(23,21,18,.13);
+  border-radius: 12rpx;
+  background: rgba(255,255,255,.58);
+}
+
+.multiplayer-section-title {
+  margin-bottom: 14rpx;
+  font-size: 30rpx;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.board-title {
+  margin-top: 22rpx;
+}
+
+.my-best-title {
+  margin-top: 22rpx;
+}
+
+.best-pair-row {
+  display: grid;
+  grid-template-columns: 104rpx minmax(0, 1fr) 92rpx;
+  align-items: center;
+  gap: 16rpx;
+  min-height: 104rpx;
+  padding: 18rpx;
+  border-radius: 10rpx;
+  background: rgba(227,239,230,.72);
+}
+
+.best-pair-row.my-best-row {
+  background: rgba(227,239,230,.72);
+}
+
+.pair-avatar-stack {
+  position: relative;
+  width: 104rpx;
+  height: 70rpx;
+}
+
+.pair-avatar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70rpx;
+  height: 70rpx;
+  border: 4rpx solid #f6f0e7;
+  border-radius: 50%;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #fffdfa;
+  background: #171512;
+  font-size: 24rpx;
+  font-weight: 900;
+}
+
+.pair-avatar.right {
+  left: 34rpx;
+  background: #3d7f5a;
+}
+
+.pair-avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+.best-pair-copy,
+.pair-board-copy {
+  min-width: 0;
+}
+
+.best-pair-copy view,
+.pair-board-copy view {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 28rpx;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.best-pair-copy text,
+.pair-board-copy text {
+  display: block;
+  margin-top: 6rpx;
+  color: #5f584f;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.best-pair-score {
+  text-align: right;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.pair-board-row {
+  display: grid;
+  grid-template-columns: 42rpx 78rpx minmax(0, 1fr) 78rpx;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 76rpx;
+  padding: 12rpx 0;
+  border-top: 1rpx solid rgba(23,21,18,.09);
+}
+
+.pair-rank {
+  color: #3d7f5a;
+  font-size: 22rpx;
+  font-weight: 900;
+}
+
+.pair-mini-avatars {
+  display: flex;
+  align-items: center;
+  width: 78rpx;
+}
+
+.pair-mini-avatars view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42rpx;
+  height: 42rpx;
+  border: 3rpx solid #f6f0e7;
+  border-radius: 50%;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #fffdfa;
+  background: #171512;
+  font-size: 18rpx;
+  font-weight: 900;
+}
+
+.pair-mini-avatars view + view {
+  margin-left: -10rpx;
+  background: #3d7f5a;
+}
+
+.pair-mini-avatars image {
+  width: 100%;
+  height: 100%;
+}
+
+.pair-board-copy view {
+  font-size: 25rpx;
+}
+
+.pair-board-score {
+  text-align: right;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 26rpx;
+  font-weight: 900;
+}
+
 .friend-result-list {
   display: grid;
   gap: 18rpx;

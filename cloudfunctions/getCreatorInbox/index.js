@@ -148,8 +148,8 @@ function compareQaAnswers(prompts, creatorChoices, friendChoices) {
 }
 
 function compareTopSongs(topArtist, creatorTopSongs, friendTopSongs) {
-  const creatorSongs = Array.isArray(creatorTopSongs) ? creatorTopSongs.slice(0, 9) : [];
-  const friendSongs = Array.isArray(friendTopSongs) ? friendTopSongs.slice(0, 9) : [];
+  const creatorSongs = Array.isArray(creatorTopSongs) ? creatorTopSongs.slice(0, 18) : [];
+  const friendSongs = Array.isArray(friendTopSongs) ? friendTopSongs.slice(0, 18) : [];
   const friendRankMap = friendSongs.reduce((map, song, index) => {
     if (song && song.trackId) map[song.trackId] = index + 1;
     return map;
@@ -167,6 +167,7 @@ function compareTopSongs(topArtist, creatorTopSongs, friendTopSongs) {
     }))
     .filter((song) => song.matched);
   const topRankMatches = matchedSongs.filter((song) => song.creatorRank <= 3 && song.creatorRank === song.friendRank);
+  const totalCount = Math.max(creatorSongs.length, friendSongs.length, 1);
   return {
     mode: "top9",
     topArtist: topArtist || {},
@@ -183,7 +184,8 @@ function compareTopSongs(topArtist, creatorTopSongs, friendTopSongs) {
     matchedSongs,
     topRankMatches,
     matchCount: matchedSongs.length,
-    score: Math.round((matchedSongs.length / 9) * 100)
+    totalCount,
+    score: Math.round((matchedSongs.length / totalCount) * 100)
   };
 }
 
@@ -250,6 +252,7 @@ function makeChallengeRecord(challengeId, data = {}) {
   const challenge = {
     challengeId,
     mode: data.mode || "artist",
+    targetCount: data.targetCount || 9,
     artists: data.artists || [],
     albums: data.albums || [],
     colors: data.colors || [],

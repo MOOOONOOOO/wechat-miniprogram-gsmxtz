@@ -16,6 +16,8 @@ function showPageShareMenu() {
 
 const HOME_SHARE_TITLE = "来测测你和朋友的音乐默契";
 const POPUP_SEEN_PREFIX = "announcementPopupSeen:";
+const HOME_INBOX_SYNC_AT_KEY = "homeInboxSyncAt:v1";
+const HOME_INBOX_SYNC_INTERVAL_MS = 30 * 60 * 1000;
 
 function callNoticeHub(data) {
   if (!wx.cloud) return Promise.resolve({});
@@ -100,7 +102,17 @@ Page({
   },
 
   onShow() {
-    syncCreatorInbox({ minInterval: 60 * 1000 }).catch(() => {});
+    this.syncInboxOccasionally();
+  },
+
+  syncInboxOccasionally() {
+    const now = Date.now();
+    try {
+      const lastSyncAt = Number(wx.getStorageSync(HOME_INBOX_SYNC_AT_KEY) || 0);
+      if (lastSyncAt && now - lastSyncAt < HOME_INBOX_SYNC_INTERVAL_MS) return;
+      wx.setStorageSync(HOME_INBOX_SYNC_AT_KEY, now);
+    } catch (error) {}
+    syncCreatorInbox({ minInterval: HOME_INBOX_SYNC_INTERVAL_MS }).catch(() => {});
   },
 
   onChooseAvatar(event) {
@@ -195,6 +207,17 @@ Page({
     app.globalData.currentQaSlotId = "";
     app.globalData.currentQaSlotArtist = null;
     wx.navigateTo({ url: "/pages/theme/theme" });
+  },
+
+  startLyricsShare() {
+    this.saveProfile();
+    const app = getApp();
+    app.globalData.draftMode = "lyrics";
+    app.globalData.draftArtists = [];
+    app.globalData.lyricsShareArtist = null;
+    app.globalData.lyricsShareSong = null;
+    app.globalData.lyricsShareSelectedLyrics = [];
+    wx.navigateTo({ url: "/pages/artists/artists?mode=lyrics" });
   },
 
   persistProfile() {

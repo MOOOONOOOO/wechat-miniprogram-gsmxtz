@@ -1,18 +1,22 @@
 <view class="page poster-page">
   <view class="poster">
     <view class="poster-head">
-      <view class="poster-avatars">
-        <view class="poster-avatar">
-          <image wx:if="{{creatorAvatarUrl}}" src="{{creatorAvatarUrl}}" mode="aspectFill"></image>
-          <text wx:else>发</text>
+      <view class="poster-pair">
+        <view class="poster-pair-avatars">
+          <view class="poster-avatar">
+            <image wx:if="{{creatorAvatarUrl}}" src="{{creatorAvatarUrl}}" mode="aspectFill"></image>
+            <text wx:else>{{creatorAvatarText}}</text>
+          </view>
+          <text class="poster-pair-mark">×</text>
+          <view class="poster-avatar friend-avatar">
+            <image wx:if="{{friendAvatarUrl}}" src="{{friendAvatarUrl}}" mode="aspectFill"></image>
+            <text wx:else class="avatar-placeholder">{{friendAvatarText}}</text>
+            <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar"></button>
+          </view>
         </view>
-        <view class="poster-avatar friend-avatar">
-          <image wx:if="{{friendAvatarUrl}}" src="{{friendAvatarUrl}}" mode="aspectFill"></image>
-          <text wx:else class="avatar-placeholder">{{friendAvatarText}}</text>
-          <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar"></button>
-        </view>
+        <text class="poster-pair-name">{{creatorName}} × {{friendName}}</text>
       </view>
-      <text>{{modeTitle}}</text>
+      <text class="poster-mode-title">{{modeTitle}}</text>
     </view>
 
     <block wx:if="{{mode === 'top9'}}">
@@ -25,7 +29,7 @@
         <image wx:if="{{topArtistCover}}" class="top9-poster-artist-cover" src="{{topArtistCover}}" mode="aspectFill"></image>
         <view wx:else class="top9-poster-artist-cover top9-poster-artist-fallback">{{topArtistAvatar}}</view>
       </view>
-      <view class="top9-match-pill">共同选择 <text>{{matchedSongs.length}}/9</text></view>
+      <view class="top9-match-pill">共同选择 <text>{{matchedSongs.length}}/{{matchTotal}}</text></view>
     </block>
 
     <block wx:if="{{mode !== 'top9'}}">
@@ -82,6 +86,25 @@
       </view>
     </view>
 
+    <view wx:if="{{mode !== 'top9'}}" class="result-lists">
+      <view class="result-list ok">
+        <view>契合{{subjectLabel}}</view>
+        <label wx:if="{{matched.length === 0}}">暂时没有契合{{subjectLabel}}</label>
+        <block wx:for="{{matched}}" wx:key="index">
+          <text>{{item.artist.name}}</text>
+          <label>都选了 {{item.friendSongName}}</label>
+        </block>
+      </view>
+      <view class="result-list">
+        <view>未契合{{subjectLabel}}</view>
+        <label wx:if="{{missed.length === 0}}">没有未契合{{subjectLabel}}</label>
+        <block wx:for="{{missed}}" wx:key="index">
+          <text>{{item.artist.name}}</text>
+          <label>{{creatorName}}：{{item.creatorSongName}} / {{friendName}}：{{item.friendSongName}}</label>
+        </block>
+      </view>
+    </view>
+
     <view class="poster-foot">
       <view>在这个混乱的世代感谢还有音乐。</view>
       <view class="qr">
@@ -97,5 +120,9 @@
     <button class="primary-button" bindtap="savePoster">保存海报图片</button>
   </view>
 
-  <canvas canvas-id="posterCanvas" class="poster-canvas"></canvas>
+  <canvas
+    canvas-id="posterCanvas"
+    class="poster-canvas"
+    style="width: {{posterCanvasWidth}}px; height: {{posterCanvasHeight}}px;"
+  ></canvas>
 </view>

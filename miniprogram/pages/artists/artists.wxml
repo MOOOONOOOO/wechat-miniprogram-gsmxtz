@@ -8,6 +8,7 @@
     <view class="title">{{titleText}}</view>
     <text class="label">{{isAlbumMode ? albumCount : selected.length}}/{{targetCount}}</text>
   </view>
+  <view wx:if="{{targetHint}}" class="target-hint">{{targetHint}}</view>
 
   <view class="tabs">
     <text wx:for="{{letterItems}}" wx:key="key" class="{{item.activeClass}}" bindtap="setLetter" data-letter="{{item.key}}">{{item.key}}</text>
@@ -91,12 +92,8 @@
   <view wx:if="{{loading}}" class="loading">正在从 iTunes 搜索{{isAlbumMode ? '专辑和歌手' : '歌手'}}...</view>
 
   <view class="bottom-action">
-    <button wx:if="{{mode === 'album'}}" class="primary-button" disabled="{{!canNext}}" bindtap="next">下一步：每张专辑选 1 首</button>
+    <button wx:if="{{mode === 'album'}}" class="primary-button" disabled="{{!canNext}}" bindtap="next">{{nextButtonText}}</button>
     <button wx:elif="{{mode === 'themeAlbum'}}" class="primary-button" disabled="{{!canNext}}" bindtap="next">{{themeAlbumDoneText}}</button>
-    <button wx:elif="{{mode === 'top9'}}" class="primary-button" disabled="{{!canNext}}" bindtap="next">下一步：选择 Top9 歌曲</button>
-    <button wx:elif="{{mode === 'color'}}" class="primary-button" disabled="{{!canNext}}" bindtap="next">下一步：为这个颜色选歌</button>
-    <button wx:elif="{{mode === 'qa'}}" class="primary-button" disabled="{{!canNext}}" bindtap="next">下一步：为这个问题选歌</button>
-    <button wx:elif="{{mode === 'theme'}}" class="primary-button" disabled="{{!canNext}}" bindtap="next">下一步：为这个题目选歌</button>
-    <button wx:else class="primary-button" disabled="{{!canNext}}" bindtap="next">下一步：每位歌手选 1 首</button>
+    <button wx:else class="primary-button" disabled="{{!canNext}}" bindtap="next">{{nextButtonText}}</button>
   </view>
 </view>

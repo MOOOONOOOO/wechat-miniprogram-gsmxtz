@@ -1,5 +1,3 @@
-const { syncCreatorInbox } = require("./utils/historySync");
-
 App({
   globalData: {
     envId: "",
@@ -39,8 +37,4 @@ App({
       wx.cloud.init(cloudOptions);
     }
   },
-
-  onShow() {
-    syncCreatorInbox({ minInterval: 30 * 1000 }).catch(() => {});
-  }
 });

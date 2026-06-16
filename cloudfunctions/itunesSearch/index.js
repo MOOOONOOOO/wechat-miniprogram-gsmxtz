@@ -46,6 +46,29 @@ function normalizeAlbum(item) {
   };
 }
 
+function normalizeSong(item) {
+  const coverUrl = artwork(item.artworkUrl100 || item.artworkUrl60);
+  const duration = item.trackTimeMillis
+    ? Math.round(Number(item.trackTimeMillis) / 1000)
+    : 0;
+  return {
+    trackId: String(item.trackId || ""),
+    trackName: item.trackName || "",
+    name: item.trackName || "",
+    artistId: item.artistId ? String(item.artistId) : "",
+    collectionId: item.collectionId ? String(item.collectionId) : "",
+    collectionName: item.collectionName || "",
+    album: item.collectionName || item.artistName || "",
+    cover: coverUrl,
+    artworkUrl100: item.artworkUrl100 || "",
+    artworkUrl600: coverUrl,
+    previewUrl: item.previewUrl || "",
+    artistName: item.artistName || "",
+    trackTimeMillis: item.trackTimeMillis || 0,
+    duration
+  };
+}
+
 function parseReleaseTime(item) {
   const releaseTime = Date.parse(item.releaseDate || "");
   return Number.isNaN(releaseTime) ? 0 : releaseTime;
@@ -579,6 +602,39 @@ exports.main = async (event) => {
     return { songs };
   }
 
+  if (event.type === "songSearch") {
+    const query = String(event.query || "").trim();
+    if (!query) return { songs: [] };
+
+    const params = new URLSearchParams({
+      term: query,
+      media: "music",
+      entity: "song",
+      country,
+      limit: String(limit)
+    });
+    let data = {};
+    try {
+      data = await requestJson(`https://itunes.apple.com/search?${params.toString()}`);
+    } catch (error) {
+      console.warn("iTunes general song search failed", error);
+      return { songs: [] };
+    }
+
+    const seen = new Set();
+    const songs = (data.results || [])
+      .filter((item) => item.wrapperType === "track" && item.kind === "song" && item.trackId && item.trackName)
+      .filter((item) => {
+        if (seen.has(item.trackId)) return false;
+        seen.add(item.trackId);
+        return true;
+      })
+      .slice(0, limit)
+      .map(normalizeSong);
+
+    return { songs };
+  }
+
   const artistName = String(event.artistName || event.displayArtistName || "").trim();
   const searchTerm = String(event.searchTerm || "").trim();
   const query = String(event.query || "").trim();
@@ -618,17 +674,7 @@ exports.main = async (event) => {
   const songs = interleaveByArtist(titleMatchedSongResults, targetArtistIds)
     .slice(0, limit)
     .map((item) => ({
-      trackId: String(item.trackId),
-      trackName: item.trackName,
-      name: item.trackName,
-      artistId: item.artistId ? String(item.artistId) : "",
-      collectionId: item.collectionId ? String(item.collectionId) : "",
-      collectionName: item.collectionName || "",
-      album: item.collectionName || item.artistName,
-      cover: artwork(item.artworkUrl100),
-      artworkUrl100: item.artworkUrl100 || "",
-      artworkUrl600: artwork(item.artworkUrl100),
-      previewUrl: item.previewUrl || "",
+      ...normalizeSong(item),
       artistName: item.artistName || identity.artistName || artistName || searchArtistName
     }));
 
