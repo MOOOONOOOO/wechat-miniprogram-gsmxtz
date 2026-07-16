@@ -1,6 +1,7 @@
 const {
   cacheAlbumsFromSearch,
-  cacheSongsFromSearch
+  cacheSongsFromSearch,
+  hydrateCoverAssets
 } = require("./itunesCache");
 
 const ITUNES_CALL_CACHE_KEY = "itunesCloudCallCache:v1";
@@ -74,7 +75,10 @@ function cachedItunesCall(data = {}) {
   const cache = readItunesCallCache();
   const hit = cache[key];
   if (hit && hit.expiresAt > now && hit.result) {
-    return Promise.resolve(hit.result);
+    return Promise.resolve({
+      ...hit.result,
+      _cacheSource: "local"
+    });
   }
   if (pendingItunesCalls[key]) return pendingItunesCalls[key];
 
@@ -90,7 +94,10 @@ function cachedItunesCall(data = {}) {
         }
       });
       writeItunesCallCache(nextCache);
-      return result;
+      return {
+        ...result,
+        _cacheSource: "network"
+      };
     })
     .finally(() => {
       delete pendingItunesCalls[key];
@@ -300,7 +307,7 @@ function searchSongs(artist, query = "") {
   return Promise.all(requests).then((results) => {
     const primary = results.find((res) => res && res.artistId) || results[0] || {};
     const resolvedArtistId = (group && group.ids[0]) || primary.artistId || artistInfo.itunesArtistId || artistInfo.artistId || "";
-    const songs = interleaveByArtist(filterSongsByQueryTitle(mergeSongs(results), query), group ? group.ids : []);
+    const songs = hydrateCoverAssets(interleaveByArtist(filterSongsByQueryTitle(mergeSongs(results), query), group ? group.ids : []));
     cacheSongsFromSearch(songs, {
       ...artistInfo,
       artistId: resolvedArtistId,
@@ -339,7 +346,7 @@ function searchAlbums(artist, limit = 200) {
 
   return Promise.all(requests).then((results) => {
     const primary = results.find((res) => res && res.artistId) || results[0] || {};
-    const albums = interleaveByArtist(mergeAlbums(results), group ? group.ids : []);
+    const albums = hydrateCoverAssets(interleaveByArtist(mergeAlbums(results), group ? group.ids : []));
     const resolvedArtistId = (group && group.ids[0]) || primary.artistId || artist.itunesArtistId || artist.artistId || "";
     cacheAlbumsFromSearch(albums, {
       artistName: artist.name || artist.artistName || "",
@@ -365,8 +372,12 @@ function searchAlbumsByQuery(query, limit = 49) {
     query,
     limit
   }).then((res) => {
-    cacheAlbumsFromSearch(res.albums);
-    return res;
+    const albums = hydrateCoverAssets(res.albums);
+    cacheAlbumsFromSearch(albums);
+    return {
+      ...res,
+      albums
+    };
   });
 }
 
@@ -376,7 +387,7 @@ function searchAlbumSongs(collectionId, query = "") {
     collectionId,
     query
   }).then((res) => {
-    const songs = filterRealSongs(res.songs);
+    const songs = hydrateCoverAssets(filterRealSongs(res.songs));
     cacheSongsFromSearch(songs, {
       collectionId
     });
@@ -393,8 +404,12 @@ function searchSongsByQuery(query, limit = 30) {
     query,
     limit
   }).then((res) => {
-    cacheSongsFromSearch(res.songs);
-    return res;
+    const songs = hydrateCoverAssets(res.songs);
+    cacheSongsFromSearch(songs);
+    return {
+      ...res,
+      songs
+    };
   });
 }
 

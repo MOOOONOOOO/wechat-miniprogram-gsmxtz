@@ -32,6 +32,20 @@ function getThemeAlbumPickText() {
     : "正在为人生九专选专辑";
 }
 
+function coverSourceStats(items) {
+  return (items || []).reduce((stats, item) => {
+    const source = item._coverSource || (item.cover || item.coverUrl ? "remoteUrl" : "missing");
+    stats[source] = (stats[source] || 0) + 1;
+    return stats;
+  }, {});
+}
+
+function stableLogSignature(payload) {
+  if (payload === null || typeof payload !== "object") return JSON.stringify(payload);
+  if (Array.isArray(payload)) return `[${payload.map(stableLogSignature).join(",")}]`;
+  return `{${Object.keys(payload).sort().map((key) => `${JSON.stringify(key)}:${stableLogSignature(payload[key])}`).join(",")}}`;
+}
+
 Page({
   data: {
     mode: "album",
@@ -91,11 +105,27 @@ Page({
           albums,
           showEmpty: albums.length === 0
         });
+        this.logAlbumCacheStats(res, albums);
       })
       .catch(() => {
         wx.showToast({ title: "专辑搜索失败", icon: "none" });
       })
       .finally(() => this.setData({ loading: false }));
+  },
+
+  logAlbumCacheStats(res, albums) {
+    if (typeof console === "undefined" || !console.log) return;
+    const payload = {
+      mode: this.data.mode,
+      artist: (this.data.artist || {}).name || "",
+      listSource: (res && res._cacheSource) || "unknown",
+      count: (albums || []).length,
+      coverSources: coverSourceStats(albums)
+    };
+    const signature = stableLogSignature(payload);
+    if (this.lastAlbumCacheStatsSignature === signature) return;
+    this.lastAlbumCacheStatsSignature = signature;
+    console.log("[album-list-cache-stats]", payload);
   },
 
   toggleAlbum(event) {

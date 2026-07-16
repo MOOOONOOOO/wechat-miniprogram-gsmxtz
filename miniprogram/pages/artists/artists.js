@@ -76,6 +76,55 @@ function getArtistDedupeNames(artist) {
   ].map(normalizeArtistName).filter(Boolean);
 }
 
+function emptyAvatarStats() {
+  return {
+    visible: 0,
+    static: 0,
+    pendingCacheRead: 0,
+    skippedCacheRead: 0,
+    localCache: 0,
+    cloudCache: 0,
+    missCache: 0,
+    itunesFallback: 0,
+    itunesSuccess: 0,
+    itunesEmpty: 0,
+    error: 0
+  };
+}
+
+function stableLogSignature(payload) {
+  if (payload === null || typeof payload !== "object") return JSON.stringify(payload);
+  if (Array.isArray(payload)) return `[${payload.map(stableLogSignature).join(",")}]`;
+  return `{${Object.keys(payload).sort().map((key) => `${JSON.stringify(key)}:${stableLogSignature(payload[key])}`).join(",")}}`;
+}
+
+function mergeAvatarStats(target, source) {
+  const next = target || emptyAvatarStats();
+  const incoming = source || emptyAvatarStats();
+  Object.keys(next).forEach((key) => {
+    if (key === "visible" || key === "static") {
+      next[key] = Math.max(Number(next[key] || 0), Number(incoming[key] || 0));
+      return;
+    }
+    next[key] = Number(next[key] || 0) + Number(incoming[key] || 0);
+  });
+  return next;
+}
+
+function getAvatarStatsDelta(stats) {
+  const previous = stats._loggedSnapshot || emptyAvatarStats();
+  const delta = emptyAvatarStats();
+  Object.keys(delta).forEach((key) => {
+    const currentValue = Number(stats[key] || 0);
+    const previousValue = Number(previous[key] || 0);
+    delta[key] = key === "visible" || key === "static"
+      ? currentValue
+      : Math.max(0, currentValue - previousValue);
+  });
+  stats._loggedSnapshot = { ...stats };
+  return delta;
+}
+
 Page({
   data: {
     mode: "artist",
@@ -188,11 +237,28 @@ Page({
           remoteArtists: artistRes.artists || [],
           remoteAlbums: this.data.isAlbumMode ? ((albumRes && albumRes.albums) || []) : []
         }, () => this.renderArtists());
+        this.logSearchCacheStats(query, artistRes, albumRes);
       })
       .catch(() => {
         wx.showToast({ title: this.data.isAlbumMode ? "搜索失败" : "歌手搜索失败", icon: "none" });
       })
       .finally(() => this.setData({ loading: false }));
+  },
+
+  logSearchCacheStats(query, artistRes, albumRes) {
+    if (typeof console === "undefined" || !console.log) return;
+    const payload = {
+      mode: this.data.mode,
+      query,
+      artistListSource: (artistRes && artistRes._cacheSource) || "unknown",
+      artistCount: ((artistRes && artistRes.artists) || []).length,
+      albumListSource: this.data.isAlbumMode ? ((albumRes && albumRes._cacheSource) || "unknown") : "disabled",
+      albumCount: this.data.isAlbumMode ? (((albumRes && albumRes.albums) || []).length) : 0
+    };
+    const signature = stableLogSignature(payload);
+    if (this.lastSearchCacheStatsSignature === signature) return;
+    this.lastSearchCacheStatsSignature = signature;
+    console.log("[artist-search-cache-stats]", payload);
   },
 
   renderArtists() {
@@ -305,32 +371,56 @@ Page({
     if (!this.avatarRequests) this.avatarRequests = {};
     if (!this.avatarCacheReads) this.avatarCacheReads = {};
 
+    const stats = emptyAvatarStats();
+    const nonAlbumArtists = (visibleArtists || []).filter((artist) => artist.type !== "album");
+    stats.visible = nonAlbumArtists.length;
+    stats.static = nonAlbumArtists.filter((artist) => artist.avatarUrl).length;
     const candidates = (visibleArtists || [])
       .filter((artist) => artist.type !== "album" && !artist.avatarUrl);
     const unread = candidates.filter((artist) => {
       const key = this.getArtistRequestKey(artist);
-      if (this.avatarCacheReads[key]) return false;
+      if (this.avatarCacheReads[key]) {
+        stats.skippedCacheRead += 1;
+        return false;
+      }
       this.avatarCacheReads[key] = true;
+      stats.pendingCacheRead += 1;
       return true;
     });
 
     if (!unread.length) {
-      this.loadMissingArtistAvatars(candidates);
+      this.loadMissingArtistAvatars(candidates, stats);
+      this.logAvatarStats(stats);
       return;
     }
 
     readArtistCovers(unread)
       .then((coverMap) => {
-        const hits = unread.filter((artist) => coverMap[artist.id]);
+        const hits = unread.filter((artist) => coverMap[artist.id] && !coverMap[artist.id]._miss);
         const misses = unread.filter((artist) => !coverMap[artist.id]);
+        unread.forEach((artist) => {
+          const cover = coverMap[artist.id];
+          if (!cover) return;
+          if (cover._source === "local") stats.localCache += 1;
+          else if (cover._source === "cloud") stats.cloudCache += 1;
+          else if (cover._source === "miss") stats.missCache += 1;
+        });
         if (!hits.length) {
-          this.loadMissingArtistAvatars(misses);
+          this.loadMissingArtistAvatars(misses, stats);
+          this.logAvatarStats(stats);
           return;
         }
 
-        this.applyArtistCoverMap(hits, coverMap, () => this.loadMissingArtistAvatars(misses));
+        this.applyArtistCoverMap(hits, coverMap, () => {
+          this.loadMissingArtistAvatars(misses, stats);
+          this.logAvatarStats(stats);
+        });
       })
-      .catch(() => this.loadMissingArtistAvatars(unread));
+      .catch(() => {
+        stats.error += unread.length;
+        this.loadMissingArtistAvatars(unread, stats);
+        this.logAvatarStats(stats);
+      });
   },
 
   getArtistRequestKey(artist) {
@@ -371,16 +461,22 @@ Page({
     });
   },
 
-  loadMissingArtistAvatars(artistsToLoad) {
+  loadMissingArtistAvatars(artistsToLoad, stats) {
     (artistsToLoad || [])
       .filter((artist) => !artist.avatarUrl && !this.avatarRequests[this.getArtistRequestKey(artist)])
       .forEach((artist) => {
         const requestKey = this.getArtistRequestKey(artist);
         this.avatarRequests[requestKey] = true;
+        if (stats) stats.itunesFallback += 1;
         searchSongs(artist, "")
           .then((res) => {
             const song = (res.songs || []).find((item) => item.cover);
-            if (!song || !song.cover) return;
+            if (!song || !song.cover) {
+              if (stats) stats.itunesEmpty += 1;
+              this.logAvatarStats(stats);
+              return;
+            }
+            if (stats) stats.itunesSuccess += 1;
 
             this.applyArtistCoverMap([artist], {
               [artist.id]: {
@@ -392,10 +488,43 @@ Page({
                 sourceCollectionId: song.collectionId || "",
                 sourceCollectionName: song.collectionName || song.album || ""
               }
-            });
+            }, () => this.logAvatarStats(stats));
           })
-          .catch(() => {});
+          .catch(() => {
+            if (stats) stats.error += 1;
+            this.logAvatarStats(stats);
+          });
       });
+  },
+
+  logAvatarStats(stats) {
+    if (!stats || typeof console === "undefined" || !console.log) return;
+    this.pendingAvatarStats = mergeAvatarStats(this.pendingAvatarStats, getAvatarStatsDelta(stats));
+    clearTimeout(this.avatarStatsTimer);
+    this.avatarStatsTimer = setTimeout(() => {
+      const pending = this.pendingAvatarStats || emptyAvatarStats();
+      this.pendingAvatarStats = null;
+      const payload = {
+        mode: this.data.mode,
+        query: this.data.query || "",
+        letter: this.data.activeLetter || "",
+        visible: pending.visible,
+        static: pending.static,
+        localCache: pending.localCache,
+        cloudCache: pending.cloudCache,
+        missCache: pending.missCache,
+        avatarSearchRequests: pending.itunesFallback,
+        itunesSuccess: pending.itunesSuccess,
+        itunesEmpty: pending.itunesEmpty,
+        pendingCacheRead: pending.pendingCacheRead,
+        skippedCacheRead: pending.skippedCacheRead,
+        error: pending.error
+      };
+      const signature = stableLogSignature(payload);
+      if (this.lastAvatarStatsSignature === signature) return;
+      this.lastAvatarStatsSignature = signature;
+      console.log("[artist-avatar-stats]", payload);
+    }, 500);
   },
 
   toggleArtist(event) {

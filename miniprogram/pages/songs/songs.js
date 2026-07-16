@@ -64,6 +64,20 @@ function hasFreshDefaultSongCache(cacheRecord, mode) {
   return Number(cacheRecord.listVersion || 0) >= SONG_LIST_CACHE_VERSION || cacheRecord.songs.length >= MIN_LEGACY_DEFAULT_SONGS;
 }
 
+function coverSourceStats(items) {
+  return (items || []).reduce((stats, item) => {
+    const source = item._coverSource || (item.cover || item.coverUrl ? "remoteUrl" : "missing");
+    stats[source] = (stats[source] || 0) + 1;
+    return stats;
+  }, {});
+}
+
+function stableLogSignature(payload) {
+  if (payload === null || typeof payload !== "object") return JSON.stringify(payload);
+  if (Array.isArray(payload)) return `[${payload.map(stableLogSignature).join(",")}]`;
+  return `{${Object.keys(payload).sort().map((key) => `${JSON.stringify(key)}:${stableLogSignature(payload[key])}`).join(",")}}`;
+}
+
 function normalizeSongKeyText(value) {
   return String(value || "")
     .trim()
@@ -93,6 +107,10 @@ function normalizeLyricsSong(song = {}) {
     duration,
     trackTimeMillis: song.trackTimeMillis || (duration ? duration * 1000 : 0)
   };
+}
+
+function getAlbumCollectionId(album = {}) {
+  return String(album.collectionId || album.id || "").trim();
 }
 
 function getChoiceKeyForData(data) {
@@ -337,6 +355,11 @@ Page({
           if (cacheRecord && Array.isArray(cacheRecord.songs) && cacheRecord.songs.length) {
             this.applySongs(cacheRecord.songs, requestId);
             this.patchCurrentArtistIdentity(cacheRecord);
+            this.logSongListCacheStats({
+              listSource: cacheRecord._source || "cache",
+              query,
+              songs: cacheRecord.songs
+            });
             this.setData({ loading: false });
             if (hasFreshDefaultSongCache(cacheRecord, this.data.mode)) return;
           }
@@ -350,7 +373,7 @@ Page({
 
   fetchSongsFromItunes(currentArtist, query, requestId, shouldCacheDefault) {
     const request = this.data.mode === "album"
-      ? searchAlbumSongs(currentArtist.collectionId, query)
+      ? searchAlbumSongs(getAlbumCollectionId(currentArtist), query)
       : searchSongs(currentArtist, query);
 
     request
@@ -358,9 +381,17 @@ Page({
         if (this.songRequestId !== requestId) return;
         const songs = res.songs || [];
         this.applySongs(songs, requestId);
+        this.logSongListCacheStats({
+          listSource: (res && res._cacheSource) || "network",
+          query,
+          songs
+        });
         if (shouldCacheDefault) {
           const cacheSubject = this.data.mode === "album"
-            ? currentArtist
+            ? {
+                ...currentArtist,
+                collectionId: getAlbumCollectionId(currentArtist)
+              }
             : {
                 ...currentArtist,
                 artistId: res.artistId || currentArtist.artistId || currentArtist.itunesArtistId || "",
@@ -379,6 +410,23 @@ Page({
       .finally(() => {
         if (this.songRequestId === requestId) this.setData({ loading: false });
       });
+  },
+
+  logSongListCacheStats({ listSource, query, songs } = {}) {
+    if (typeof console === "undefined" || !console.log) return;
+    const payload = {
+      mode: this.data.mode,
+      role: this.data.role,
+      subject: (this.data.currentArtist || {}).name || "",
+      query: query || "",
+      listSource: listSource || "unknown",
+      count: (songs || []).length,
+      coverSources: coverSourceStats(songs)
+    };
+    const signature = stableLogSignature(payload);
+    if (this.lastSongListCacheStatsSignature === signature) return;
+    this.lastSongListCacheStatsSignature = signature;
+    console.log("[song-list-cache-stats]", payload);
   },
 
   applySongs(rawSongs, requestId) {

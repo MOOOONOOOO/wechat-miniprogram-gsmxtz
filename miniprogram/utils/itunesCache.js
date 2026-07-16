@@ -308,6 +308,40 @@ function rememberCoverAssets(records) {
   safeSetStorage(LOCAL_COVER_ASSET_KEY, cache);
 }
 
+function getItemCover(item) {
+  return (item && (item.cover || item.coverUrl || item.artworkUrl600 || item.artworkUrl100 || item.artworkUrl60 || item.albumCover || item.imageUrl)) || "";
+}
+
+function classifyCoverSource(url) {
+  const value = String(url || "");
+  if (!value) return "missing";
+  if (value.indexOf("cloud://") === 0) return "cloud";
+  if (value.indexOf("wxfile://") === 0) return "localFile";
+  if (/^https?:\/\//i.test(value)) return "remoteUrl";
+  return "other";
+}
+
+function hydrateCoverAssets(items) {
+  const cache = safeGetStorage(LOCAL_COVER_ASSET_KEY);
+  return (Array.isArray(items) ? items : []).map((item) => {
+    const collectionId = String((item && item.collectionId) || "").trim();
+    const currentCover = getItemCover(item);
+    const asset = collectionId ? cache[collectionId] : null;
+    const cachedCover = asset && (asset.coverUrl || asset.artworkUrl600 || asset.artworkUrl100);
+    const cover = currentCover || cachedCover || "";
+    if (!cover) return { ...item, _coverSource: "missing" };
+    if (currentCover) return { ...item, _coverSource: classifyCoverSource(currentCover) };
+    return {
+      ...item,
+      cover,
+      coverUrl: cover,
+      artworkUrl600: cover,
+      artworkUrl100: asset.artworkUrl100 || item.artworkUrl100 || "",
+      _coverSource: "localCoverAsset"
+    };
+  });
+}
+
 function getLocalSongList(mode, id) {
   const key = mode === "album" ? LOCAL_ALBUM_SONG_LIST_KEY : LOCAL_ARTIST_SONG_LIST_KEY;
   const cache = safeGetStorage(key);
@@ -430,7 +464,7 @@ function normalizeSongsForList(songs) {
 }
 
 function getSongListSubjectId(subject, mode) {
-  if (mode === "album") return String((subject && subject.collectionId) || "").trim();
+  if (mode === "album") return String((subject && (subject.collectionId || subject.id)) || "").trim();
   return String((subject && (subject.artistId || subject.itunesArtistId)) || "").trim();
 }
 
@@ -490,14 +524,24 @@ async function readDefaultSongList(subject, mode = "artist") {
 
   const local = getLocalSongList(safeMode, id);
   const safeLocal = sanitizeSongListRecord(subject, safeMode, local);
-  if (safeLocal && safeLocal.songs.length) return safeLocal;
+  if (safeLocal && safeLocal.songs.length) {
+    return {
+      ...safeLocal,
+      _source: "local",
+      songs: hydrateCoverAssets(safeLocal.songs)
+    };
+  }
 
   const collection = safeMode === "album" ? ALBUM_SONG_LIST_COLLECTION : ARTIST_SONG_LIST_COLLECTION;
   const cloudRecord = await readSongListRecord(collection, id);
   const safeCloudRecord = sanitizeSongListRecord(subject, safeMode, cloudRecord);
   if (safeCloudRecord && safeCloudRecord.songs.length) {
     rememberSongList(safeMode, safeCloudRecord);
-    return safeCloudRecord;
+    return {
+      ...safeCloudRecord,
+      _source: "cloud",
+      songs: hydrateCoverAssets(safeCloudRecord.songs)
+    };
   }
   return null;
 }
@@ -575,7 +619,7 @@ function makeSongListRecord(subject, mode, songs) {
     ? String((subject && (subject.artistId || subject.itunesArtistId)) || "").trim()
     : "";
   const id = safeMode === "album"
-    ? String((subject && subject.collectionId) || firstWithCollection.collectionId || "").trim()
+    ? String(collectionId || firstWithCollection.collectionId || "").trim()
     : String(trustedSubjectArtistId || firstWithArtist.artistId || "").trim();
 
   if (!id) return null;
@@ -716,8 +760,8 @@ async function readArtistCovers(artists) {
 
   safeArtists.forEach((artist) => {
     const hit = getLocalArtistCover(artist);
-    if (hit) localHits[artist.id] = hit;
-    else if (hasRecentArtistCoverMiss(artist)) localHits[artist.id] = { _miss: true };
+    if (hit) localHits[artist.id] = { ...hit, _source: "local" };
+    else if (hasRecentArtistCoverMiss(artist)) localHits[artist.id] = { _miss: true, _source: "miss" };
     else missing.push(artist);
   });
 
@@ -741,7 +785,8 @@ async function readArtistCovers(artists) {
     const cover = {
       ...hit,
       coverUrl: hit.coverUrl || hit.avatarUrl || "",
-      avatarUrl: hit.avatarUrl || hit.coverUrl || ""
+      avatarUrl: hit.avatarUrl || hit.coverUrl || "",
+      _source: "cloud"
     };
     cloudHits[artist.id] = cover;
     rememberArtistCover(cover);
@@ -806,6 +851,7 @@ module.exports = {
   cacheAlbumsFromSearch,
   cacheSongsFromSearch,
   getLocalArtistCover,
+  hydrateCoverAssets,
   readArtistCovers,
   readDefaultSongListWithTimeout
 };
