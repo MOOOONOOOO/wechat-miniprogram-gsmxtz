@@ -1,0 +1,180 @@
+.tournament-table-scroll {
+  width: 100%;
+  overflow: hidden;
+  border: 1rpx solid rgba(23,21,18,.2);
+  border-radius: 8rpx;
+  background: #fffdfa;
+}
+
+.tournament-table-shell {
+  box-sizing: border-box;
+}
+
+.tournament-table-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 66rpx;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  color: #171512;
+  border-bottom: 1rpx solid rgba(23,21,18,.35);
+  background: #f4f028;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 25rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tournament-table-columns {
+  display: flex;
+  align-items: flex-start;
+}
+
+.tournament-column {
+  flex: 0 0 230rpx;
+  width: 230rpx;
+  box-sizing: border-box;
+  border-right: 1rpx solid rgba(23,21,18,.32);
+}
+
+.tournament-column:last-child {
+  border-right: 0;
+}
+
+.tournament-column-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68rpx;
+  padding: 0 12rpx;
+  box-sizing: border-box;
+  border-bottom: 1rpx solid rgba(23,21,18,.32);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 21rpx;
+  line-height: 1.2;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tournament-table-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 12rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-bottom: 1rpx solid rgba(23,21,18,.26);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  line-height: 1.25;
+  font-weight: 600;
+  text-align: center;
+}
+
+.tournament-table-cell.champion-path {
+  z-index: 1;
+  color: #124d31;
+  background: #bfe5c9;
+  font-weight: 900;
+}
+
+.tournament-table-cell.compact-cell {
+  flex-direction: row;
+  gap: 8rpx;
+}
+
+.tournament-table-cell.large-cell {
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.table-song-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 4rpx;
+  background: rgba(23,21,18,.1);
+}
+
+.table-song-fallback {
+  color: #fffdfa;
+  background: #171512;
+  font-size: 22rpx;
+  font-weight: 900;
+}
+
+.table-song-name {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.compact-cell .table-song-name {
+  flex: 1;
+  -webkit-line-clamp: 2;
+}
+
+.large-cell .table-song-name {
+  flex: 0 1 auto;
+  text-align: center;
+}
+
+.tournament-table-cell:last-child {
+  border-bottom: 0;
+}
+
+.tournament-table-cell.empty {
+  color: rgba(23,21,18,.3);
+  font-size: 20rpx;
+}
+
+.tournament-column:first-child .tournament-table-cell {
+  justify-content: flex-start;
+  font-size: 20rpx;
+  text-align: left;
+}
+
+.tournament-column:last-child .tournament-table-cell {
+  padding-right: 22rpx;
+  padding-left: 22rpx;
+  font-size: 32rpx;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.column-blue {
+  background: #dfe9ef;
+}
+
+.column-lilac {
+  background: #dfe4f6;
+}
+
+.column-pink {
+  background: #f5dfdc;
+}
+
+.column-yellow {
+  background: #fff0c9;
+}
+
+.column-green {
+  background: #e3efd8;
+}
+
+.column-cyan {
+  background: #d9f1f2;
+}
+
+.column-rose {
+  background: #f4dadd;
+}

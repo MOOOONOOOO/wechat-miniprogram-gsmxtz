@@ -14,10 +14,13 @@ function hydrateChallenge(challenge, options = {}) {
         ? [challenge.topArtist].filter(Boolean)
         : (mode === "color"
             ? (challenge.colors || [])
-            : (mode === "qa" ? (challenge.qaPrompts || []) : (challenge.artists || []))));
+            : (mode === "qa" ? (challenge.qaPrompts || []) : (mode === "tree" ? (challenge.treePrompts || []) : (challenge.artists || [])))));
   app.globalData.draftAlbums = challenge.albums || [];
   app.globalData.draftColors = challenge.colors || [];
   app.globalData.draftQaPrompts = challenge.qaPrompts || [];
+  app.globalData.draftThemeTemplate = mode === "tree" ? "tree" : (app.globalData.draftThemeTemplate || "");
+  app.globalData.draftThemePrompts = mode === "tree" ? (challenge.treePrompts || []) : (app.globalData.draftThemePrompts || []);
+  app.globalData.draftThemeChoices = mode === "tree" ? (challenge.creatorChoices || {}) : (app.globalData.draftThemeChoices || {});
   app.globalData.draftTopArtist = challenge.topArtist || null;
   app.globalData.creatorChoices = challenge.creatorChoices || {};
   app.globalData.creatorTopSongs = challenge.creatorTopSongs || [];
@@ -33,6 +36,9 @@ function hydrateChallenge(challenge, options = {}) {
     app.globalData.draftQaArtists = {};
     app.globalData.currentQaSlotId = "";
     app.globalData.currentQaSlotArtist = null;
+    app.globalData.draftThemeArtists = {};
+    app.globalData.currentThemeSlotId = "";
+    app.globalData.currentThemeSlotArtist = null;
   } else {
     app.globalData.friendChoices = app.globalData.friendChoices || {};
     app.globalData.friendTopSongs = app.globalData.friendTopSongs || [];

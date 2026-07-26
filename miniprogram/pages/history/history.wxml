@@ -34,9 +34,9 @@
       </view>
 
       <view class="record-actions {{item.actionClass}}">
-        <view wx:if="{{item.canView}}" class="mini-button primary-mini" data-type="{{item.type}}" data-challenge-id="{{item.challengeId}}" bindtap="viewRecord">查看结果</view>
+        <view wx:if="{{item.canView}}" class="mini-button primary-mini" data-type="{{item.type}}" data-record-kind="{{item.recordKind}}" data-challenge-id="{{item.challengeId}}" data-tournament-id="{{item.tournamentId}}" bindtap="viewRecord">查看结果</view>
         <view wx:if="{{item.canShare}}" class="mini-button" data-challenge-id="{{item.challengeId}}" bindtap="shareRecord">继续分享</view>
-        <view class="mini-button danger" data-type="{{item.type}}" data-challenge-id="{{item.challengeId}}" bindtap="deleteRecord">删除记录</view>
+        <view class="mini-button danger" data-type="{{item.type}}" data-record-kind="{{item.recordKind}}" data-challenge-id="{{item.challengeId}}" data-tournament-id="{{item.tournamentId}}" bindtap="deleteRecord">删除记录</view>
       </view>
     </view>
   </view>

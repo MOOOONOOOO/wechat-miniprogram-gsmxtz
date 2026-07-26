@@ -74,6 +74,15 @@ function normalizePrompt(prompt = {}, index) {
   };
 }
 
+function normalizeTreePrompt(prompt = {}, index) {
+  const count = Number(prompt.count || 0);
+  return {
+    id: String(prompt.id || `tree-${String(index + 1).padStart(2, "0")}`).trim(),
+    count,
+    part: prompt.part === "trunk" ? "trunk" : "crown"
+  };
+}
+
 function hasCompleteChoices(subjects, choices) {
   return Array.isArray(subjects) && subjects.length === 9 && subjects.every((item) => {
     const song = choices[item.id];
@@ -88,20 +97,67 @@ function countCompleteChoices(subjects, choices) {
   }).length;
 }
 
+function getSongTitleUnits(value) {
+  return Array.from(String(value || "").trim()).reduce((total, char) => {
+    const codePoint = char.codePointAt(0);
+    return total + (codePoint <= 0x7f || (codePoint >= 0xff61 && codePoint <= 0xff9f) ? 0.5 : 1);
+  }, 0);
+}
+
+function matchesSongTitleCount(value, targetCount) {
+  const actualCount = getSongTitleUnits(value);
+  const expectedCount = Number(targetCount || 0);
+  if (expectedCount === 9) return actualCount === 9;
+  if (expectedCount === 10 || expectedCount === 11) {
+    return actualCount >= 9 && actualCount <= 11;
+  }
+  return actualCount === expectedCount;
+}
+
+function getSongKey(song = {}) {
+  const trackId = String(song.trackId || "").trim();
+  if (trackId) return `id:${trackId}`;
+  const text = `${song.artistName || ""}:${song.name || song.trackName || ""}`
+    .trim()
+    .toLowerCase()
+    .replace(/[\s·・.。'’`"“”\-_/\\()（）[\]【】:：,，]+/g, "");
+  return text ? `name:${text}` : "";
+}
+
+function hasValidTreeChoices(prompts, choices) {
+  const keys = [];
+  const valid = (prompts || []).every((prompt) => {
+    const song = (choices || {})[prompt.id];
+    if (!song || !song.trackId || !(song.name || song.trackName)) return false;
+    if (!matchesSongTitleCount(song.name || song.trackName, prompt.count)) return false;
+    const key = getSongKey(song);
+    if (!key || keys.indexOf(key) >= 0) return false;
+    keys.push(key);
+    return true;
+  });
+  return valid && keys.length === (prompts || []).length;
+}
+
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext();
   const rawMode = String(event.mode || "").trim();
   const hasQaPrompts = Array.isArray(event.qaPrompts) && event.qaPrompts.length > 0;
+  const hasTreePrompts = Array.isArray(event.treePrompts) && event.treePrompts.length > 0;
   const qaOnly = event.qaOnly === true;
   const mode = rawMode === "album"
     ? "album"
     : (rawMode === "top9"
         ? "top9"
-        : (rawMode === "color" ? "color" : (rawMode === "qa" || qaOnly || hasQaPrompts ? "qa" : "artist")));
+        : (rawMode === "color"
+            ? "color"
+            : (rawMode === "tree" || hasTreePrompts
+                ? "tree"
+                : (rawMode === "qa" || qaOnly || hasQaPrompts ? "qa" : "artist"))));
   const artists = Array.isArray(event.artists) ? event.artists.slice(0, MAX_TARGET_COUNT) : [];
   const albums = Array.isArray(event.albums) ? event.albums.slice(0, MAX_TARGET_COUNT) : [];
   const colors = Array.isArray(event.colors) ? event.colors.slice(0, 9).map(normalizeColor).filter((item) => item.id && item.name) : [];
   const qaPrompts = Array.isArray(event.qaPrompts) ? event.qaPrompts.slice(0, 9).map(normalizePrompt).filter((item) => item.id && item.prompt) : [];
+  const treePrompts = Array.isArray(event.treePrompts) ? event.treePrompts.slice(0, 14).map(normalizeTreePrompt).filter((item) => item.id && item.count > 0) : [];
   const qaSolo = event.qaSolo === true;
   const topArtist = normalizeTopArtist(event.topArtist || {});
   const creatorChoices = event.creatorChoices || {};
@@ -114,7 +170,9 @@ exports.main = async (event) => {
     ? normalizeTargetCount(event.targetCount, artists.length)
     : (mode === "album"
         ? normalizeTargetCount(event.targetCount, albums.length)
-        : (mode === "top9" ? normalizeTargetCount(event.targetCount, creatorTopSongs.length) : DEFAULT_TARGET_COUNT));
+        : (mode === "top9"
+            ? normalizeTargetCount(event.targetCount, creatorTopSongs.length)
+            : (mode === "tree" ? treePrompts.length : DEFAULT_TARGET_COUNT)));
 
   if (mode === "artist" && (!isValidTargetCount(targetCount) || artists.length !== targetCount)) {
     console.warn("createChallenge rejected as artist", {
@@ -148,6 +206,15 @@ exports.main = async (event) => {
   if (mode === "qa" && qaPrompts.length !== 9) {
     return { ok: false, message: "需要选择 9 个问题" };
   }
+  if (mode === "tree" && treePrompts.length !== 14) {
+    return { ok: false, message: "圣诞树需要 14 个歌名格" };
+  }
+  if (mode === "tree" && countCompleteChoices(treePrompts, creatorChoices) !== treePrompts.length) {
+    return { ok: false, message: `需要填满左边 14 首歌，目前 ${countCompleteChoices(treePrompts, creatorChoices)}/14` };
+  }
+  if (mode === "tree" && !hasValidTreeChoices(treePrompts, creatorChoices)) {
+    return { ok: false, message: "左边歌名字数不符合要求，或选择了重复歌曲" };
+  }
 
   const record = {
     creatorOpenId: wxContext.OPENID,
@@ -157,6 +224,7 @@ exports.main = async (event) => {
     albums,
     colors,
     qaPrompts,
+    treePrompts,
     qaSolo,
     topArtist,
     creatorChoices,

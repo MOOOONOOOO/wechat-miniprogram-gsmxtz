@@ -14,8 +14,28 @@
       bindtap="openTemplate"
     >
       <view class="template-visual">
+        <view wx:if="{{item.id == 'color' || item.id == 'life9'}}" class="color-cover-preview">
+          <view
+            wx:for="{{item.previewCells}}"
+            wx:key="index"
+            class="color-cover-cell color-cover-cell-{{index}}"
+          ></view>
+        </view>
+        <view wx:elif="{{item.id == 'tree'}}" class="tree-cover-preview">
+          <view class="tree-cover-star">✦</view>
+          <view
+            wx:for="{{item.previewRows}}"
+            wx:key="index"
+            wx:for-item="previewRow"
+            class="tree-cover-row {{previewRow.part}}"
+            style="width: {{previewRow.width}}%;"
+          >
+            <view class="tree-cover-bubble mine"></view>
+            <view class="tree-cover-bubble yours"></view>
+          </view>
+        </view>
         <image
-          wx:if="{{item.coverImage}}"
+          wx:elif="{{item.coverImage}}"
           class="template-cover"
           src="{{item.coverImage}}"
           mode="aspectFill"

@@ -16,6 +16,8 @@
     <input value="{{query}}" bindinput="onSongSearch" placeholder="{{searchPlaceholder}}" />
   </view>
 
+  <view wx:if="{{selectionHint}}" class="selection-hint">{{selectionHint}}</view>
+
   <view wx:if="{{loading}}" class="loading">正在准备热门歌曲...</view>
 
   <scroll-view class="song-list" scroll-y enhanced show-scrollbar="{{false}}">
@@ -36,12 +38,12 @@
 
   <view wx:if="{{showEmpty}}" class="loading">{{emptyText}}</view>
 
-  <view class="timeline">
+  <view class="timeline {{progressDots.length > 9 ? 'compact' : ''}}">
     <view wx:for="{{progressDots}}" wx:key="id" class="dot {{item.doneClass}}"></view>
   </view>
 
   <view class="bottom-action nav-actions {{mode === 'top9' || mode === 'lyrics' ? 'top9-actions' : ''}}">
-    <button wx:if="{{mode !== 'top9' && mode !== 'lyrics'}}" class="secondary-button" disabled="{{!canPrev}}" bindtap="prev">上一位</button>
+    <button wx:if="{{mode !== 'top9' && mode !== 'lyrics'}}" class="secondary-button" disabled="{{!canPrev}}" bindtap="prev">返回歌手页</button>
     <button class="primary-button" disabled="{{!canProceed}}" bindtap="next">{{nextLabel}}</button>
   </view>
 

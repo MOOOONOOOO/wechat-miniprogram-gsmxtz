@@ -1,6 +1,7 @@
 const { getThemeTemplate } = require("../../data/themeTemplates");
 const { getMiniProgramCode } = require("../../utils/api");
 const { readCachedProfile, resolveCloudFileUrl } = require("../../utils/profile");
+const { imageShareMethods } = require("../../utils/imageShare");
 const {
   creatorProfileGateData,
   creatorProfileGateMethods,
@@ -322,40 +323,7 @@ Page({
       });
   },
 
-  shareOrSaveImage(filePath) {
-    this.usedImageShareMenu = false;
-    if (wx.showShareImageMenu) {
-      return new Promise((resolve, reject) => {
-        wx.showShareImageMenu({
-          path: filePath,
-          success: () => {
-            this.usedImageShareMenu = true;
-            resolve();
-          },
-          fail: (error) => {
-            const errMsg = String((error && error.errMsg) || "");
-            if (errMsg.indexOf("cancel") >= 0) {
-              this.usedImageShareMenu = true;
-              resolve();
-              return;
-            }
-            reject(error);
-          }
-        });
-      }).catch(() => this.saveImageToAlbum(filePath));
-    }
-    return this.saveImageToAlbum(filePath);
-  },
-
-  saveImageToAlbum(filePath) {
-    return new Promise((resolve, reject) => {
-      wx.saveImageToPhotosAlbum({
-        filePath,
-        success: resolve,
-        fail: reject
-      });
-    });
-  },
+  ...imageShareMethods,
 
   goHome() {
     wx.reLaunch({ url: "/pages/home/home" });

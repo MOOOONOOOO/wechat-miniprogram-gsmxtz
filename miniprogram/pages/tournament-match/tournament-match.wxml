@@ -1,0 +1,69 @@
+<view class="page tournament-match-page">
+  <view wx:if="{{invalid}}" class="panel invalid-state">
+    <view class="serif-title">比赛记录无法恢复</view>
+    <text class="muted">本地记录可能已损坏，请返回首页重新开始。</text>
+    <button class="primary-button" bindtap="goHome">返回首页</button>
+  </view>
+
+  <block wx:else>
+    <view class="panel progress tournament-progress">
+      <view>
+        <text class="label tournament-stage-title">{{stageTitle}}</text>
+        <view class="tournament-stage-copy">{{stageCopy}}</view>
+      </view>
+      <view class="step">{{progressText}}</view>
+    </view>
+
+    <view class="overall-row">
+      <text>{{overallText}}</text>
+      <view class="overall-track"><view style="width: {{progressPercent}}%;"></view></view>
+    </view>
+
+    <scroll-view class="song-list tournament-card-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="tournament-card-grid {{groupMode ? 'four-cards' : 'two-cards'}}">
+        <view
+          wx:for="{{songs}}"
+          wx:key="key"
+          class="panel tournament-song-card {{item.stateClass}}"
+          role="button"
+          data-key="{{item.key}}"
+          bindtap="chooseSong"
+        >
+          <view class="tournament-card-cover">
+            <image wx:if="{{item.cover}}" src="{{item.cover}}" mode="{{groupMode ? 'aspectFit' : 'aspectFill'}}" data-key="{{item.key}}" binderror="onSongCoverError"></image>
+            <view wx:else class="tournament-card-fallback">{{item.fallbackText}}</view>
+            <view class="choice-state">{{item.selectedClass ? "✓ 已选择" : (groupMode ? "选择" : "留下")}}</view>
+          </view>
+          <view class="tournament-card-copy">
+            <view class="tournament-card-title">{{item.displayName}}</view>
+            <view class="tournament-card-meta">{{item.displayAlbum}}</view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view class="bottom-action tournament-actions">
+      <view class="secondary-action-row">
+        <button class="secondary-button" disabled="{{!canUndo || locked}}" bindtap="undoLast">{{undoLabel}}</button>
+      </view>
+      <button wx:if="{{groupMode}}" class="primary-button" disabled="{{!canConfirmGroup || locked}}" bindtap="confirmGroup">留下这 2 首</button>
+      <view wx:else class="muted pair-tip">点击其中一首，即可进入下一组</view>
+    </view>
+
+    <view wx:if="{{roundBreak}}" class="creator-profile-modal-mask">
+      <view class="creator-profile-modal tournament-round-modal">
+        <text class="label">{{roundBreakLabel}}</text>
+        <view class="creator-profile-modal-title">{{roundBreakTitle}}</view>
+        <scroll-view scroll-y class="round-winner-list">
+          <view wx:for="{{roundWinners}}" wx:key="key" class="song-item round-winner-row">
+            <image wx:if="{{item.cover}}" class="song-cover" src="{{item.cover}}" mode="aspectFill" data-key="{{item.key}}" binderror="onWinnerCoverError"></image>
+            <view wx:else class="song-cover song-cover-fallback">{{item.fallbackText}}</view>
+            <view class="song-info"><view class="song-title">{{item.displayName}}</view></view>
+          </view>
+        </scroll-view>
+        <button class="primary-button" bindtap="continueRound">进入{{nextStageLabel}}</button>
+        <button class="secondary-button round-undo" bindtap="undoLast">撤销刚才的选择</button>
+      </view>
+    </view>
+  </block>
+</view>

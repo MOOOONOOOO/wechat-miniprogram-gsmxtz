@@ -5,6 +5,7 @@ const {
   listHistory
 } = require("../../utils/history");
 const { syncCreatorInbox } = require("../../utils/historySync");
+const { deleteTournamentRecord } = require("../../utils/songTournament");
 
 function isCloudFileUrl(url) {
   return String(url || "").indexOf("cloud://") === 0;
@@ -112,7 +113,13 @@ Page({
   },
 
   viewRecord(event) {
-    const { type, challengeId } = event.currentTarget.dataset;
+    const { type, challengeId, recordKind, tournamentId } = event.currentTarget.dataset;
+    if (recordKind === "tournament") {
+      wx.navigateTo({
+        url: `/pages/tournament-result/tournament-result?id=${encodeURIComponent(tournamentId || challengeId)}`
+      });
+      return;
+    }
     if (type === "created") {
       const record = getCreatedChallenge(challengeId);
       if (!record || !record.results || !record.results.length) {
@@ -134,6 +141,10 @@ Page({
       wx.navigateTo({ url: `/pages/theme-qa-board/theme-qa-board?history=participated&challengeId=${challengeId}` });
       return;
     }
+    if (record.mode === "tree") {
+      wx.navigateTo({ url: `/pages/theme-tree/theme-tree?role=friend&restore=1&challengeId=${encodeURIComponent(challengeId)}` });
+      return;
+    }
     wx.navigateTo({ url: `/pages/result/result?history=participated&challengeId=${challengeId}` });
   },
 
@@ -149,10 +160,13 @@ Page({
     const challenge = record.challenge;
     app.globalData.challenge = challenge;
     app.globalData.draftMode = challenge.mode || "artist";
-    app.globalData.draftArtists = (challenge.mode || "artist") === "album" ? [] : ((challenge.mode || "artist") === "color" ? (challenge.colors || []) : ((challenge.mode || "artist") === "qa" ? (challenge.qaPrompts || []) : (challenge.artists || [])));
+    app.globalData.draftArtists = (challenge.mode || "artist") === "album" ? [] : ((challenge.mode || "artist") === "color" ? (challenge.colors || []) : ((challenge.mode || "artist") === "qa" ? (challenge.qaPrompts || []) : ((challenge.mode || "artist") === "tree" ? (challenge.treePrompts || []) : (challenge.artists || []))));
     app.globalData.draftAlbums = challenge.albums || [];
     app.globalData.draftColors = challenge.colors || [];
     app.globalData.draftQaPrompts = challenge.qaPrompts || [];
+    app.globalData.draftThemeTemplate = challenge.mode === "tree" ? "tree" : "";
+    app.globalData.draftThemePrompts = challenge.treePrompts || [];
+    app.globalData.draftThemeChoices = challenge.mode === "tree" ? (challenge.creatorChoices || {}) : {};
     app.globalData.draftQaArtists = {};
     app.globalData.creatorChoices = challenge.creatorChoices || {};
     app.globalData.creatorProfile = challenge.creatorProfile || record.creatorProfile || {};
@@ -160,14 +174,18 @@ Page({
   },
 
   deleteRecord(event) {
-    const { type, challengeId } = event.currentTarget.dataset;
+    const { type, challengeId, recordKind, tournamentId } = event.currentTarget.dataset;
     wx.showModal({
       title: "删除记录",
       content: "删除记录后无法找回。",
       confirmText: "删除",
       success: (res) => {
         if (!res.confirm) return;
-        deleteHistoryRecord(type, challengeId);
+        if (recordKind === "tournament") {
+          deleteTournamentRecord(tournamentId || challengeId);
+        } else {
+          deleteHistoryRecord(type, challengeId);
+        }
         this.render();
       }
     });

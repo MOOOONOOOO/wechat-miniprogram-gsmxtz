@@ -1,5 +1,14 @@
 const { getThemeTemplates } = require("../../data/themeTemplates");
 
+const COLOR_TEMPLATE = {
+  id: "color",
+  name: "颜色推歌挑战",
+  typeText: "双人",
+  description: "按 9 个颜色，各推荐 1 首歌",
+  status: "ready",
+  prompts: []
+};
+
 function readThemeCoverConfig() {
   if (!wx.cloud) return Promise.resolve({});
   return wx.cloud.callFunction({
@@ -40,12 +49,24 @@ function resolveThemeCoverUrls(covers) {
 }
 
 function decorateTemplates(cloudCovers = {}, failedCovers = {}) {
-  return getThemeTemplates().map((item) => {
+  const visibleTemplates = [
+    COLOR_TEMPLATE,
+    ...getThemeTemplates().filter((item) => item.id !== "tree")
+  ];
+  return visibleTemplates.map((item) => {
     const coverImage = failedCovers[item.id] ? "" : (cloudCovers[item.id] || "");
     return {
       ...item,
       coverImage,
       previewCells: Array.from({ length: 9 }).map((_, index) => index + 1),
+      previewRows: item.id === "tree"
+        ? [18, 26, 34, 42, 50, 58, 66, 74, 82, 90, 98].map((width) => ({ width, part: "crown" }))
+          .concat([
+            { width: 30, part: "trunk" },
+            { width: 24, part: "trunk" },
+            { width: 24, part: "trunk" }
+          ])
+        : [],
       readyClass: item.status === "ready" ? "ready" : "soon"
     };
   });
@@ -149,6 +170,32 @@ Page({
 
     if (template.status !== "ready") {
       wx.showToast({ title: "这个模板稍后开放", icon: "none" });
+      return;
+    }
+
+    if (id === "color") {
+      const app = getApp();
+      app.globalData.draftMode = "color";
+      app.globalData.draftColors = [];
+      app.globalData.draftColorArtists = {};
+      app.globalData.currentColorId = "";
+      app.globalData.currentColorArtist = null;
+      app.globalData.creatorChoices = {};
+      app.globalData.friendChoices = {};
+      wx.navigateTo({ url: "/pages/colors/colors?role=creator" });
+      return;
+    }
+
+    if (id === "tree") {
+      const app = getApp();
+      app.globalData.draftMode = "theme";
+      app.globalData.draftThemeTemplate = "tree";
+      app.globalData.draftThemePrompts = template.prompts || [];
+      app.globalData.draftThemeChoices = {};
+      app.globalData.draftThemeArtists = {};
+      app.globalData.currentThemeSlotId = "";
+      app.globalData.currentThemeSlotArtist = null;
+      wx.navigateTo({ url: "/pages/theme-tree/theme-tree" });
       return;
     }
 

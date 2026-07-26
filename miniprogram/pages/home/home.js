@@ -6,6 +6,8 @@ const {
   saveAccountProfile
 } = require("../../utils/profile");
 const { syncCreatorInbox } = require("../../utils/historySync");
+const { clearActiveTournament, getActiveTournament } = require("../../utils/songTournament");
+const { getThemeTemplate } = require("../../data/themeTemplates");
 
 function showPageShareMenu() {
   if (!wx.showShareMenu) return;
@@ -209,6 +211,20 @@ Page({
     wx.navigateTo({ url: "/pages/theme/theme" });
   },
 
+  startTree() {
+    this.saveProfile();
+    const app = getApp();
+    const template = getThemeTemplate("tree") || {};
+    app.globalData.draftMode = "theme";
+    app.globalData.draftThemeTemplate = "tree";
+    app.globalData.draftThemePrompts = template.prompts || [];
+    app.globalData.draftThemeChoices = {};
+    app.globalData.draftThemeArtists = {};
+    app.globalData.currentThemeSlotId = "";
+    app.globalData.currentThemeSlotArtist = null;
+    wx.navigateTo({ url: "/pages/theme-tree/theme-tree" });
+  },
+
   startLyricsShare() {
     this.saveProfile();
     const app = getApp();
@@ -218,6 +234,43 @@ Page({
     app.globalData.lyricsShareSong = null;
     app.globalData.lyricsShareSelectedLyrics = [];
     wx.navigateTo({ url: "/pages/artists/artists?mode=lyrics" });
+  },
+
+  startTournament() {
+    const active = getActiveTournament();
+    if (!active) {
+      this.beginNewTournament();
+      return;
+    }
+    wx.showActionSheet({
+      itemList: ["继续上次决选", "重新开始"],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          const page = active.status === "setup" ? "tournament-setup" : "tournament-match";
+          wx.navigateTo({ url: `/pages/${page}/${page}` });
+          return;
+        }
+        if (res.tapIndex === 1) {
+          wx.showModal({
+            title: "重新开始？",
+            content: "当前未完成的决选进度会被删除，已完成的历史记录不受影响。",
+            confirmText: "重新开始",
+            success: (modalRes) => {
+              if (!modalRes.confirm) return;
+              clearActiveTournament();
+              this.beginNewTournament();
+            }
+          });
+        }
+      }
+    });
+  },
+
+  beginNewTournament() {
+    const app = getApp();
+    app.globalData.draftMode = "songTournament";
+    app.globalData.songTournamentArtist = null;
+    wx.navigateTo({ url: "/pages/artists/artists?mode=songTournament" });
   },
 
   persistProfile() {

@@ -42,6 +42,7 @@ exports.main = async (event) => {
       albums: res.data.albums || [],
       colors: res.data.colors || [],
       qaPrompts: res.data.qaPrompts || [],
+      treePrompts: res.data.treePrompts || [],
       qaSolo: res.data.qaSolo === true,
       topArtist: res.data.topArtist || null,
       creatorChoices: res.data.creatorChoices,

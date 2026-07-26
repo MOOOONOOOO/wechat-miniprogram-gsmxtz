@@ -21,6 +21,7 @@ function modeTitle(mode) {
   if (mode === "top9") return "同担 Top 挑战";
   if (mode === "color") return "颜色推歌挑战";
   if (mode === "qa") return "歌单问答";
+  if (mode === "tree") return "圣诞树推歌";
   return mode === "album" ? "专辑默契挑战" : "歌手默契挑战";
 }
 
@@ -206,15 +207,16 @@ Page({
     }
     const isColorMode = record.mode === "color";
     const isQaMode = record.mode === "qa";
+    const isTreeMode = record.mode === "tree";
     const results = (record.results || []).map((item) => ({
       resultId: item.resultId,
       friendName: (item.friendProfile || {}).nickName || "匿名朋友",
       avatarUrl: isUsableAvatarUrl((item.friendProfile || {}).avatarUrl) ? (item.friendProfile || {}).avatarUrl : "",
       avatarText: ((item.friendProfile || {}).nickName || "友").slice(0, 1),
-      scoreText: (isColorMode || isQaMode) ? "" : `${item.score || 0}%`,
-      matchText: isColorMode ? "颜色推歌结果" : (isQaMode ? "歌单问答结果" : formatMatchText(record, item)),
+      scoreText: (isColorMode || isQaMode || isTreeMode) ? "" : `${item.score || 0}%`,
+      matchText: isColorMode ? "颜色推歌结果" : (isQaMode ? "歌单问答结果" : (isTreeMode ? "圣诞歌名树" : formatMatchText(record, item))),
       timeText: formatTime(item.createdAt),
-      metaText: (isColorMode || isQaMode) ? formatTime(item.createdAt) : `${formatMatchText(record, item)} · ${formatTime(item.createdAt)}`
+      metaText: (isColorMode || isQaMode || isTreeMode) ? formatTime(item.createdAt) : `${formatMatchText(record, item)} · ${formatTime(item.createdAt)}`
     }));
     const scores = (record.results || []).map((item) => Number(item.score) || 0);
     const best = scores.reduce((max, score) => Math.max(max, score), 0);
@@ -224,7 +226,7 @@ Page({
       countText: `${results.length} 位朋友已作答`,
       bestText: `最高 ${best}%`,
       avgText: `平均 ${avg}%`,
-      showStats: !isColorMode && !isQaMode,
+      showStats: !isColorMode && !isQaMode && !isTreeMode,
       results
     }, () => {
       this.resolveAvatarUrls();
@@ -413,6 +415,10 @@ Page({
       wx.navigateTo({ url: `/pages/theme-qa-board/theme-qa-board?history=created&challengeId=${this.data.challengeId}&resultId=${resultId}` });
       return;
     }
+    if ((record || {}).mode === "tree") {
+      wx.navigateTo({ url: `/pages/theme-tree/theme-tree?history=created&challengeId=${encodeURIComponent(this.data.challengeId)}&resultId=${encodeURIComponent(resultId)}` });
+      return;
+    }
     wx.navigateTo({ url: `/pages/result/result?history=created&challengeId=${this.data.challengeId}&resultId=${resultId}&viewer=creator` });
   },
 
@@ -423,10 +429,13 @@ Page({
     const challenge = record.challenge;
     app.globalData.challenge = challenge;
     app.globalData.draftMode = challenge.mode || "artist";
-    app.globalData.draftArtists = (challenge.mode || "artist") === "album" ? [] : ((challenge.mode || "artist") === "color" ? (challenge.colors || []) : ((challenge.mode || "artist") === "qa" ? (challenge.qaPrompts || []) : (challenge.artists || [])));
+    app.globalData.draftArtists = (challenge.mode || "artist") === "album" ? [] : ((challenge.mode || "artist") === "color" ? (challenge.colors || []) : ((challenge.mode || "artist") === "qa" ? (challenge.qaPrompts || []) : ((challenge.mode || "artist") === "tree" ? (challenge.treePrompts || []) : (challenge.artists || []))));
     app.globalData.draftAlbums = challenge.albums || [];
     app.globalData.draftColors = challenge.colors || [];
     app.globalData.draftQaPrompts = challenge.qaPrompts || [];
+    app.globalData.draftThemeTemplate = challenge.mode === "tree" ? "tree" : "";
+    app.globalData.draftThemePrompts = challenge.treePrompts || [];
+    app.globalData.draftThemeChoices = challenge.mode === "tree" ? (challenge.creatorChoices || {}) : {};
     app.globalData.draftQaArtists = {};
     app.globalData.draftTopArtist = challenge.topArtist || null;
     app.globalData.creatorChoices = challenge.creatorChoices || {};

@@ -21,6 +21,25 @@ function getThemeAlbumDoneText() {
     : "完成：组成我的人生九专";
 }
 
+function isTreeThemeMode(mode) {
+  return mode === "theme" && getApp().globalData.draftThemeTemplate === "tree";
+}
+
+function getTreeSlotCount(slotId) {
+  const prompt = (getApp().globalData.draftThemePrompts || []).find((item) => item.id === slotId);
+  return Number((prompt || {}).count || 0);
+}
+
+function getTreeSongCountLabel(targetCount) {
+  const count = Number(targetCount || 0);
+  return count === 10 || count === 11 ? "9、10 或 11 字歌" : `${count} 字歌`;
+}
+
+function getTreeSongCountHint(targetCount) {
+  const count = Number(targetCount || 0);
+  return count === 10 || count === 11 ? "9、10 或 11 个汉字" : `${count} 个汉字`;
+}
+
 function normalizeArtistName(value) {
   const variants = {
     "張": "张",
@@ -167,6 +186,7 @@ Page({
     const isAlbumMode = mode === "album" || mode === "themeAlbum";
     const albumTargetCount = getAlbumTargetCount(mode);
     const topArtist = app.globalData.draftTopArtist;
+    const tournamentArtist = app.globalData.songTournamentArtist;
     const colorId = options.colorId || app.globalData.currentColorId || "";
     const colorArtist = colorId ? ((app.globalData.draftColorArtists || {})[colorId] || app.globalData.currentColorArtist) : null;
     const slotId = options.slotId || (mode === "qa" ? app.globalData.currentQaSlotId : app.globalData.currentThemeSlotId) || "";
@@ -180,7 +200,7 @@ Page({
       challengeId,
       colorId,
       slotId,
-      selected: mode === "top9" && topArtist ? [topArtist] : (mode === "color" && colorArtist ? [colorArtist] : (mode === "theme" && themeArtist ? [themeArtist] : (mode === "qa" && qaArtist ? [qaArtist] : (mode === "lyrics" && lyricsArtist ? [lyricsArtist] : [])))),
+      selected: mode === "songTournament" && tournamentArtist ? [tournamentArtist] : (mode === "top9" && topArtist ? [topArtist] : (mode === "color" && colorArtist ? [colorArtist] : (mode === "theme" && themeArtist ? [themeArtist] : (mode === "qa" && qaArtist ? [qaArtist] : (mode === "lyrics" && lyricsArtist ? [lyricsArtist] : []))))),
       albumCount: (app.globalData.draftAlbums || []).length,
       isAlbumMode,
       albumTargetCount,
@@ -312,7 +332,7 @@ Page({
     const visibleAlbums = showSearchSections ? searchedAlbums.map(decorateItem) : [];
     const visibleArtistResults = showSearchSections ? searchedArtists.map(decorateItem) : [];
 
-    const isSingleArtistMode = this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" || this.data.mode === "lyrics";
+    const isSingleArtistMode = this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" || this.data.mode === "lyrics" || this.data.mode === "songTournament";
     const selectedCount = this.data.isAlbumMode ? this.data.albumCount : selected.length;
     const targetCount = this.data.isAlbumMode
       ? this.data.albumTargetCount
@@ -320,20 +340,25 @@ Page({
     const canNext = this.data.isAlbumMode
       ? this.canUseAlbumCount(this.data.albumCount)
       : (isSingleArtistMode ? selected.length === 1 : isValidTargetCount(selected.length));
+    const treeThemeMode = isTreeThemeMode(this.data.mode);
+    const treeTargetCount = treeThemeMode ? getTreeSlotCount(this.data.slotId) : 0;
     const titleText = this.data.isAlbumMode
       ? "选择几张专辑"
       : (targetCount === 1 ? "选择 1 位歌手" : "选择几位歌手");
     const targetHint = this.data.isAlbumMode
       ? (this.data.mode === "themeAlbum" ? "" : getTargetCountHint(selectedCount, "张"))
-      : (isSingleArtistMode ? "" : getTargetCountHint(selected.length, "位"));
+      : (treeThemeMode
+          ? `下一步请选择一首相当于 ${getTreeSongCountHint(treeTargetCount)}的歌`
+          : (isSingleArtistMode ? "" : getTargetCountHint(selected.length, "位")));
     const nextButtonText = this.data.isAlbumMode
       ? (this.data.mode === "themeAlbum" ? this.data.themeAlbumDoneText : getTargetCountStartText(selectedCount, "张", "专辑"))
-        : (this.data.mode === "top9" ? "下一步：选择 Top 歌曲"
+        : (this.data.mode === "songTournament" ? "下一步：设置决选"
+          : (this.data.mode === "top9" ? "下一步：选择 Top 歌曲"
           : (this.data.mode === "color" ? "下一步：为这个颜色选歌"
             : (this.data.mode === "qa" ? "下一步：为这个问题选歌"
-              : (this.data.mode === "theme" ? "下一步：为这个题目选歌"
+              : (this.data.mode === "theme" ? (treeThemeMode ? `下一步：选择 ${getTreeSongCountLabel(treeTargetCount)}` : "下一步：为这个题目选歌")
                 : (this.data.mode === "lyrics" ? "下一步：选择歌曲"
-                  : getTargetCountStartText(selected.length, "位", "歌手"))))));
+                  : getTargetCountStartText(selected.length, "位", "歌手")))))));
     this.setData({
       visibleArtists,
       visibleAlbums,
@@ -551,6 +576,13 @@ Page({
       return;
     }
 
+    if (this.data.mode === "songTournament") {
+      const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
+      getApp().globalData.songTournamentArtist = selected[0] || null;
+      this.setData({ selected }, () => this.renderArtists());
+      return;
+    }
+
     if (this.data.mode === "color") {
       const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
       this.setData({ selected }, () => this.renderArtists());
@@ -616,6 +648,18 @@ Page({
   },
 
   next() {
+    if (this.data.mode === "songTournament") {
+      if (this.data.selected.length !== 1) {
+        wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
+        return;
+      }
+      const app = getApp();
+      app.globalData.songTournamentArtist = this.data.selected[0];
+      app.globalData.draftMode = "songTournament";
+      wx.navigateTo({ url: "/pages/tournament-setup/tournament-setup" });
+      return;
+    }
+
     if (this.data.mode === "qa") {
       if (this.data.selected.length !== 1) {
         wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
@@ -646,7 +690,7 @@ Page({
         ...(app.globalData.draftThemeArtists || {}),
         [this.data.slotId]: artist
       };
-      wx.redirectTo({ url: `/pages/songs/songs?role=${this.data.role}&mode=theme&slotId=${this.data.slotId}` });
+      wx.redirectTo({ url: `/pages/songs/songs?role=${this.data.role}&mode=theme&slotId=${this.data.slotId}&challengeId=${encodeURIComponent(this.data.challengeId || "")}` });
       return;
     }
 

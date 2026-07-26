@@ -1,0 +1,47 @@
+<view class="page tournament-bracket-page">
+  <view wx:if="{{invalid}}" class="panel bracket-invalid">
+    <view class="serif-title">决选表无法读取</view>
+    <text class="muted">请返回上一页重新打开。</text>
+  </view>
+  <block wx:else>
+    <view class="panel bracket-heading">
+      <text class="label">完整决选表</text>
+      <view class="serif-title">{{artistName}}</view>
+      <view class="muted">{{size}} 首歌曲 · {{progressText}}</view>
+    </view>
+
+    <scroll-view class="tournament-table-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="tournament-table-shell" style="width: {{tableWidth}}rpx;">
+        <view class="tournament-table-title">决战{{artistName}}歌曲之巅</view>
+        <view class="tournament-table-columns">
+          <view wx:for="{{columns}}" wx:key="key" class="tournament-column {{item.colorClass}}">
+            <view class="tournament-column-head">{{item.label}}</view>
+            <view wx:for="{{item.cells}}" wx:for-item="cell" wx:key="key" class="tournament-table-cell {{cell.emptyClass}} {{cell.championClass}} {{cell.layoutClass}}" style="height: {{cell.height}}rpx;">
+              <block wx:if="{{cell.hasSong}}">
+                <image
+                  wx:if="{{cell.cover}}"
+                  class="table-song-cover"
+                  src="{{cell.cover}}"
+                  mode="aspectFill"
+                  lazy-load="{{true}}"
+                  style="width: {{cell.coverSize}}rpx; height: {{cell.coverSize}}rpx;"
+                  data-column-key="{{item.key}}"
+                  data-cell-key="{{cell.key}}"
+                  binderror="onTableCoverError"
+                ></image>
+                <view wx:else class="table-song-cover table-song-fallback" style="width: {{cell.coverSize}}rpx; height: {{cell.coverSize}}rpx;">{{cell.fallbackText}}</view>
+                <text class="table-song-name">{{cell.displayName}}</text>
+              </block>
+              <text wx:else class="table-song-name">{{cell.displayName}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{complete}}" class="panel bracket-champion">
+      <text class="label">最后留下</text>
+      <view>{{championName}}</view>
+    </view>
+  </block>
+</view>

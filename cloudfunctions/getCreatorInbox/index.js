@@ -257,6 +257,7 @@ function makeChallengeRecord(challengeId, data = {}) {
     albums: data.albums || [],
     colors: data.colors || [],
     qaPrompts: data.qaPrompts || [],
+    treePrompts: data.treePrompts || [],
     qaSolo: data.qaSolo === true,
     topArtist: data.topArtist || null,
     creatorChoices: data.creatorChoices || {},
@@ -346,7 +347,7 @@ async function buildEntry(item, cache) {
   const friendProfile = await mergeFriendProfile(item, cache);
   const items = challenge.mode === "album"
     ? challenge.albums
-    : (challenge.mode === "color" ? challenge.colors : (challenge.mode === "qa" ? challenge.qaPrompts : challenge.artists));
+    : (challenge.mode === "color" ? challenge.colors : (challenge.mode === "qa" ? challenge.qaPrompts : (challenge.mode === "tree" ? challenge.treePrompts : challenge.artists)));
   const result = challenge.mode === "top9"
     ? compareTopSongs(challenge.topArtist, challenge.creatorTopSongs, item.friendTopSongs || [])
     : (challenge.mode === "qa" ? compareQaAnswers(items, challenge.creatorChoices, item.friendChoices || {})

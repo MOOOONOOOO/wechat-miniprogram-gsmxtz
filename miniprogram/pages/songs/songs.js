@@ -19,6 +19,11 @@ const {
   isValidTargetCount,
   normalizeTargetCount
 } = require("../../utils/targetCount");
+const {
+  getSongTitleUnits,
+  matchesSongTitleCount
+} = require("../../utils/songTitleLength");
+const { getSongKey } = require("../../utils/songIdentity");
 
 const SONG_LIST_CACHE_VERSION = 2;
 const MIN_LEGACY_DEFAULT_SONGS = 24;
@@ -26,6 +31,16 @@ const MIN_LEGACY_DEFAULT_SONGS = 24;
 function truncateText(text, maxLength = 12) {
   const value = String(text || "");
   return value.length > maxLength ? `${value.slice(0, maxLength)}....` : value;
+}
+
+function getTreeSongCountLabel(targetCount) {
+  const count = Number(targetCount || 0);
+  return count === 10 || count === 11 ? "9、10 或 11 字" : `${count} 字`;
+}
+
+function getTreeSongCountHint(targetCount) {
+  const count = Number(targetCount || 0);
+  return count === 10 || count === 11 ? "9、10 或 11 个汉字" : `${count} 个汉字`;
 }
 
 function cleanTopSong(song, index) {
@@ -78,22 +93,6 @@ function stableLogSignature(payload) {
   return `{${Object.keys(payload).sort().map((key) => `${JSON.stringify(key)}:${stableLogSignature(payload[key])}`).join(",")}}`;
 }
 
-function normalizeSongKeyText(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s·・.。'’`"“”\-_/\\()（）[\]【】:：,，]+/g, "");
-}
-
-function getSongKey(song) {
-  if (!song) return "";
-  const trackId = String(song.trackId || "").trim();
-  if (trackId) return `id:${trackId}`;
-  const artistName = normalizeSongKeyText(song.artistName || "");
-  const songName = normalizeSongKeyText(song.name || song.trackName || "");
-  return artistName || songName ? `name:${artistName}:${songName}` : "";
-}
-
 function normalizeLyricsSong(song = {}) {
   const duration = Number(song.duration || 0) || (song.trackTimeMillis ? Math.round(Number(song.trackTimeMillis) / 1000) : 0);
   return {
@@ -117,6 +116,15 @@ function getChoiceKeyForData(data) {
   if (data.mode === "color") return data.colorId;
   if (data.mode === "theme" || data.mode === "qa") return data.slotId;
   return (data.currentArtist || {}).id;
+}
+
+function isTreeThemeMode(data) {
+  return data.mode === "theme" && getApp().globalData.draftThemeTemplate === "tree";
+}
+
+function getTreeSlotCount(slotId) {
+  const prompt = (getApp().globalData.draftThemePrompts || []).find((item) => item.id === slotId);
+  return Number((prompt || {}).count || 0);
 }
 
 function stableInsertIndex(song, length) {
@@ -163,6 +171,7 @@ Page({
     canPrev: false,
     canProceed: false,
     nextLabel: "下一位",
+    selectionHint: "",
     showEmpty: false,
     emptyText: "没有找到相关歌曲，换个关键词试试。",
     progressDots: []
@@ -219,7 +228,9 @@ Page({
       }
     }
     const choices = mode === "theme"
-      ? (app.globalData.draftThemeChoices || {})
+      ? (app.globalData.draftThemeTemplate === "tree" && role === "friend"
+          ? (app.globalData.friendChoices || {})
+          : (app.globalData.draftThemeChoices || {}))
       : (role === "friend" ? app.globalData.friendChoices : app.globalData.creatorChoices);
     const topSongs = mode === "top9"
       ? (role === "friend" ? (app.globalData.friendTopSongs || []) : (app.globalData.creatorTopSongs || []))
@@ -303,20 +314,28 @@ Page({
       ? topTargetCount
       : getChallengeTargetCount(this.data.mode, getApp(), this.data.artists);
     const isLastSubject = index >= targetCount - 1;
+    const treeThemeMode = isTreeThemeMode(this.data);
+    const treeTargetCount = treeThemeMode ? getTreeSlotCount(this.data.slotId) : 0;
+    const treeSongCountLabel = getTreeSongCountLabel(treeTargetCount);
     this.setData({
       currentIndex: index,
       currentArtist,
-      searchPlaceholder: this.data.mode === "album" ? "搜索这张专辑里的歌曲" : "搜索这位歌手的歌曲",
+      searchPlaceholder: this.data.mode === "album"
+        ? "搜索这张专辑里的歌曲"
+        : (treeThemeMode ? `搜索这位歌手的 ${treeSongCountLabel}歌` : "搜索这位歌手的歌曲"),
+      selectionHint: treeThemeMode ? `请选择一首相当于 ${getTreeSongCountHint(treeTargetCount)}的歌` : "",
       query: "",
       songs: [],
       selectedTrackId: selected ? selected.trackId : "",
       stepText: this.data.mode === "top9" ? this.data.topSongs.length : (this.data.mode === "lyrics" ? (selected ? 1 : 0) : (this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? selectedCount : index + 1)),
       targetCount,
-      canPrev: this.data.mode === "top9" || this.data.mode === "lyrics" ? false : index > 0,
+      canPrev: this.data.mode !== "top9" && this.data.mode !== "lyrics",
       canProceed: this.data.mode === "top9" ? this.canUseTopSongs(this.data.topSongs.length) : Boolean(selected),
-      nextLabel: this.data.mode === "top9" ? getTopNextLabel(this.data.role, this.data.topSongs.length) : (this.data.mode === "lyrics" ? "下一步：选择歌词" : (this.data.mode === "color" ? "回到颜色格" : (this.data.mode === "theme" ? "回到题目格" : (this.data.mode === "qa" ? "回到问答格" : (isLastSubject ? (this.data.role === "friend" ? "查看结果" : "创建挑战") : (this.data.mode === "album" ? "下一张" : "下一位")))))),
+      nextLabel: this.data.mode === "top9" ? getTopNextLabel(this.data.role, this.data.topSongs.length) : (this.data.mode === "lyrics" ? "下一步：选择歌词" : (this.data.mode === "color" ? "回到颜色格" : (this.data.mode === "theme" ? (treeThemeMode ? "回到圣诞树" : "回到题目格") : (this.data.mode === "qa" ? "回到问答格" : (isLastSubject ? (this.data.role === "friend" ? "查看结果" : "创建挑战") : (this.data.mode === "album" ? "下一张" : "下一位")))))),
       showEmpty: false,
-      emptyText: this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? "没有找到这位歌手的歌曲，换个关键词试试。" : "没有找到相关歌曲，换个关键词试试。",
+      emptyText: treeThemeMode
+        ? `这位歌手暂时没有 ${treeSongCountLabel}歌，试试搜索歌名或换一位歌手。`
+        : (this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? "没有找到这位歌手的歌曲，换个关键词试试。" : "没有找到相关歌曲，换个关键词试试。"),
       progressDots: this.data.mode === "lyrics"
         ? buildScaledProgressDots(selected ? 1 : 0, 1)
         : (this.data.mode === "top9"
@@ -329,11 +348,15 @@ Page({
 
   onSongSearch(event) {
     const query = event.detail.value || "";
+    const treeTargetCount = isTreeThemeMode(this.data) ? getTreeSlotCount(this.data.slotId) : 0;
+    const treeSongCountLabel = getTreeSongCountLabel(treeTargetCount);
     this.setData({
       query,
       songs: [],
       showEmpty: false,
-      emptyText: "没有找到相关歌曲，换个关键词试试。"
+      emptyText: treeTargetCount
+        ? `没有找到 ${treeSongCountLabel}歌，换个关键词或歌手试试。`
+        : "没有找到相关歌曲，换个关键词试试。"
     });
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.loadSongs(), 360);
@@ -436,7 +459,11 @@ Page({
       if (song && song.trackId) map[song.trackId] = true;
       return map;
     }, {});
-    const visibleRawSongs = this.mixCreatorChoiceSong(rawSongs || []);
+    let visibleRawSongs = this.mixCreatorChoiceSong(rawSongs || []);
+    if (isTreeThemeMode(this.data)) {
+      const targetCount = getTreeSlotCount(this.data.slotId);
+      visibleRawSongs = visibleRawSongs.filter((song) => matchesSongTitleCount(song.name || song.trackName, targetCount));
+    }
     const songs = visibleRawSongs.map((item) => ({
       ...item,
       selectedClass: this.data.mode === "top9" ? (topSelectedMap[item.trackId] ? "selected" : "") : (item.trackId === selectedTrackId ? "selected" : "")
@@ -449,6 +476,7 @@ Page({
 
   mixCreatorChoiceSong(rawSongs) {
     if (this.data.role !== "friend" || this.data.mode === "top9") return rawSongs;
+    if (isTreeThemeMode(this.data)) return rawSongs;
     const app = getApp();
     const choiceKey = getChoiceKeyForData(this.data);
     const creatorSong = ((app.globalData.creatorChoices || {})[choiceKey]) || null;
@@ -510,6 +538,12 @@ Page({
         ...(app.globalData.draftQaArtists || {}),
         [this.data.slotId]: currentArtist
       };
+    } else if (this.data.mode === "theme") {
+      app.globalData.currentThemeSlotArtist = currentArtist;
+      app.globalData.draftThemeArtists = {
+        ...(app.globalData.draftThemeArtists || {}),
+        [this.data.slotId]: currentArtist
+      };
     } else if (this.data.mode === "lyrics") {
       app.globalData.lyricsShareArtist = currentArtist;
       app.globalData.draftArtists = (app.globalData.draftArtists || []).map(patch);
@@ -521,6 +555,23 @@ Page({
     const trackId = event.currentTarget.dataset.trackId;
     const song = this.data.songs.find((item) => item.trackId === trackId);
     if (!song) return;
+
+    if (isTreeThemeMode(this.data)) {
+      const targetCount = getTreeSlotCount(this.data.slotId);
+      const actualCount = getSongTitleUnits(song.name || song.trackName);
+      if (!matchesSongTitleCount(song.name || song.trackName, targetCount)) {
+        wx.showToast({ title: `这首歌相当于 ${actualCount} 个字`, icon: "none" });
+        return;
+      }
+      const songKey = getSongKey(song);
+      const duplicate = Object.keys(this.data.choices || {}).some((slotId) => (
+        slotId !== this.data.slotId && getSongKey(this.data.choices[slotId]) === songKey
+      ));
+      if (duplicate) {
+        wx.showToast({ title: `${this.data.role === "friend" ? "右边" : "左边"}不能重复选择同一首歌`, icon: "none" });
+        return;
+      }
+    }
 
     if (this.data.mode === "top9") {
       this.toggleTopSong(song);
@@ -552,7 +603,13 @@ Page({
       [this.data.mode === "color" ? this.data.colorId : (this.data.mode === "theme" || this.data.mode === "qa" ? this.data.slotId : this.data.currentArtist.id)]: song
     };
     const app = getApp();
-    if (this.data.mode === "theme") app.globalData.draftThemeChoices = choices;
+    if (this.data.mode === "theme" && isTreeThemeMode(this.data) && this.data.role === "friend") {
+      app.globalData.friendChoices = choices;
+      saveFriendDraft(this.data.challengeId || (app.globalData.challenge || {}).challengeId || "", {
+        friendChoices: choices,
+        friendProfile: app.globalData.friendProfile || {}
+      });
+    } else if (this.data.mode === "theme") app.globalData.draftThemeChoices = choices;
     else if (this.data.role === "friend") {
       app.globalData.friendChoices = choices;
       saveFriendDraft(this.data.challengeId || (app.globalData.challenge || {}).challengeId || "", {
@@ -751,8 +808,26 @@ Page({
   },
 
   prev() {
-    if (this.data.currentIndex === 0) return;
-    this.setCurrent(this.data.currentIndex - 1);
+    if (this.data.mode === "album") {
+      wx.navigateBack();
+      return;
+    }
+
+    const pages = getCurrentPages();
+    const previousPage = pages.length > 1 ? pages[pages.length - 2] : null;
+    if (previousPage && previousPage.route === "pages/artists/artists") {
+      wx.navigateBack();
+      return;
+    }
+
+    const params = [
+      `role=${encodeURIComponent(this.data.role || "creator")}`,
+      `mode=${encodeURIComponent(this.data.mode || "artist")}`
+    ];
+    if (this.data.challengeId) params.push(`challengeId=${encodeURIComponent(this.data.challengeId)}`);
+    if (this.data.slotId) params.push(`slotId=${encodeURIComponent(this.data.slotId)}`);
+    if (this.data.colorId) params.push(`colorId=${encodeURIComponent(this.data.colorId)}`);
+    wx.redirectTo({ url: `/pages/artists/artists?${params.join("&")}` });
   },
 
   next() {

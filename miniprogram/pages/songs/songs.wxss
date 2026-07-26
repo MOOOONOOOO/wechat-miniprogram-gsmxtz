@@ -1,3 +1,5 @@
+@import "../../styles/song-row.wxss";
+
 .page {
   display: flex;
   flex-direction: column;
@@ -216,64 +218,17 @@
   overflow: hidden;
 }
 
-.song-item {
-  display: grid;
-  grid-template-columns: 88rpx minmax(0, 1fr);
-  align-items: center;
-  column-gap: 18rpx;
-  width: 100%;
-  min-width: 0;
-  min-height: 104rpx;
-  margin: 0;
-  padding: 8rpx 0;
-  box-sizing: border-box;
-  color: #22222a;
-  border-radius: 8rpx;
-  background: transparent;
-  border: 0;
-  text-align: left;
-  line-height: 1.2;
-}
-
-.song-item::after {
-  border: 0;
-}
-
-.song-item.selected {
-  background: rgba(61,127,90,.1);
-}
-
-.song-cover {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 6rpx;
-  background: rgba(23,21,18,.08);
-  display: block;
-}
-
-.song-info {
-  min-width: 0;
-}
-
-.song-title {
+.selection-hint {
+  flex: 0 0 auto;
+  margin: -10rpx 0 20rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 10rpx;
+  background: rgba(149,236,105,.22);
+  color: #245b31;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
-  font-size: 31rpx;
-  line-height: 1.28;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.song-meta {
-  margin-top: 6rpx;
-  color: #8c8a90;
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
-  font-size: 24rpx;
-  line-height: 1.28;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 25rpx;
+  line-height: 1.4;
+  font-weight: 800;
 }
 
 .timeline {
@@ -281,9 +236,11 @@
   display: flex;
   justify-content: center;
   gap: 12rpx;
+  width: 100%;
   margin-top: auto;
   padding-top: 18rpx;
-  overflow-x: auto;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .dot {
@@ -291,10 +248,20 @@
   flex: 0 0 auto;
   width: 54rpx;
   height: 54rpx;
+  box-sizing: border-box;
   border: 1rpx solid rgba(23,21,18,.13);
   border-radius: 50%;
   background: rgba(255,255,255,.5);
   overflow: hidden;
+}
+
+.timeline.compact {
+  gap: 8rpx;
+}
+
+.timeline.compact .dot {
+  width: 40rpx;
+  height: 40rpx;
 }
 
 .dot.done {

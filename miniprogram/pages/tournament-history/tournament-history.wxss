@@ -1,0 +1,58 @@
+@import "../../styles/song-row.wxss";
+
+.history-heading {
+  margin-bottom: 28rpx;
+}
+
+.history-heading .serif-title {
+  margin: 10rpx 0 8rpx;
+}
+
+.history-empty {
+  margin-top: 36rpx;
+  padding: 52rpx 20rpx;
+  text-align: center;
+}
+
+.record-list {
+  display: grid;
+  gap: 18rpx;
+}
+
+.record-card {
+  padding-top: 12rpx;
+  padding-bottom: 18rpx;
+}
+
+.record-main {
+  padding: 0;
+}
+
+.record-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fffdfa;
+  background: #171512;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.record-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.record-actions button {
+  width: 100%;
+  min-height: 70rpx;
+  margin: 0;
+  font-size: 23rpx;
+}
+
+.record-actions .delete {
+  width: 112rpx;
+  color: #8f3c37;
+}

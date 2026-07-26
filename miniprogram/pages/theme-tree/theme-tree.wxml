@@ -1,0 +1,89 @@
+<view class="page tree-page {{viewerRole === 'friend' ? 'friend-view' : 'creator-view'}} {{resultMode ? 'result-mode' : ''}}">
+  <view wx:if="{{resultMode && resultCopy}}" class="tree-result-copy">{{resultCopy}}</view>
+  <view class="chat-star {{starClass}}" bindtap="replayGrowth">★</view>
+  <view class="tree-list">
+    <view wx:for="{{rows}}" wx:key="id" class="tree-row {{item.part}} {{item.firstTrunkClass}} {{item.revealClass}}">
+      <view
+        class="song-chip left-bubble {{item.leftClass}}"
+        style="width: {{item.width}}rpx;"
+        data-id="{{item.id}}"
+        data-side="left"
+        catchtap="chooseRow"
+      >
+        <text wx:if="{{item.leftText}}">{{item.leftText}}</text>
+        <text wx:elif="{{item.branchGuide}}" class="tree-branch-guide">{{item.branchGuide}}</text>
+        <text wx:else class="empty-bubble-text">{{item.leftPlaceholder}}</text>
+      </view>
+      <view
+        class="song-chip right-bubble {{item.rightClass}}"
+        style="width: {{item.width}}rpx;"
+        data-id="{{item.id}}"
+        data-side="right"
+        catchtap="chooseRow"
+      >
+        <text wx:if="{{item.rightText}}">{{item.rightText}}</text>
+        <text wx:elif="{{item.rightGuide}}" class="tree-branch-guide">{{item.rightGuide}}</text>
+        <text wx:else class="empty-bubble-text">{{item.rightPlaceholder}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{resultMode}}" class="tree-people {{peopleClass}}">
+    <view class="tree-person left-person">
+      <view class="tree-person-avatar">
+        <image wx:if="{{creatorProfile.avatarUrl}}" src="{{creatorProfile.avatarUrl}}" mode="aspectFill" binderror="onTreeCreatorAvatarError"></image>
+        <text wx:else>{{creatorProfile.initial}}</text>
+      </view>
+      <text class="tree-person-name">{{creatorProfile.nickName}}</text>
+    </view>
+    <view class="tree-person right-person">
+      <view class="tree-person-avatar">
+        <image wx:if="{{friendProfile.avatarUrl}}" src="{{friendProfile.avatarUrl}}" mode="aspectFill" binderror="onTreeFriendAvatarError"></image>
+        <text wx:else>{{friendProfile.initial}}</text>
+      </view>
+      <text class="tree-person-name">{{friendProfile.nickName}}</text>
+    </view>
+  </view>
+
+  <view class="tree-snow-layer {{snowClass}}">
+    <view
+      wx:for="{{snowflakes}}"
+      wx:key="id"
+      class="tree-snowflake {{item.driftClass}}"
+      style="{{item.style}}"
+    ></view>
+  </view>
+
+  <view wx:if="{{started}}" class="tree-action-bar">
+    <button wx:if="{{resultMode}}" class="secondary-button" disabled="{{savingImage || savingVideo}}" bindtap="saveResultImage">{{savingImage ? "生成中" : "保存图片"}}</button>
+    <button wx:if="{{resultMode}}" class="secondary-button" disabled="{{savingImage || savingVideo}}" bindtap="saveResultVideo">{{savingVideo ? "生成中" : "保存视频"}}</button>
+    <button wx:if="{{resultMode && !previewMode}}" class="secondary-button" open-type="share" disabled="{{!shareReady}}">{{shareReady ? "分享结果" : "准备分享中"}}</button>
+    <button wx:if="{{!resultMode}}" class="primary-button" disabled="{{creating}}" bindtap="primaryAction">{{creating ? "处理中" : primaryLabel}}</button>
+  </view>
+
+  <canvas canvas-id="treeResultCanvas" class="tree-result-canvas"></canvas>
+  <canvas canvas-id="treeShareCanvas" class="tree-share-canvas"></canvas>
+
+  <view wx:if="{{showCreatorProfileModal}}" class="creator-profile-modal-mask">
+    <view class="creator-profile-modal">
+      <view class="creator-profile-modal-title">先设置你的资料</view>
+      <view class="creator-profile-modal-copy">用于生成挑战和邀请页里的头像昵称。</view>
+      <button class="creator-modal-avatar" open-type="chooseAvatar" bindchooseavatar="onChooseCreatorAvatar">
+        <image wx:if="{{creatorProfileDraft.avatarUrl}}" src="{{creatorProfileDraft.avatarUrl}}" mode="aspectFill"></image>
+        <text wx:else>头像</text>
+      </button>
+      <input
+        class="creator-modal-input"
+        type="nickname"
+        value="{{creatorProfileDraft.nickName}}"
+        bindinput="onCreatorNicknameInput"
+        placeholder="填写昵称"
+      />
+      <button
+        class="primary-button creator-modal-confirm"
+        disabled="{{!creatorProfileDraft.avatarUrl || !creatorProfileDraft.nickName}}"
+        bindtap="confirmCreatorProfileModal"
+      >{{creatorProfileModalConfirmText}}</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,24 @@
+<view class="page tournament-history-page">
+  <view class="panel history-heading">
+    <text class="label">本机记录</text>
+    <view class="serif-title">我的决选记录</view>
+    <view class="muted">记录只保存在当前设备，不会公开或同步给好友。</view>
+  </view>
+  <view wx:if="{{records.length === 0}}" class="loading history-empty">还没有完成过决选。</view>
+  <view wx:else class="record-list">
+    <view wx:for="{{records}}" wx:key="id" class="panel record-card">
+      <button class="song-item record-main" data-id="{{item.id}}" bindtap="openRecord">
+        <image wx:if="{{item.championCover}}" class="song-cover" src="{{item.championCover}}" mode="aspectFill" data-id="{{item.id}}" binderror="onCoverError"></image>
+        <view wx:else class="song-cover record-fallback">{{item.fallbackText}}</view>
+        <view class="song-info">
+          <view class="song-title">{{item.championName}}</view>
+          <view class="song-meta">{{item.artistName}} · {{item.size}} 首 · {{item.completedAt}}</view>
+        </view>
+      </button>
+      <view class="record-actions">
+        <button class="secondary-button" data-id="{{item.id}}" bindtap="openRecord">打开结果</button>
+        <button class="secondary-button delete" data-id="{{item.id}}" bindtap="deleteRecord">删除</button>
+      </view>
+    </view>
+  </view>
+</view>

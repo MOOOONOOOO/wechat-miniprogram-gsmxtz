@@ -1,4 +1,9 @@
 const HISTORY_KEY = "challengeHistory:v1";
+const {
+  deriveTournament,
+  getSongName,
+  listTournamentHistory
+} = require("./songTournament");
 
 function now() {
   return Date.now();
@@ -73,6 +78,8 @@ function slimSubject(item = {}) {
     name: item.name || item.title || item.prompt || "",
     title: item.title || "",
     prompt: item.prompt || "",
+    count: Number(item.count || 0),
+    part: item.part || "",
     color: item.color || "",
     textColor: item.textColor || "",
     borderColor: item.borderColor || "",
@@ -136,6 +143,7 @@ function slimChallenge(challenge = {}) {
     albums: (challenge.albums || []).map(slimSubject),
     colors: (challenge.colors || []).map(slimSubject),
     qaPrompts: (challenge.qaPrompts || []).map(slimSubject),
+    treePrompts: (challenge.treePrompts || []).map(slimSubject),
     qaSolo: challenge.qaSolo === true,
     topArtist: challenge.topArtist ? slimSubject(challenge.topArtist) : null,
     creatorChoices: slimChoices(challenge.creatorChoices || {}),
@@ -211,6 +219,7 @@ function modeTitle(mode) {
   if (mode === "top9") return "同担 Top 挑战";
   if (mode === "color") return "颜色推歌挑战";
   if (mode === "qa") return "歌单问答";
+  if (mode === "tree") return "圣诞树推歌";
   return mode === "album" ? "专辑默契挑战" : "歌手默契挑战";
 }
 
@@ -231,6 +240,7 @@ function getChallengeItems(challenge) {
   if (mode === "top9") return (challenge || {}).topArtist ? [(challenge || {}).topArtist] : [];
   if (mode === "color") return (challenge || {}).colors || [];
   if (mode === "qa") return (challenge || {}).qaPrompts || [];
+  if (mode === "tree") return (challenge || {}).treePrompts || [];
   return mode === "album" ? ((challenge || {}).albums || []) : ((challenge || {}).artists || []);
 }
 
@@ -426,6 +436,7 @@ function summarizeCreated(record) {
   const results = Array.isArray(record.results) ? record.results : [];
   const isColorMode = record.mode === "color";
   const isQaMode = record.mode === "qa";
+  const isTreeMode = record.mode === "tree";
   const highest = results.reduce((max, item) => Math.max(max, Number(item.score) || 0), 0);
   const latestTime = results[0] ? results[0].createdAt : record.createdAt;
   const creatorProfile = record.creatorProfile || ((record.challenge || {}).creatorProfile) || {};
@@ -441,7 +452,7 @@ function summarizeCreated(record) {
     counterpartName: results.length ? `${results.length} 位朋友已作答` : "待朋友作答",
     avatarText: (creatorProfile.nickName || "我").slice(0, 1),
     avatarUrl: creatorProfile.avatarUrl || "",
-    scoreText: (isColorMode || isQaMode) ? (results.length ? "看结果" : "待作答") : (results.length ? `最高 ${highest}%` : "待作答"),
+    scoreText: (isColorMode || isQaMode || isTreeMode) ? (results.length ? "看结果" : "待作答") : (results.length ? `最高 ${highest}%` : "待作答"),
     timeText: formatTime(latestTime),
     rawTime: normalizeTime(latestTime),
     resultCount: results.length,
@@ -456,6 +467,7 @@ function summarizeParticipated(record) {
   const score = (record.result || {}).score || 0;
   const isColorMode = record.mode === "color";
   const isQaMode = record.mode === "qa";
+  const isTreeMode = record.mode === "tree";
   return {
     id: `participated:${record.challengeId}`,
     type: "participated",
@@ -465,9 +477,38 @@ function summarizeParticipated(record) {
     counterpartName: creatorProfile.nickName || "匿名挑战者",
     avatarText: (creatorProfile.nickName || "友").slice(0, 1),
     avatarUrl: creatorProfile.avatarUrl || "",
-    scoreText: (isColorMode || isQaMode) ? "看结果" : `${score}%`,
+    scoreText: (isColorMode || isQaMode || isTreeMode) ? "看结果" : `${score}%`,
     timeText: formatTime(record.savedAt || record.updatedAt),
     rawTime: normalizeTime(record.savedAt || record.updatedAt),
+    resultCount: 1,
+    canView: true,
+    canShare: false,
+    actionClass: "action-count-2"
+  };
+}
+
+function summarizeTournament(record) {
+  const derived = deriveTournament(record);
+  if (!derived.valid || !derived.complete) return null;
+  const champion = derived.champion || {};
+  const artist = record.artist || {};
+  const completedAt = record.completedAt || record.updatedAt || record.createdAt;
+  const championName = getSongName(champion) || "未命名歌曲";
+  const cover = champion.cover || champion.coverUrl || champion.artworkUrl600 || champion.artworkUrl100 || "";
+  return {
+    id: `tournament:${record.id}`,
+    type: "created",
+    recordKind: "tournament",
+    typeText: "我发起",
+    challengeId: record.id,
+    tournamentId: record.id,
+    title: "决战歌曲之巅",
+    counterpartName: artist.name || artist.artistName || "歌曲决选",
+    avatarText: championName.slice(0, 1) || "音",
+    avatarUrl: cover,
+    scoreText: `冠军《${championName}》`,
+    timeText: formatTime(completedAt),
+    rawTime: normalizeTime(completedAt),
     resultCount: 1,
     canView: true,
     canShare: false,
@@ -479,7 +520,8 @@ function listHistory(filter = "all") {
   const history = readHistory();
   const created = history.created.map(summarizeCreated);
   const participated = history.participated.map(summarizeParticipated);
-  return [...created, ...participated]
+  const tournaments = listTournamentHistory().map(summarizeTournament).filter(Boolean);
+  return [...created, ...participated, ...tournaments]
     .filter((item) => filter === "all" || item.type === filter)
     .sort((a, b) => b.rawTime - a.rawTime);
 }

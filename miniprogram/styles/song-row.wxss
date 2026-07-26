@@ -1,0 +1,59 @@
+.song-item {
+  display: grid;
+  grid-template-columns: 88rpx minmax(0, 1fr);
+  align-items: center;
+  column-gap: 18rpx;
+  width: 100%;
+  min-width: 0;
+  min-height: 104rpx;
+  margin: 0;
+  padding: 8rpx 0;
+  box-sizing: border-box;
+  color: #22222a;
+  border: 0;
+  border-radius: 8rpx;
+  background: transparent;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.song-item::after {
+  border: 0;
+}
+
+.song-item.selected {
+  background: rgba(61,127,90,.1);
+}
+
+.song-cover {
+  display: block;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 6rpx;
+  background: rgba(23,21,18,.08);
+}
+
+.song-info {
+  min-width: 0;
+}
+
+.song-title {
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 31rpx;
+  line-height: 1.28;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-meta {
+  margin-top: 6rpx;
+  overflow: hidden;
+  color: #8c8a90;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 24rpx;
+  line-height: 1.28;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -47,17 +47,24 @@
       </view>
       <text class="mode-arrow">›</text>
     </button>
-    <button class="mode-card" data-mode="color" bindtap="start">
+    <button class="mode-card" bindtap="startTournament">
       <view>
-        <text>颜色推歌挑战</text>
-        <label>按 9 个颜色，各推荐 1 首歌</label>
+        <text>决战歌曲之巅</text>
+        <label>首轮每 4 首留下 2 首，再两两选出最后一首</label>
+      </view>
+      <text class="mode-arrow">›</text>
+    </button>
+    <button class="mode-card tree-mode-card" bindtap="startTree">
+      <view>
+        <text>圣诞树推歌</text>
+        <label>两个人，用歌名一起拼一棵圣诞树</label>
       </view>
       <text class="mode-arrow">›</text>
     </button>
     <button class="mode-card theme-mode-card" bindtap="startTheme">
       <view>
         <text>主题推歌</text>
-        <label>心形专辑挑战、人生九专、歌单问答</label>
+        <label>颜色、心形专辑、人生九专、歌单问答</label>
       </view>
       <text class="mode-arrow">›</text>
     </button>

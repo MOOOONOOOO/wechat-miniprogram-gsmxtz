@@ -449,6 +449,10 @@ function getMiniProgramCode(payload) {
   return call("getMiniProgramCode", typeof payload === "object" ? payload : { challengeId: payload });
 }
 
+function renderTreeVideo(payload) {
+  return call("renderTreeVideo", payload || {});
+}
+
 function publishSharedResult(payload) {
   return call("publishSharedResult", payload);
 }
@@ -477,6 +481,7 @@ module.exports = {
   getCreatorInbox,
   updateChallengeProfile,
   getMiniProgramCode,
+  renderTreeVideo,
   publishSharedResult,
   getSharedResult,
   getLyrics

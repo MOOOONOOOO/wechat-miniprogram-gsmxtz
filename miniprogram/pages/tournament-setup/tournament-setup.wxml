@@ -1,0 +1,77 @@
+<view class="page tournament-setup-page">
+  <view class="panel setup-heading">
+    <text class="label">单人歌曲决选</text>
+    <view class="serif-title">决战歌曲之巅</view>
+    <view class="muted">{{artistName || "选择一位歌手"}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">正在整理这位歌手的歌曲...</view>
+
+  <view wx:elif="{{loadError}}" class="panel error-panel">
+    <view class="section-row"><view class="title">暂时无法开始</view></view>
+    <view class="muted">{{loadError}}</view>
+    <view class="state-actions">
+      <button class="secondary-button" bindtap="changeArtist">更换歌手</button>
+      <button class="primary-button" bindtap="retry">重试</button>
+    </view>
+  </view>
+
+  <block wx:else>
+    <view class="panel size-section">
+      <view class="section-row">
+        <view class="title">选择比赛规模</view>
+        <text class="label">找到 {{sourceCount}} 首</text>
+      </view>
+      <view class="size-grid">
+        <button class="secondary-button size-card {{size === 16 ? 'selected' : ''}}" data-size="16" bindtap="selectSize">
+          <text>16 首</text><label>首轮 4 选 2，留下 8 首</label>
+        </button>
+        <button class="secondary-button size-card {{size === 32 ? 'selected' : ''}}" disabled="{{!canUse32}}" data-size="32" bindtap="selectSize">
+          <text>32 首</text><label>{{canUse32 ? "首轮留下 16 首" : "当前歌曲不足"}}</label>
+        </button>
+      </view>
+    </view>
+
+    <view class="section-row pool-heading">
+      <view class="pool-heading-copy">
+        <view class="title">参赛歌曲</view>
+        <text class="pool-count">已选 {{pool.length}} 首歌曲</text>
+      </view>
+      <view class="pool-heading-actions">
+        <button class="secondary-button compact-button" bindtap="refreshPool">换一批</button>
+        <button class="secondary-button compact-button" bindtap="togglePool">{{poolExpanded ? "收起" : "展开"}}</button>
+      </view>
+    </view>
+
+    <view wx:if="{{!poolExpanded}}" class="panel pool-preview" bindtap="togglePool">
+      <view class="pool-preview-covers">
+        <view wx:for="{{poolPreview}}" wx:key="key" class="pool-preview-cover">
+          <image wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill"></image>
+          <text wx:else>{{item.fallbackText}}</text>
+        </view>
+      </view>
+      <view class="pool-preview-copy">
+        <view>{{pool.length}} 首歌曲已准备好</view>
+        <text>点击展开查看</text>
+      </view>
+      <text class="pool-preview-arrow">›</text>
+    </view>
+
+    <view wx:if="{{poolExpanded}}" class="panel pool-list">
+      <view wx:for="{{pool}}" wx:key="key" class="song-item pool-row">
+        <image wx:if="{{item.cover}}" class="song-cover" src="{{item.cover}}" mode="aspectFill" data-index="{{index}}" binderror="onPoolCoverError"></image>
+        <view wx:else class="song-cover song-cover-fallback">{{item.fallbackText}}</view>
+        <view class="song-info">
+          <view class="song-title">{{item.displayName}}</view>
+          <view class="song-meta">{{item.displayAlbum}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-action setup-actions">
+      <button class="secondary-button" bindtap="goBack">返回</button>
+      <button class="primary-button" disabled="{{confirming || pool.length !== size}}" bindtap="confirmPool">{{confirming ? "正在抽签" : "确认名单并开始"}}</button>
+    </view>
+  </block>
+
+</view>

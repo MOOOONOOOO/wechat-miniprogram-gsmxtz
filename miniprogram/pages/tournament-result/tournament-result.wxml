@@ -1,0 +1,119 @@
+<view class="page tournament-result-page">
+  <view wx:if="{{invalid}}" class="result-invalid">
+    <view class="serif-title">结果记录无法读取</view>
+    <button class="primary-button" bindtap="goHome">返回首页</button>
+  </view>
+
+  <block wx:else>
+    <view class="panel result-poster-shell">
+      <image
+        wx:if="{{posterPreviewUrl}}"
+        class="result-poster-image"
+        src="{{posterPreviewUrl}}"
+        mode="widthFix"
+        aria-label="决战歌曲之巅完整晋级海报"
+      ></image>
+      <view wx:else class="result-poster" aria-label="决战歌曲之巅完整晋级海报">
+        <view class="poster-atmosphere poster-atmosphere-left"></view>
+        <view class="poster-atmosphere poster-atmosphere-right"></view>
+        <view class="poster-grain"></view>
+
+        <view class="poster-header">
+          <view class="poster-title">决 战 歌 曲 之 巅</view>
+          <view class="poster-artist-line">
+            <text>{{artistName}}丨{{size}}首参赛</text>
+          </view>
+        </view>
+
+        <view
+          class="poster-edge {{item.className}}"
+          wx:for="{{posterEdges}}"
+          wx:key="key"
+          style="{{item.style}}"
+        ></view>
+
+        <view
+          class="poster-cover-node {{item.className}}"
+          wx:for="{{posterNodes}}"
+          wx:key="id"
+          style="{{item.style}}"
+        >
+          <view class="poster-node-art" style="{{item.thumbStyle}}">
+            <image
+              wx:if="{{item.cover}}"
+              src="{{item.cover}}"
+              mode="aspectFill"
+              data-cover="{{item.cover}}"
+              binderror="onPosterCoverError"
+            ></image>
+            <view wx:else class="poster-cover-fallback">{{item.fallbackText}}</view>
+          </view>
+          <text class="poster-node-name">{{item.name}}</text>
+        </view>
+
+        <view
+          class="poster-finalist-label"
+          wx:for="{{finalistLabels}}"
+          wx:key="key"
+          style="{{item.style}}"
+        >
+          <text>决赛</text>
+        </view>
+
+        <view class="poster-champion">
+          <view class="poster-champion-label">冠 军</view>
+          <view class="poster-champion-cover">
+            <image
+              wx:if="{{championCover}}"
+              src="{{championCover}}"
+              mode="aspectFill"
+              data-cover="{{championCover}}"
+              binderror="onPosterCoverError"
+            ></image>
+            <view wx:else class="poster-champion-fallback">{{championFallback}}</view>
+          </view>
+          <view class="poster-champion-name">{{championName}}</view>
+          <view class="poster-champion-album">{{championAlbum}}</view>
+        </view>
+
+        <view class="poster-footer {{qrUrl ? '' : 'without-qr'}}">
+          <image
+            wx:if="{{qrUrl}}"
+            class="poster-qr"
+            src="{{qrUrl}}"
+            mode="aspectFit"
+            binderror="onQrError"
+          ></image>
+          <view class="poster-brand">
+            <view>决战歌曲之巅</view>
+            <text>扫码开始你的歌曲决选</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="result-actions">
+      <button class="primary-button tournament-share-button" open-type="share" disabled="{{shareImageLoading}}">
+        {{shareImageLoading ? "正在准备分享图" : "分享给好友"}}
+      </button>
+      <button class="secondary-button save-poster-button" disabled="{{savingPoster}}" bindtap="saveResultPoster">
+        {{savingPoster ? "生成中" : "保存结果海报"}}
+      </button>
+      <view class="result-secondary-actions">
+        <button class="secondary-button" bindtap="replay">再玩一次</button>
+        <button class="secondary-button" bindtap="goHome">返回首页</button>
+      </view>
+    </view>
+  </block>
+
+  <canvas
+    canvas-id="tournamentPosterCanvas"
+    class="poster-canvas"
+    style="width: {{posterCanvasWidth}}px; height: {{posterCanvasHeight}}px;"
+  ></canvas>
+  <canvas
+    canvas-id="tournamentShareCanvas"
+    class="poster-canvas"
+    style="width: {{shareCanvasWidth}}px; height: {{shareCanvasHeight}}px;"
+  ></canvas>
+</view>

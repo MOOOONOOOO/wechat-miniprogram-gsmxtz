@@ -212,6 +212,7 @@ exports.main = async (event) => {
     albums: challengeRes.data.albums || [],
     colors: challengeRes.data.colors || [],
     qaPrompts: challengeRes.data.qaPrompts || [],
+    treePrompts: challengeRes.data.treePrompts || [],
     topArtist: challengeRes.data.topArtist || null,
     creatorChoices: challengeRes.data.creatorChoices || {},
     creatorTopSongs: challengeRes.data.creatorTopSongs || [],
@@ -220,7 +221,7 @@ exports.main = async (event) => {
   };
   const items = challenge.mode === "album"
     ? challenge.albums
-    : (challenge.mode === "color" ? challenge.colors : (challenge.mode === "qa" ? challenge.qaPrompts : challenge.artists));
+    : (challenge.mode === "color" ? challenge.colors : (challenge.mode === "qa" ? challenge.qaPrompts : (challenge.mode === "tree" ? challenge.treePrompts : challenge.artists)));
   const result = challenge.mode === "top9"
     ? compareTopSongs(challenge.topArtist, challenge.creatorTopSongs, submission.friendTopSongs || [])
     : (challenge.mode === "qa" ? compareQaAnswers(items, challenge.creatorChoices, submission.friendChoices || {})

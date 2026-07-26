@@ -1,9 +1,7 @@
+const { getSongName } = require("./songIdentity");
+
 function getSongCover(song) {
   return (song && (song.cover || song.coverUrl || song.artworkUrl600 || song.artworkUrl100 || song.artworkUrl60 || song.picUrl || song.albumCover || song.imageUrl)) || "";
-}
-
-function getSongName(song) {
-  return (song && (song.name || song.trackName)) || "";
 }
 
 function compareByItems(items, creatorChoices, friendChoices) {

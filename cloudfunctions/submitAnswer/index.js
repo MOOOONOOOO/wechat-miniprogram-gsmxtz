@@ -275,6 +275,47 @@ function countCompleteChoices(subjects, choices) {
   }).length;
 }
 
+function getSongTitleUnits(value) {
+  return Array.from(String(value || "").trim()).reduce((total, char) => {
+    const codePoint = char.codePointAt(0);
+    return total + (codePoint <= 0x7f || (codePoint >= 0xff61 && codePoint <= 0xff9f) ? 0.5 : 1);
+  }, 0);
+}
+
+function matchesSongTitleCount(value, targetCount) {
+  const actualCount = getSongTitleUnits(value);
+  const expectedCount = Number(targetCount || 0);
+  if (expectedCount === 9) return actualCount === 9;
+  if (expectedCount === 10 || expectedCount === 11) {
+    return actualCount >= 9 && actualCount <= 11;
+  }
+  return actualCount === expectedCount;
+}
+
+function getSongKey(song = {}) {
+  const trackId = String(song.trackId || "").trim();
+  if (trackId) return `id:${trackId}`;
+  const text = `${song.artistName || ""}:${song.name || song.trackName || ""}`
+    .trim()
+    .toLowerCase()
+    .replace(/[\s·・.。'’`"“”\-_/\\()（）[\]【】:：,，]+/g, "");
+  return text ? `name:${text}` : "";
+}
+
+function hasValidTreeChoices(prompts, choices) {
+  const keys = [];
+  const valid = (prompts || []).every((prompt) => {
+    const song = (choices || {})[prompt.id];
+    if (!song || !song.trackId || !(song.name || song.trackName)) return false;
+    if (!matchesSongTitleCount(song.name || song.trackName, prompt.count)) return false;
+    const key = getSongKey(song);
+    if (!key || keys.indexOf(key) >= 0) return false;
+    keys.push(key);
+    return true;
+  });
+  return valid && keys.length === (prompts || []).length;
+}
+
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext();
   const challengeId = event.challengeId;
@@ -297,12 +338,15 @@ exports.main = async (event) => {
   const mode = challenge.data.mode || "artist";
   const items = mode === "album"
     ? (challenge.data.albums || [])
-    : (mode === "color" ? (challenge.data.colors || []) : (mode === "qa" ? (challenge.data.qaPrompts || []) : (challenge.data.artists || [])));
+    : (mode === "color" ? (challenge.data.colors || []) : (mode === "qa" ? (challenge.data.qaPrompts || []) : (mode === "tree" ? (challenge.data.treePrompts || []) : (challenge.data.artists || []))));
   const targetCount = mode === "top9"
     ? normalizeTargetCount(challenge.data.targetCount, (challenge.data.creatorTopSongs || []).length)
-    : (mode === "artist" || mode === "album" ? normalizeTargetCount(challenge.data.targetCount, items.length) : DEFAULT_TARGET_COUNT);
-  if ((mode === "artist" || mode === "album") && countCompleteChoices(items, friendChoices) !== targetCount) {
+    : (mode === "artist" || mode === "album" ? normalizeTargetCount(challenge.data.targetCount, items.length) : (mode === "tree" ? items.length : DEFAULT_TARGET_COUNT));
+  if ((mode === "artist" || mode === "album" || mode === "tree") && countCompleteChoices(items, friendChoices) !== targetCount) {
     return { ok: false, message: `需要填满 ${targetCount} 个选择` };
+  }
+  if (mode === "tree" && !hasValidTreeChoices(items, friendChoices)) {
+    return { ok: false, message: "右边歌名字数不符合要求，或选择了重复歌曲" };
   }
   if (mode === "top9" && friendTopSongs.length !== targetCount) {
     return { ok: false, message: `需要选择 ${targetCount} 首歌曲` };

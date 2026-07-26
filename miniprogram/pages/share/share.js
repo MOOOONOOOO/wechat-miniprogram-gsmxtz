@@ -22,6 +22,7 @@ function getInviteShareTitle(mode, nickName) {
   if (mode === "top9") return `来做${name}的同担 Top 挑战`;
   if (mode === "color") return `来做${name}的颜色推歌挑战`;
   if (mode === "qa") return `来填${name}的歌单问答`;
+  if (mode === "tree") return `来和${name}一起完成圣诞歌名树`;
   return `来做${name}的音乐默契挑战`;
 }
 
@@ -70,12 +71,29 @@ function pickShareImages(images) {
 
 function collectShareCovers(app, mode) {
   const challenge = app.globalData.challenge || {};
-  const choices = app.globalData.creatorChoices || challenge.creatorChoices || {};
+  const choiceSources = mode === "tree"
+    ? [
+        app.globalData.draftThemeChoices,
+        challenge.creatorChoices,
+        app.globalData.creatorChoices
+      ]
+    : [
+        app.globalData.creatorChoices,
+        challenge.creatorChoices
+      ];
+  const choices = choiceSources.find((items) => (
+    items && Object.keys(items).length
+  )) || {};
   const draftAlbums = app.globalData.draftAlbums || [];
   const draftArtists = app.globalData.draftArtists || [];
   const albums = draftAlbums.length ? draftAlbums : (challenge.albums || []);
   const artists = draftArtists.length ? draftArtists : (challenge.artists || []);
-  const choiceCovers = Object.values(choices).map((item) => item && item.cover);
+  const choiceCovers = Object.values(choices).map((item) => item && (
+    item.cover
+    || item.coverUrl
+    || item.artworkUrl600
+    || item.artworkUrl100
+  ));
   const topSongs = (app.globalData.creatorTopSongs || []).length
     ? app.globalData.creatorTopSongs
     : (challenge.creatorTopSongs || []);
@@ -99,6 +117,10 @@ function collectShareCovers(app, mode) {
     return [];
   }
 
+  if (mode === "tree") {
+    return pickShareImages(choiceCovers);
+  }
+
   return pickShareImages([
     ...choiceCovers,
     ...artists.map((item) => item && (item.avatarUrl || item.cover))
@@ -112,10 +134,13 @@ function hydrateAppFromChallenge(challenge) {
   app.globalData.draftMode = challenge.mode || "artist";
   app.globalData.draftArtists = challenge.mode === "album"
     ? []
-    : (challenge.mode === "top9" ? [challenge.topArtist].filter(Boolean) : (challenge.mode === "color" ? (challenge.colors || []) : (challenge.mode === "qa" ? (challenge.qaPrompts || []) : (challenge.artists || []))));
+    : (challenge.mode === "top9" ? [challenge.topArtist].filter(Boolean) : (challenge.mode === "color" ? (challenge.colors || []) : (challenge.mode === "qa" ? (challenge.qaPrompts || []) : (challenge.mode === "tree" ? (challenge.treePrompts || []) : (challenge.artists || [])))));
   app.globalData.draftAlbums = challenge.albums || [];
   app.globalData.draftColors = challenge.colors || [];
   app.globalData.draftQaPrompts = challenge.qaPrompts || [];
+  app.globalData.draftThemeTemplate = challenge.mode === "tree" ? "tree" : "";
+  app.globalData.draftThemePrompts = challenge.treePrompts || [];
+  app.globalData.draftThemeChoices = challenge.mode === "tree" ? (challenge.creatorChoices || {}) : {};
   app.globalData.draftTopArtist = challenge.topArtist || null;
   app.globalData.creatorChoices = challenge.creatorChoices || {};
   app.globalData.creatorTopSongs = challenge.creatorTopSongs || [];
@@ -127,17 +152,20 @@ function getModeTitle(mode) {
   if (mode === "top9") return "同担 Top 挑战";
   if (mode === "color") return "颜色推歌挑战";
   if (mode === "qa") return "歌单问答";
+  if (mode === "tree") return "圣诞树推歌";
   return "歌手默契挑战";
 }
 
 function getModeMeta(mode, isInviteLanding) {
   if (mode === "qa") return isInviteLanding ? "9 个音乐题目，快来接受挑战" : "9 个问题，来填一张歌单问答";
+  if (mode === "tree") return isInviteLanding ? "补完右边 14 首歌，一起点亮圣诞树" : "";
   return "只有几道题，快来测测看";
 }
 
 function getShareCopy(mode, isInviteLanding) {
   if (mode === "top9") return "";
   if (mode === "qa") return isInviteLanding ? "" : "我做了一张歌单问答表";
+  if (mode === "tree") return isInviteLanding ? "" : "来和我一起种一棵歌名树";
   return pickShareCopy();
 }
 
@@ -146,12 +174,14 @@ function getShareHeadline(mode, isInviteLanding) {
     if (mode === "top9") return "来完成这个同担 Top 挑战。";
     if (mode === "color") return "来完成这个颜色推歌挑战。";
     if (mode === "qa") return "朋友发来了9个音乐题目。";
+    if (mode === "tree") return "来补完这棵圣诞歌名树。";
     if (mode === "album") return "来完成这组专辑选择。";
     return "来完成这组音乐选择题。";
   }
   if (mode === "top9") return "把你的同担 Top 发给朋友。";
   if (mode === "color") return "把你的颜色推歌发给朋友。";
   if (mode === "qa") return "把这张歌单问答发给朋友。";
+  if (mode === "tree") return "";
   return "把这几个音乐选择题发给朋友。";
 }
 
@@ -621,7 +651,11 @@ Page({
     ctx.setFontSize(23);
     ctx.fillText(this.data.modeTitle, 724, 151);
 
-    const labels = this.data.mode === "album" ? ["Album", "Pick", "Music"] : (this.data.mode === "color" ? ["Color", "Cover", "Song"] : (this.data.mode === "qa" ? ["?", "?", "?"] : ["Live", "Album", "Music"]));
+    const labels = this.data.mode === "album"
+      ? ["Album", "Pick", "Music"]
+      : (this.data.mode === "color"
+          ? ["Color", "Cover", "Song"]
+          : (this.data.mode === "qa" ? ["?", "?", "?"] : (this.data.mode === "tree" ? ["★", "Tree", "推歌"] : ["Live", "Album", "Music"])));
     const cards = [
       { x: 686, y: 248, image: coverImages[2], label: labels[0] },
       { x: 608, y: 302, image: coverImages[1], label: labels[1] },
@@ -735,11 +769,13 @@ Page({
     const width = 1000;
     const height = 1000;
     const cardSize = 420;
-    const cards = this.data.mode === "qa"
+    const isSymbolMode = this.data.mode === "qa";
+    const symbolLabels = ["?", "?", "?"];
+    const cards = isSymbolMode
       ? [
-          { x: 222, y: 352, image: null, label: "?", rotate: -7 },
-          { x: 340, y: 282, image: null, label: "?", rotate: 0 },
-          { x: 458, y: 352, image: null, label: "?", rotate: 7 }
+          { x: 222, y: 352, image: null, label: symbolLabels[0], rotate: -7 },
+          { x: 340, y: 282, image: null, label: symbolLabels[1], rotate: 0 },
+          { x: 458, y: 352, image: null, label: symbolLabels[2], rotate: 7 }
         ]
       : [
           { x: 222, y: 352, image: coverImages[0], label: "Music", rotate: -7 },

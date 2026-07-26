@@ -1,7 +1,7 @@
 <view class="page">
   <view class="panel share">
     <text class="label">{{isInviteLanding ? "好友邀请" : "挑战已生成"}}</text>
-    <view class="serif-title">{{headline}}</view>
+    <view wx:if="{{headline}}" class="serif-title">{{headline}}</view>
     <view wx:if="{{isInviteLanding}}" class="muted">{{description}}</view>
     <view wx:else class="muted share-description">
       <text>点击分享给好友的按钮分享给朋友或群聊，也可以点击</text>
@@ -28,7 +28,7 @@
       </view>
       <view class="share-copy">
         <view wx:if="{{shareCopy}}">{{shareCopy}}</view>
-        <text>{{modeMeta}}</text>
+        <text wx:if="{{modeMeta}}">{{modeMeta}}</text>
       </view>
     </view>
   </view>

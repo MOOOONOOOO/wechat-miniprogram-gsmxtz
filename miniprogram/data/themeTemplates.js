@@ -52,6 +52,23 @@ const heartSlots = Array.from({ length: 15 }).map((_, index) => ({
   prompt: "选一首放进心里的歌"
 }));
 
+const treeSongRows = [
+  { id: "tree-01", count: 1 },
+  { id: "tree-02", count: 2 },
+  { id: "tree-03", count: 3 },
+  { id: "tree-04", count: 4 },
+  { id: "tree-05", count: 5 },
+  { id: "tree-06", count: 6 },
+  { id: "tree-07", count: 7 },
+  { id: "tree-08", count: 8 },
+  { id: "tree-09", count: 9 },
+  { id: "tree-10", count: 10 },
+  { id: "tree-11", count: 11 },
+  { id: "tree-12", count: 3, part: "trunk" },
+  { id: "tree-13", count: 2, part: "trunk" },
+  { id: "tree-14", count: 2, part: "trunk" }
+];
+
 const qaPrompts = [
   { id: "qa-classic-01", title: "第一首歌", prompt: "人生第一首记住的歌" },
   { id: "qa-classic-02", title: "入坑曲", prompt: "让你入坑某位歌手的歌" },
@@ -195,6 +212,14 @@ const qaPrompts = [
 
 const templates = [
   {
+    id: "tree",
+    name: "圣诞树推歌",
+    typeText: "双人",
+    description: "按 1—11 字拼一棵歌名树",
+    status: "ready",
+    prompts: treeSongRows
+  },
+  {
     id: "heart",
     name: "心形专辑挑战",
     typeText: "Solo",
@@ -236,5 +261,6 @@ module.exports = {
   getThemeTemplates,
   heartSlots,
   life9Prompts,
-  qaPrompts
+  qaPrompts,
+  treeSongRows
 };
