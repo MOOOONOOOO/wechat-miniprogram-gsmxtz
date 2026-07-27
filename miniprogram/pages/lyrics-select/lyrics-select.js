@@ -140,6 +140,7 @@ function selectedLineItems(lines, selectedKeys) {
 
 Page({
   data: {
+    mode: "lyrics",
     song: null,
     loading: false,
     error: "",
@@ -148,19 +149,33 @@ Page({
     selectedKeys: [],
     selectedLyrics: [],
     selectedCountText: `0/${MAX_SELECTED_LINES}`,
-    canNext: false
+    canNext: false,
+    nextLabel: "生成卡片。"
   },
 
-  onLoad() {
+  onLoad(options = {}) {
     const app = getApp();
-    const song = normalizeSong(app.globalData.lyricsShareSong || {});
+    const mode = options.mode === "rainLetter" ? "rainLetter" : "lyrics";
+    const song = normalizeSong(
+      mode === "rainLetter"
+        ? (app.globalData.rainLetterSong || {})
+        : (app.globalData.lyricsShareSong || {})
+    );
     if (!song.name || !song.artistName) {
       wx.showToast({ title: "先选择歌曲", icon: "none" });
-      wx.redirectTo({ url: "/pages/artists/artists?mode=lyrics" });
+      wx.redirectTo({
+        url: mode === "rainLetter"
+          ? "/pages/artists/artists?mode=rainLetter"
+          : "/pages/artists/artists?mode=lyrics"
+      });
       return;
     }
 
-    this.setData({ song }, () => this.fetchLyrics(song));
+    this.setData({
+      mode,
+      song,
+      nextLabel: mode === "rainLetter" ? "使用选中的歌词" : "生成卡片。"
+    }, () => this.fetchLyrics(song));
   },
 
   fetchLyrics(song) {
@@ -211,7 +226,9 @@ Page({
       this.setData({
         lyricLines: decorateLines(lines, []),
         error: "",
-        debugText: ""
+        debugText: "",
+        canNext: false,
+        nextLabel: this.data.mode === "rainLetter" ? "使用选中的歌词" : "生成卡片。"
       });
     }).catch((error) => {
       if (this.lyricsRequestId !== requestId) return;
@@ -250,7 +267,10 @@ Page({
       lyricLines,
       selectedLyrics,
       selectedCountText: `${selectedLyrics.length}/${MAX_SELECTED_LINES}`,
-      canNext: Boolean(selectedLyrics.length)
+      canNext: Boolean(selectedLyrics.length),
+      nextLabel: this.data.mode === "rainLetter"
+        ? "使用选中的歌词"
+        : "生成卡片。"
     });
   },
 
@@ -265,6 +285,20 @@ Page({
     }
     const app = getApp();
     const lyricLines = this.data.lyricLines || [];
+    if (this.data.mode === "rainLetter") {
+      const selectedLyrics = this.data.selectedLyrics;
+      app.globalData.rainLetterSelectedLyrics = selectedLyrics;
+      app.globalData.rainLetterLyricLines = lyricLines.map((line) => ({
+        key: line.key,
+        index: line.index,
+        text: line.text,
+        time: line.time || 0,
+        timeText: line.timeText || ""
+      }));
+      wx.navigateBack({ delta: 2 });
+      return;
+    }
+
     app.globalData.lyricsShareSelectedLyrics = this.data.selectedLyrics;
     app.globalData.lyricsShareSelectedLyricItems = selectedLineItems(lyricLines, this.data.selectedKeys);
     app.globalData.lyricsShareLyricLines = lyricLines.map((line) => ({

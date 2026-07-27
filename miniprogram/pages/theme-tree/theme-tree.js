@@ -5,7 +5,6 @@ const {
   getRecentSubmission,
   getSharedResult,
   publishSharedResult,
-  renderTreeVideo,
   submitAnswer
 } = require("../../utils/api");
 const { ensureChallenge, needsChallenge } = require("../../utils/challengeState");
@@ -14,6 +13,7 @@ const { getCreatedResult, saveCreatedChallenge, saveParticipatedResult } = requi
 const { getResultSnapshot, saveResultSnapshot } = require("../../utils/resultSnapshot");
 const { imageShareMethods } = require("../../utils/imageShare");
 const { getSongName } = require("../../utils/songIdentity");
+const { canRecordTreeVideo, recordTreeVideo } = require("../../utils/treeVideoRecorder");
 const { ensureStableAccountProfile, readCachedProfile, resolveCloudFileUrl } = require("../../utils/profile");
 const {
   creatorProfileGateData,
@@ -150,15 +150,23 @@ function decorateProfile(profile, fallbackName) {
   };
 }
 
-function fillRoundRect(ctx, x, y, width, height, radius, color) {
+function drawRoundRectPath(ctx, x, y, width, height, radius) {
   const r = Math.min(radius, width / 2, height / 2);
   ctx.beginPath();
   ctx.moveTo(x + r, y);
-  ctx.arcTo(x + width, y, x + width, y + height, r);
-  ctx.arcTo(x + width, y + height, x, y + height, r);
-  ctx.arcTo(x, y + height, x, y, r);
-  ctx.arcTo(x, y, x + width, y, r);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
+}
+
+function fillRoundRect(ctx, x, y, width, height, radius, color) {
+  drawRoundRectPath(ctx, x, y, width, height, radius);
   ctx.setFillStyle(color);
   ctx.fill();
 }
@@ -228,54 +236,6 @@ function drawShareBubble(ctx, x, y, width, text, side, isMine = side === "left")
   ctx.setTextAlign("center");
   ctx.setTextBaseline("middle");
   ctx.fillText(text, x + width / 2, y + height / 2 + 1);
-}
-
-function getSongCover(song) {
-  return (song && (
-    song.cover
-    || song.coverUrl
-    || song.artworkUrl600
-    || song.artworkUrl100
-  )) || "";
-}
-
-function pickRandomTreeCovers(choiceGroups, count = 3) {
-  const seen = {};
-  const covers = (choiceGroups || [])
-    .reduce((songs, choices) => songs.concat(Object.values(choices || {})), [])
-    .map(getSongCover)
-    .filter((cover) => {
-      if (!cover || seen[cover]) return false;
-      seen[cover] = true;
-      return true;
-    });
-  for (let index = covers.length - 1; index > 0; index -= 1) {
-    const pickedIndex = Math.floor(Math.random() * (index + 1));
-    const pickedCover = covers[pickedIndex];
-    covers[pickedIndex] = covers[index];
-    covers[index] = pickedCover;
-  }
-  return covers.slice(0, count);
-}
-
-function drawShareCover(ctx, imagePath, x, y, size) {
-  ctx.save();
-  fillRoundRect(ctx, x - 5, y - 5, size + 10, size + 10, 9, "rgba(255,255,255,.86)");
-  ctx.beginPath();
-  ctx.moveTo(x + 7, y);
-  ctx.arcTo(x + size, y, x + size, y + size, 7);
-  ctx.arcTo(x + size, y + size, x, y + size, 7);
-  ctx.arcTo(x, y + size, x, y, 7);
-  ctx.arcTo(x, y, x + size, y, 7);
-  ctx.closePath();
-  ctx.clip();
-  if (imagePath) {
-    ctx.drawImage(imagePath, x, y, size, size);
-  } else {
-    ctx.setFillStyle("#d9d3ca");
-    ctx.fillRect(x, y, size, size);
-  }
-  ctx.restore();
 }
 
 function readCanvasImage(src) {
@@ -394,6 +354,8 @@ Page({
     creating: false,
     savingImage: false,
     savingVideo: false,
+    videoProgress: 0,
+    videoProgressStage: "正在准备画面",
     snowClass: "",
     snowflakes: buildSnowflakes(),
     creatorProfile: decorateProfile({}, "左边朋友"),
@@ -530,6 +492,7 @@ Page({
 
   onUnload() {
     this.clearGrowthTimers();
+    this.stopVideoProgress();
     this.stopSnowEffect(false);
   },
 
@@ -943,22 +906,11 @@ Page({
   },
 
   drawResultShareImage() {
-    const app = getApp();
-    const challenge = app.globalData.challenge || {};
-    const coverSources = pickRandomTreeCovers([
-      challenge.creatorChoices || app.globalData.draftThemeChoices || {},
-      app.globalData.friendChoices || {}
-    ]);
     return Promise.all([
       readCanvasImage((this.data.creatorProfile || {}).avatarUrl),
       readCanvasImage((this.data.friendProfile || {}).avatarUrl),
-      ...coverSources.map(readCanvasImage),
       this.getHomeQrCodeUrl().then(readCanvasImage)
-    ]).then((images) => new Promise((resolve, reject) => {
-      const creatorAvatar = images[0];
-      const friendAvatar = images[1];
-      const coverImages = images.slice(2, 2 + coverSources.length);
-      const qrImage = images[images.length - 1];
+    ]).then(([creatorAvatar, friendAvatar, qrImage]) => new Promise((resolve, reject) => {
       const ctx = wx.createCanvasContext("treeShareCanvas", this);
       const center = TREE_SHARE_WIDTH / 2;
       const gap = 16;
@@ -984,10 +936,6 @@ Page({
         const friendView = this.data.viewerRole === "friend";
         drawShareBubble(ctx, center - gap / 2 - bubbleWidth, y, bubbleWidth, row.leftText || "", "left", !friendView);
         drawShareBubble(ctx, center + gap / 2, y, bubbleWidth, row.rightText || "", "right", friendView);
-      });
-
-      coverImages.forEach((imagePath, index) => {
-        drawShareCover(ctx, imagePath, 762 + index * 30, 150 + index * 78, 92);
       });
 
       const friendView = this.data.viewerRole === "friend";
@@ -1139,14 +1087,6 @@ Page({
     };
   },
 
-  uploadTreeVideoMaster(filePath) {
-    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    return wx.cloud.uploadFile({
-      cloudPath: `tree-video-sources/${suffix}.jpg`,
-      filePath
-    }).then((res) => res.fileID || "");
-  },
-
   saveVideoFile(filePath) {
     return new Promise((resolve, reject) => {
       wx.saveVideoToPhotosAlbum({
@@ -1157,56 +1097,131 @@ Page({
     });
   },
 
-  cleanupTreeVideo(fileID) {
-    if (!fileID) return Promise.resolve();
-    return renderTreeVideo({ action: "cleanup", fileID }).catch(() => {});
+  setVideoProgress(progress, stage) {
+    const requestedProgress = Math.max(0, Math.min(100, Math.round(Number(progress || 0))));
+    const nextProgress = Math.max(Number(this.data.videoProgress || 0), requestedProgress);
+    const nextData = { videoProgress: nextProgress };
+    if (stage) nextData.videoProgressStage = stage;
+    this.setData(nextData);
   },
 
-  cleanupTreeVideoSource(fileID) {
-    if (!fileID || !wx.cloud || !wx.cloud.deleteFile) return Promise.resolve();
-    return wx.cloud.deleteFile({ fileList: [fileID] }).catch(() => {});
+  startVideoProgress() {
+    this.stopVideoProgress();
+    this.setVideoProgress(6, "正在准备画面");
+  },
+
+  stopVideoProgress(reset = false) {
+    if (reset && this.data) {
+      this.setData({
+        videoProgress: 0,
+        videoProgressStage: "正在准备画面"
+      });
+    }
+  },
+
+  generateTreeVideoLocally(masterPath) {
+    this.setVideoProgress(24, "正在初始化本地录制");
+    return recordTreeVideo({
+      sourcePath: masterPath,
+      width: TREE_VIDEO_WIDTH,
+      height: TREE_VIDEO_HEIGHT,
+      regions: this.getTreeVideoRegions(),
+      frameRate: 12,
+      onProgress: ({ current, total, percent }) => {
+        const progress = 28 + Math.round(Number(percent || 0) * 0.62);
+        this.setVideoProgress(progress, `正在录制 ${current}/${total} 帧`);
+      }
+    }).then((res) => {
+      if (!res.tempFilePath) throw new Error("本地视频导出失败");
+      this.setVideoProgress(93, "正在整理视频");
+      return res.tempFilePath;
+    });
+  },
+
+  getTreeVideoErrorMessage(error) {
+    const message = String((error && (error.message || error.errMsg)) || "");
+    const normalized = message.toLowerCase();
+    if (normalized.includes("cancel")) return "已取消保存";
+    if (normalized.includes("auth") || normalized.includes("permission")) return "请允许访问相册";
+    if (normalized.includes("timeout") || normalized.includes("time_limit")) return "视频生成超时，请稍后重试";
+    if (
+      normalized.includes("mediarecorder")
+      || normalized.includes("media recorder")
+      || normalized.includes("webgl")
+      || normalized.includes("视频帧")
+    ) {
+      return "当前设备本地录制失败";
+    }
+    return message && message.length <= 18 ? message : "视频生成失败，请稍后重试";
   },
 
   saveResultVideo() {
     if (!this.data.resultMode || this.data.savingVideo || this.data.savingImage) return;
-    if (!wx.cloud || !wx.saveVideoToPhotosAlbum) {
+    if (!wx.saveVideoToPhotosAlbum) {
       wx.showToast({ title: "当前微信版本暂不支持保存视频", icon: "none" });
       return;
     }
-    let sourceFileID = "";
-    let videoFileID = "";
+    if (!canRecordTreeVideo()) {
+      let systemInfo = {};
+      try {
+        systemInfo = wx.getSystemInfoSync ? wx.getSystemInfoSync() : {};
+      } catch (infoError) {}
+      wx.showToast({
+        title: systemInfo.platform === "devtools"
+          ? "请使用真机生成视频"
+          : "当前微信版本暂不支持生成视频",
+        icon: "none"
+      });
+      return;
+    }
     this.setData({ savingVideo: true });
-    wx.showLoading({ title: "生成动态视频" });
+    this.startVideoProgress();
+    this.treeVideoGenerationMode = "local-media-recorder";
+    console.info("[theme-tree] saveResultVideo started", {
+      mode: this.treeVideoGenerationMode,
+      width: TREE_VIDEO_WIDTH,
+      height: TREE_VIDEO_HEIGHT,
+      frameRate: 12
+    });
     this.drawResultImage({ videoMaster: true })
-      .then((masterPath) => this.uploadTreeVideoMaster(masterPath))
-      .then((fileID) => {
-        if (!fileID) throw new Error("动画母版上传失败");
-        sourceFileID = fileID;
-        return renderTreeVideo({
-          sourceFileID,
-          regions: this.getTreeVideoRegions(),
-          frameRate: 12
-        });
+      .then((masterPath) => {
+        this.setVideoProgress(18, "画面准备完成");
+        return this.generateTreeVideoLocally(masterPath);
       })
-      .then((res) => {
-        videoFileID = res.fileID || "";
-        if (!videoFileID) throw new Error("视频生成失败");
-        return wx.cloud.downloadFile({ fileID: videoFileID });
+      .then((videoPath) => {
+        this.setVideoProgress(97, "正在保存到相册");
+        return this.saveVideoFile(videoPath);
       })
-      .then((res) => this.saveVideoFile(res.tempFilePath))
-      .then(() => wx.showToast({ title: "视频已保存", icon: "success" }))
+      .then(() => {
+        this.stopVideoProgress();
+        this.setVideoProgress(100, "视频已生成");
+        wx.showToast({ title: "视频已保存", icon: "success" });
+        return new Promise((resolve) => setTimeout(resolve, 360));
+      })
       .catch((error) => {
-        const message = String((error && (error.message || error.errMsg)) || "");
+        let systemInfo = {};
+        try {
+          systemInfo = wx.getSystemInfoSync ? wx.getSystemInfoSync() : {};
+        } catch (infoError) {}
+        console.error("[theme-tree] saveResultVideo failed", {
+          mode: this.treeVideoGenerationMode || "unknown",
+          progress: Number(this.data.videoProgress || 0),
+          stage: this.data.videoProgressStage || "",
+          sdkVersion: systemInfo.SDKVersion || "",
+          platform: systemInfo.platform || "",
+          system: systemInfo.system || "",
+          message: String((error && error.message) || ""),
+          errMsg: String((error && error.errMsg) || ""),
+          stack: String((error && error.stack) || "")
+        }, error);
         wx.showToast({
-          title: message.includes("cancel") ? "已取消保存" : (message || "视频生成失败，请稍后重试"),
+          title: this.getTreeVideoErrorMessage(error),
           icon: "none"
         });
       })
       .finally(() => {
-        wx.hideLoading();
+        this.stopVideoProgress(true);
         this.setData({ savingVideo: false });
-        if (sourceFileID) this.cleanupTreeVideoSource(sourceFileID);
-        if (videoFileID) this.cleanupTreeVideo(videoFileID);
       });
   },
 

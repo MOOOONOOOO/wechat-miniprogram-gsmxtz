@@ -1,0 +1,83 @@
+<view class="mailbox-page">
+  <view class="mailbox-hero">
+    <view class="hero-envelope">
+      <view class="hero-envelope-flap"></view>
+    </view>
+    <view>
+      <view class="hero-title">雨声回响</view>
+      <text class="hero-copy">收下雨声，也记住寄出的回响。</text>
+    </view>
+  </view>
+
+  <view class="mailbox-tabs">
+    <button
+      class="{{activeTab === 'inbox' ? 'active' : ''}}"
+      data-tab="inbox"
+      bindtap="switchTab"
+    >
+      <text>收件箱</text>
+      <text>{{inboxCount}}</text>
+    </button>
+    <button
+      class="{{activeTab === 'outbox' ? 'active' : ''}}"
+      data-tab="outbox"
+      bindtap="switchTab"
+    >
+      <text>发件箱</text>
+      <text>{{outboxCount}}</text>
+    </button>
+  </view>
+
+  <view wx:if="{{cloudLoading}}" class="cloud-syncing">正在同步云端信件…</view>
+
+  <view wx:if="{{activeLetters.length}}" class="letter-list">
+    <view
+      wx:for="{{activeLetters}}"
+      wx:key="id"
+      class="mail-letter {{selectedId === item.id ? 'expanded' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="toggleLetter"
+    >
+      <view class="mail-letter-index">{{index < 9 ? "0" : ""}}{{index + 1}}</view>
+      <view class="mail-letter-heading">
+        <text>{{item.directionLabel}} · {{item.dateText}}</text>
+        <text>{{selectedId === item.id ? "收起" : "展开"}}</text>
+      </view>
+      <view class="mail-letter-title">{{item.title}}</view>
+      <view wx:if="{{selectedId !== item.id}}" class="mail-letter-preview">{{item.preview}}</view>
+
+      <view wx:else class="mail-letter-detail">
+        <text wx:for="{{item.bodyLines}}" wx:key="index">{{item}}</text>
+        <text class="mail-letter-signature">—— {{item.signature}}</text>
+
+        <view wx:if="{{item.song.name}}" class="archive-song-card">
+          <image
+            wx:if="{{item.song.cover}}"
+            src="{{item.song.cover}}"
+            mode="aspectFill"
+          ></image>
+          <view wx:else class="archive-cover-fallback">雨</view>
+          <view class="archive-song-copy">
+            <view class="archive-song-title">{{item.song.name}}</view>
+            <view class="archive-song-meta">
+              <text>{{item.song.artistName}}</text>
+              <text wx:if="{{item.song.album}}"> · {{item.song.album}}</text>
+            </view>
+            <view class="archive-song-lyrics">
+              <text wx:if="{{item.lyricsLoading && !item.song.lyrics.length}}">歌词正在抵达…</text>
+              <text wx:for="{{item.song.lyrics}}" wx:key="index">{{item}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:else class="mailbox-empty">
+    <view class="empty-envelope">
+      <view></view>
+    </view>
+    <view>{{activeTab === "inbox" ? "还没有收进来的信" : "还没有寄出去的信"}}</view>
+    <text>{{activeTab === "inbox" ? "下一封信会在一场雨之后抵达。" : "写下第一封，盒子会替你收好。"}}</text>
+  </view>
+</view>

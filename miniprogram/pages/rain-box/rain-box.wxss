@@ -1,0 +1,793 @@
+page {
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.rain-layer {
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.rain-drop {
+  position: absolute;
+  top: -20vh;
+  left: 0;
+  animation-name: rain-fall-calm;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+}
+
+.rain-left .rain-drop {
+  animation-name: rain-fall-left;
+}
+
+.rain-right .rain-drop {
+  animation-name: rain-fall-right;
+}
+
+.rain-streak {
+  display: block;
+  border-radius: 999px;
+  background: #1e4b7a;
+  transform-origin: top center;
+  pointer-events: none;
+}
+
+@keyframes rain-fall-left {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-46vw, 140vh, 0);
+  }
+}
+
+@keyframes rain-fall-right {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(46vw, 140vh, 0);
+  }
+}
+
+@keyframes rain-fall-calm {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 140vh, 0);
+  }
+}
+
+.rain-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 32rpx 24rpx 120rpx;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.rain-page .mailbox-button,
+button.mailbox-button {
+  position: fixed;
+  z-index: 80;
+  top: 22rpx;
+  right: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 66rpx;
+  width: 66rpx !important;
+  min-width: 66rpx !important;
+  max-width: 66rpx !important;
+  height: 60rpx !important;
+  min-height: 60rpx !important;
+  max-height: 60rpx !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #111111;
+  border: 1rpx solid rgba(17, 17, 17, .18);
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 8rpx 24rpx rgba(28, 53, 66, .08);
+}
+
+.mailbox-button::after {
+  border: 0;
+}
+
+.envelope-icon {
+  position: relative;
+  width: 34rpx;
+  height: 24rpx;
+  box-sizing: border-box;
+  border: 3rpx solid currentColor;
+  border-radius: 2rpx;
+  overflow: hidden;
+}
+
+.envelope-flap {
+  position: absolute;
+  top: -16rpx;
+  left: 3rpx;
+  width: 22rpx;
+  height: 22rpx;
+  border-right: 3rpx solid currentColor;
+  border-bottom: 3rpx solid currentColor;
+  transform: rotate(45deg);
+}
+
+.box-stage {
+  position: relative;
+  flex: none;
+  width: 100vw;
+  height: 56.25vw;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.timeline {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  background: transparent;
+  pointer-events: none;
+  transform: scale(1.02);
+  transform-origin: center center;
+}
+
+.timeline.active {
+  z-index: 2;
+  opacity: 1;
+}
+
+.timeline-entry-poster {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  pointer-events: none;
+  transform: scale(1.02);
+  transform-origin: center center;
+}
+
+.video-switch-mask {
+  position: absolute;
+  z-index: 8;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  background: #ffffff;
+  pointer-events: none;
+  transition: opacity .12s ease-out;
+}
+
+.video-switch-mask.visible {
+  opacity: 1;
+  transition: none;
+}
+
+.open-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 260rpx;
+  min-height: 88rpx;
+  margin: 0;
+  padding: 0 42rpx;
+  color: #ffffff;
+  border: 0;
+  border-radius: 0;
+  background: #111111;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 27rpx;
+  letter-spacing: .16em;
+}
+
+.mode-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14rpx;
+  width: calc(100vw - 48rpx);
+  max-width: 560rpx;
+  margin: 46rpx auto 0;
+}
+
+.mode-actions button {
+  width: 100%;
+}
+
+.write-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88rpx;
+  margin: 0;
+  padding: 0 34rpx;
+  color: #26343a;
+  border: 1rpx solid #26343a;
+  border-radius: 0;
+  background: rgba(255, 255, 255, .88);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 27rpx;
+  letter-spacing: .16em;
+}
+
+.write-button::after {
+  border: 0;
+}
+
+.write-button[disabled] {
+  color: #a4aaac;
+  border-color: #d8dcdd;
+  background: rgba(247, 247, 247, .9);
+}
+
+.open-button::after {
+  border: 0;
+}
+
+.open-button[disabled] {
+  color: #8b8b8b;
+  background: #eeeeee;
+}
+
+.letter-scene {
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 34rpx 26rpx;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, .97);
+  touch-action: pan-y;
+}
+
+.letter-scroll {
+  width: 100%;
+  height: calc(100vh - 68rpx);
+  max-height: 92vh;
+  box-sizing: border-box;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.letter-paper {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  padding: 62rpx 48rpx 48rpx;
+  box-sizing: border-box;
+  color: #252b2d;
+  border: 1rpx solid #d6e0e2;
+  background: #fffefa;
+  box-shadow: 0 30rpx 90rpx rgba(52, 73, 82, .18);
+  animation: letter-arrive .72s cubic-bezier(.17, .84, .25, 1) both;
+}
+
+@keyframes letter-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(40vh) rotate(3deg) scale(.42);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.letter-lines {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  opacity: .48;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 49rpx,
+    rgba(78, 132, 159, .15) 50rpx 51rpx
+  );
+  pointer-events: none;
+}
+
+.letter-header,
+.letter-body,
+.letter-song-card,
+.letter-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.letter-header {
+  padding-bottom: 28rpx;
+  border-bottom: 1rpx solid rgba(57, 75, 81, .2);
+}
+
+.letter-kicker {
+  color: #71838a;
+  font-family: "Times New Roman", serif;
+  font-size: 18rpx;
+  letter-spacing: .14em;
+}
+
+.letter-title {
+  margin-top: 18rpx;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 39rpx;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.letter-date {
+  display: block;
+  margin-top: 16rpx;
+  color: #78868b;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 21rpx;
+}
+
+.letter-body {
+  display: grid;
+  gap: 14rpx;
+  margin: 36rpx 0 0;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 28rpx;
+  line-height: 1.9;
+}
+
+.letter-signature {
+  display: block;
+  margin-top: 12rpx;
+  color: #566368;
+  font-size: 23rpx;
+  line-height: 1.6;
+  text-align: right;
+}
+
+.letter-footer {
+  margin-top: 30rpx;
+}
+
+.letter-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12rpx;
+  margin-top: 0;
+}
+
+.letter-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 76rpx;
+  margin: 0;
+  padding: 0 16rpx;
+  color: #f3f9fb;
+  border: 1rpx solid #111111;
+  border-radius: 0;
+  background: #111111;
+  font-size: 22rpx;
+  line-height: 1;
+  text-align: center;
+}
+
+.letter-actions button::after {
+  border: 0;
+}
+
+.letter-actions .replay-button {
+  color: #46565e;
+  border-color: #111111;
+  background: transparent;
+}
+
+.letter-song-card {
+  display: grid;
+  grid-template-columns: 174rpx minmax(0, 1fr);
+  gap: 22rpx;
+  align-items: center;
+  width: 100%;
+  min-height: 174rpx;
+  margin: 30rpx auto 0;
+  padding: 13rpx;
+  box-sizing: border-box;
+  color: #171512;
+  border: 1rpx solid #cfc9c0;
+  border-radius: 8rpx;
+  background: #fffdfa;
+  line-height: 1.2;
+  text-align: left;
+  box-shadow: 0 8rpx 20rpx rgba(23, 21, 18, .1);
+}
+
+.letter-song-card::after {
+  border: 0;
+}
+
+.letter-song-artwork {
+  position: relative;
+  align-self: center;
+  width: 174rpx;
+  height: 174rpx;
+  overflow: hidden;
+  border-radius: 6rpx;
+  background: rgba(23, 21, 18, .08);
+}
+
+.letter-song-artwork image,
+.letter-song-cover-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.letter-song-cover-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fffdfa;
+  background: #171512;
+  font-family: "Songti SC", "Times New Roman", serif;
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+.letter-song-copy {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  align-content: start;
+  min-width: 0;
+  min-height: 174rpx;
+  padding: 6rpx 4rpx;
+  box-sizing: border-box;
+}
+
+.letter-song-title {
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 29rpx;
+  line-height: 1.2;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.letter-song-artist {
+  overflow: hidden;
+  margin-top: 6rpx;
+  color: #827b70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.letter-song-lyrics {
+  display: grid;
+  gap: 3rpx;
+  align-content: start;
+  margin-top: 10rpx;
+  overflow: hidden;
+  color: #5f6a6e;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 19rpx;
+  line-height: 1.45;
+}
+
+.letter-song-lyrics text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compose-paper {
+  padding-top: 54rpx;
+}
+
+.compose-header {
+  padding-right: 84rpx;
+}
+
+.compose-title-input {
+  width: 100%;
+  height: 76rpx;
+  margin-top: 14rpx;
+  padding: 0;
+  color: #252b2d;
+  border: 0;
+  background: transparent;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 38rpx;
+  line-height: 76rpx;
+  font-weight: 700;
+}
+
+.compose-body {
+  position: relative;
+  z-index: 1;
+  margin-top: 28rpx;
+}
+
+.compose-body-input {
+  width: 100%;
+  height: 300rpx;
+  padding: 8rpx 0;
+  box-sizing: border-box;
+  color: #2d3437;
+  border: 0;
+  background: transparent;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 27rpx;
+  line-height: 1.9;
+}
+
+.compose-body-count {
+  margin-top: -6rpx;
+  color: #97a2a5;
+  font-family: "Times New Roman", serif;
+  font-size: 18rpx;
+  letter-spacing: .06em;
+  text-align: right;
+}
+
+.compose-signature-input {
+  width: 260rpx;
+  height: 64rpx;
+  margin: 12rpx 0 0 auto;
+  padding: 0;
+  color: #566368;
+  border: 0;
+  border-bottom: 1rpx solid rgba(57, 75, 81, .28);
+  background: transparent;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 23rpx;
+  line-height: 64rpx;
+  text-align: right;
+}
+
+.add-song-button {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 64rpx 1fr;
+  gap: 18rpx;
+  align-items: center;
+  width: calc(100% + 96rpx);
+  min-height: 112rpx;
+  margin: 28rpx -48rpx 0;
+  padding: 18rpx 48rpx;
+  box-sizing: border-box;
+  color: #3d7f5a;
+  border: 1rpx dashed rgba(61, 127, 90, .55);
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: rgba(227, 239, 216, .38);
+  text-align: left;
+}
+
+.add-song-button::after {
+  border: 0;
+}
+
+.add-song-button > text {
+  font-family: "Times New Roman", serif;
+  font-size: 52rpx;
+  line-height: 1;
+  text-align: center;
+}
+
+.add-song-button view view {
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.add-song-button view text {
+  display: block;
+  margin-top: 5rpx;
+  color: #7d8c82;
+  font-size: 19rpx;
+}
+
+.compose-song-section {
+  position: relative;
+  z-index: 1;
+  margin-top: 28rpx;
+}
+
+.compose-song-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #71838a;
+  font-size: 19rpx;
+}
+
+.compose-song-label button {
+  min-height: 50rpx;
+  width: auto;
+  min-width: 0;
+  margin: 0 0 0 auto;
+  padding: 0;
+  color: #3d7f5a;
+  border: 0;
+  background: transparent;
+  font-size: 19rpx;
+}
+
+.compose-song-label button::after {
+  border: 0;
+}
+
+.compose-song-card {
+  margin-top: 12rpx;
+}
+
+.compose-actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12rpx;
+  margin-top: 30rpx;
+}
+
+.compose-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 82rpx;
+  min-height: 82rpx;
+  margin: 0;
+  padding: 0 8rpx;
+  box-sizing: border-box;
+  border-radius: 0;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 24rpx;
+  line-height: 1;
+  font-weight: 700;
+  text-align: center;
+}
+
+.compose-actions button::after {
+  border: 0;
+}
+
+.compose-cancel {
+  color: #46565e;
+  border: 1rpx solid #183042;
+  background: transparent;
+}
+
+.compose-send {
+  color: #fffdfa;
+  border: 1rpx solid #183042;
+  background: #183042;
+}
+
+.compose-send[disabled] {
+  color: #a4aaac;
+  border-color: #d8dcdd;
+  background: #f1f1f1;
+}
+
+.compose-preview-button,
+.preview-back-button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 72rpx;
+  margin: 14rpx 0 0;
+  padding: 0;
+  color: #46565e;
+  border: 1rpx solid #183042;
+  border-radius: 0;
+  background: rgba(255, 255, 255, .72);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 21rpx;
+  line-height: 1;
+}
+
+.compose-actions .compose-preview-button {
+  height: 82rpx;
+  min-height: 82rpx;
+  margin: 0;
+  color: #46565e;
+  background: rgba(255, 255, 255, .72);
+  font-size: 24rpx;
+}
+
+.compose-preview-button::after,
+.preview-back-button::after {
+  border: 0;
+}
+
+.compose-preview-button[disabled] {
+  opacity: .32;
+}
+
+.preview-scene {
+  z-index: 1200;
+}
+
+.preview-paper {
+  padding-top: 58rpx;
+}
+
+.preview-letter-body {
+  display: block;
+}
+
+.preview-body-text {
+  display: block;
+  white-space: pre-wrap;
+}
+
+.preview-back-button {
+  color: #ffffff;
+  background: #111111;
+}
+
+.postmark {
+  position: absolute;
+  z-index: 2;
+  top: 90rpx;
+  right: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 102rpx;
+  height: 102rpx;
+  color: rgba(47, 116, 149, .16);
+  border: 3rpx solid currentColor;
+  border-radius: 50%;
+  font-family: "Times New Roman", serif;
+  font-size: 16rpx;
+  letter-spacing: .08em;
+  transform: rotate(12deg);
+}

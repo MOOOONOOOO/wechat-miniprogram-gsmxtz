@@ -45,6 +45,21 @@
     </view>
   </view>
 
+  <view wx:if="{{savingVideo}}" class="tree-video-progress-mask">
+    <view class="tree-video-progress-card">
+      <view class="tree-video-progress-star">★</view>
+      <text class="tree-video-progress-title">生成视频中</text>
+      <text class="tree-video-progress-copy">可能时间比较久，请耐心等待。保存视频如果有问题，可以重试看看。</text>
+      <view class="tree-video-progress-track">
+        <view class="tree-video-progress-fill" style="width: {{videoProgress}}%;"></view>
+      </view>
+      <view class="tree-video-progress-meta">
+        <text>{{videoProgressStage}}</text>
+        <text>{{videoProgress}}%</text>
+      </view>
+    </view>
+  </view>
+
   <view class="tree-snow-layer {{snowClass}}">
     <view
       wx:for="{{snowflakes}}"

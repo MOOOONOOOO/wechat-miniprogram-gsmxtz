@@ -9,7 +9,8 @@
   </view>
 
   <view class="lyric-toolbar">
-    <text>点选歌词行 {{selectedCountText}}</text>
+    <text wx:if="{{mode === 'rainLetter'}}">点选要放进信里的歌词 {{selectedCountText}}</text>
+    <text wx:else>点选歌词行 {{selectedCountText}}</text>
   </view>
 
   <view wx:if="{{loading}}" class="loading">正在查找歌词，请等待...失败了请从上一个页面重新进入</view>
@@ -35,6 +36,6 @@
 
   <view class="bottom-action lyrics-actions">
     <button class="secondary-button" bindtap="chooseAnotherSong">返回选歌</button>
-    <button class="primary-button" disabled="{{!canNext}}" bindtap="continueToShare">生成卡片。</button>
+    <button class="primary-button" disabled="{{!canNext}}" bindtap="continueToShare">{{nextLabel}}</button>
   </view>
 </view>

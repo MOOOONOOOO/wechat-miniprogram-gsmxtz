@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07111c" />
+    <meta
+      name="description"
+      content="雨水一盒：每天写一封信、收一封信，用一首歌和陌生人交换片刻。"
+    />
+    <title>雨水一盒｜接收动画 Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="rain-field" aria-hidden="true">
+      <span style="--x: 6%; --delay: -1.8s; --speed: 1.9s"></span>
+      <span style="--x: 14%; --delay: -0.4s; --speed: 2.6s"></span>
+      <span style="--x: 23%; --delay: -2.2s; --speed: 2.2s"></span>
+      <span style="--x: 35%; --delay: -0.9s; --speed: 1.7s"></span>
+      <span style="--x: 48%; --delay: -1.5s; --speed: 2.8s"></span>
+      <span style="--x: 62%; --delay: -0.1s; --speed: 2.1s"></span>
+      <span style="--x: 73%; --delay: -2.7s; --speed: 2.5s"></span>
+      <span style="--x: 84%; --delay: -1.2s; --speed: 1.8s"></span>
+      <span style="--x: 94%; --delay: -2.1s; --speed: 2.4s"></span>
+    </div>
+
+    <main class="page-shell">
+      <header class="masthead">
+        <a class="brand" href="#" aria-label="雨水一盒首页">
+          <span class="brand-mark" aria-hidden="true">☂</span>
+          <span>雨水一盒</span>
+        </a>
+        <div class="daily-rule" aria-label="每日使用规则">
+          <span>今日</span>
+          <b>可收 1 封</b>
+          <i aria-hidden="true"></i>
+          <b>可写 1 封</b>
+        </div>
+      </header>
+
+      <section class="intro" aria-labelledby="page-title">
+        <div class="eyebrow">
+          <span>RAIN LETTER · 001</span>
+          <span class="weather">多云，偶有心事</span>
+        </div>
+        <h1 id="page-title">
+          把今天的雨声，<br />
+          <em>换成一首歌。</em>
+        </h1>
+        <p>
+          有人把一封信留在盒子里。打开它之前，你不会知道写信的人是谁，也不会知道今晚会听见哪一首歌。
+        </p>
+      </section>
+
+      <section class="experience" data-state="idle" aria-label="收信动画">
+        <div class="stage-wrap">
+          <div class="video-stage" id="videoStage">
+            <div class="video-glow" aria-hidden="true"></div>
+            <video
+              class="timeline is-active"
+              id="timeline1"
+              src="./assets/timeline-1.mp4"
+              muted
+              playsinline
+              preload="auto"
+              aria-label="雨水盒子第一次开启动画"
+            ></video>
+            <video
+              class="timeline"
+              id="timeline2"
+              src="./assets/timeline-2.mp4"
+              muted
+              playsinline
+              preload="auto"
+              loop
+              aria-label="雨水盒子等待开启动画"
+            ></video>
+            <video
+              class="timeline"
+              id="timeline3"
+              src="./assets/timeline-3.mp4"
+              muted
+              playsinline
+              preload="auto"
+              aria-label="雨水盒子取出信封动画"
+            ></video>
+
+            <div class="loading-note" id="loadingNote" role="status">
+              <span></span>
+              正在接住一点雨
+            </div>
+
+            <div class="stage-corners" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div class="stage-caption" aria-live="polite">
+            <span class="state-dot"></span>
+            <span id="stateLabel">一封未拆的信，正在等你</span>
+            <span class="caption-index" id="stateIndex">00 / 03</span>
+          </div>
+        </div>
+
+        <aside class="control-panel">
+          <div class="step-number" aria-hidden="true">01</div>
+          <h2 id="actionTitle">今天的信到了</h2>
+          <p id="actionCopy">盒盖还没有被打开。准备好时，轻轻按一下开启。</p>
+
+          <button class="open-button" id="openButton" type="button">
+            <span class="button-label" id="buttonLabel">开启</span>
+            <span class="button-orbit" aria-hidden="true"></span>
+            <span class="button-arrow" aria-hidden="true">↗</span>
+          </button>
+
+          <button class="skip-button" id="skipButton" type="button">Demo：直接查看信件</button>
+
+          <div class="privacy-note">
+            <span aria-hidden="true">⌁</span>
+            <p>信件随机抵达。读完之前，写信人与收信人都不会知道彼此是谁。</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <section class="letter-scene" id="letterScene" aria-hidden="true">
+      <div class="letter-backdrop"></div>
+      <article class="letter-paper" role="dialog" aria-modal="true" aria-labelledby="letterTitle">
+        <div class="paper-grain" aria-hidden="true"></div>
+        <div class="paper-fold fold-left" aria-hidden="true"></div>
+        <div class="paper-fold fold-right" aria-hidden="true"></div>
+
+        <header class="letter-header">
+          <div>
+            <span class="letter-kicker">一封来自雨里的信</span>
+            <h2 id="letterTitle">给今晚也还没睡的你：</h2>
+          </div>
+          <time datetime="2026-07-26">7月26日，夜</time>
+        </header>
+
+        <div class="letter-body">
+          <p>不知道你打开这封信时，窗外有没有下雨。</p>
+          <p>
+            我最近总在循环一首歌。它没有劝我振作，也没有替我解释什么，只是像有人坐在旁边，陪我把一场雨听完。
+          </p>
+          <p>如果你今天也有一点说不清的疲惫，希望它能替我陪你几分钟。</p>
+        </div>
+
+        <a
+          class="song-ticket"
+          href="https://music.163.com/#/search/m/?s=%E9%9B%A8%E6%B0%B4%E4%B8%80%E7%9B%92%20%E9%99%88%E7%BB%AE%E8%B4%9E&type=1"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span class="record" aria-hidden="true"><i></i></span>
+          <span class="song-meta">
+            <small>这封信附带的歌</small>
+            <strong>雨水一盒</strong>
+            <span>陈绮贞 · 去听这首歌</span>
+          </span>
+          <span class="ticket-arrow" aria-hidden="true">↗</span>
+        </a>
+
+        <footer class="letter-footer">
+          <p>—— 一个也在等雨停的人</p>
+          <div class="letter-actions">
+            <button id="closeLetterButton" type="button">收好这封信</button>
+            <button id="replayButton" class="text-button" type="button">重看动画</button>
+          </div>
+        </footer>
+
+        <div class="postmark" aria-hidden="true">
+          <span>RAIN<br />LETTER</span>
+          <i></i><i></i><i></i>
+        </div>
+      </article>
+    </section>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

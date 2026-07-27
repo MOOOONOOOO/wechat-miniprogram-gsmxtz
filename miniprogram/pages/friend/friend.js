@@ -53,7 +53,7 @@ function getInviteTitle(challenge = {}) {
   if (mode === "top9") return "好友邀请你完成同担 Top 挑战。";
   if (mode === "color") return "好友邀请你完成颜色推歌挑战。";
   if (mode === "qa") return "好友邀请你填写一张歌单问答。";
-  if (mode === "tree") return "好友邀请你一起完成一棵圣诞歌名树。";
+  if (mode === "tree") return "好友邀请你完成圣诞树推歌挑战。";
   return "好友邀请你完成同一组歌手选择。";
 }
 
@@ -64,7 +64,10 @@ function getInviteCopy(challenge = {}) {
   if (mode === "top9") return `选出这位歌手你最爱的 ${targetCount} 首歌，拖动排出你的 Top。`;
   if (mode === "color") return "按 9 个颜色各推荐 1 首歌，提交后看看你们的封面颜色默契。";
   if (mode === "qa") return "回答同一组 9 个音乐问题，只看彼此的答案，不算默契分。";
-  if (mode === "tree") return "你填写右边 14 首歌。完成前看不到对方的答案，最后一起揭晓整棵树。";
+  if (mode === "tree") {
+    const creatorName = String((((challenge || {}).creatorProfile || {}).nickName) || "好友").trim() || "好友";
+    return `填写右边 14 首歌，和${creatorName}一起完成一棵圣诞歌名树。`;
+  }
   return "每位歌手选 1 首最喜欢的歌。提交后会看到你们两个人的音乐品味契合度。";
 }
 

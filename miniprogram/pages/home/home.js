@@ -8,6 +8,7 @@ const {
 const { syncCreatorInbox } = require("../../utils/historySync");
 const { clearActiveTournament, getActiveTournament } = require("../../utils/songTournament");
 const { getThemeTemplate } = require("../../data/themeTemplates");
+const { buildModeCatalog } = require("../../config/modeCatalog");
 
 function showPageShareMenu() {
   if (!wx.showShareMenu) return;
@@ -20,6 +21,8 @@ const HOME_SHARE_TITLE = "来测测你和朋友的音乐默契";
 const POPUP_SEEN_PREFIX = "announcementPopupSeen:";
 const HOME_INBOX_SYNC_AT_KEY = "homeInboxSyncAt:v1";
 const HOME_INBOX_SYNC_INTERVAL_MS = 30 * 60 * 1000;
+const MODE_CONTENT_CACHE_KEY = "modeContentCache:v1";
+const MODE_CONTENT_REFRESH_INTERVAL_MS = 60 * 1000;
 
 function callNoticeHub(data) {
   if (!wx.cloud) return Promise.resolve({});
@@ -83,7 +86,8 @@ Page({
     },
     showProfileModal: false,
     showAnnouncementPopup: false,
-    announcementPopup: null
+    announcementPopup: null,
+    homeModes: buildModeCatalog()
   },
 
   onLoad() {
@@ -101,10 +105,99 @@ Page({
       }, () => this.tryShowAnnouncementPopup());
     });
     this.loadAnnouncementPopup();
+    this.loadModeContent();
   },
 
   onShow() {
     this.syncInboxOccasionally();
+    this.loadModeContent();
+  },
+
+  readCachedModeContent() {
+    try {
+      const cache = wx.getStorageSync(MODE_CONTENT_CACHE_KEY);
+      return cache && Array.isArray(cache.modes) ? cache : null;
+    } catch (error) {
+      return null;
+    }
+  },
+
+  loadModeContent() {
+    const cached = this.readCachedModeContent();
+    if (cached && cached.modes) {
+      this.setData({ homeModes: buildModeCatalog(cached.modes) });
+    }
+
+    const now = Date.now();
+    if (
+      this.modeContentRequest
+      || (
+        this.modeContentFetchedAt
+        && now - this.modeContentFetchedAt < MODE_CONTENT_REFRESH_INTERVAL_MS
+      )
+    ) {
+      return this.modeContentRequest || Promise.resolve();
+    }
+    if (!wx.cloud) return Promise.resolve();
+
+    this.modeContentFetchedAt = now;
+    this.modeContentRequest = wx.cloud.callFunction({
+      name: "modeCatalog",
+      data: {}
+    }).then((res) => {
+      const result = (res && res.result) || {};
+      const modes = Array.isArray(result.modes) ? result.modes : [];
+      if (!modes.length) return;
+      this.setData({ homeModes: buildModeCatalog(modes) });
+      try {
+        wx.setStorageSync(MODE_CONTENT_CACHE_KEY, {
+          modes,
+          updatedAt: Date.now()
+        });
+      } catch (error) {}
+    }).catch((error) => {
+      console.warn("load mode content failed", error);
+    }).finally(() => {
+      this.modeContentRequest = null;
+    });
+    return this.modeContentRequest;
+  },
+
+  openMode(event) {
+    const modeKey = String(
+      (event && event.currentTarget && event.currentTarget.dataset.modeKey) || ""
+    );
+    if (modeKey === "artist" || modeKey === "album" || modeKey === "top9") {
+      this.start({
+        currentTarget: {
+          dataset: { mode: modeKey }
+        }
+      });
+      return;
+    }
+    if (modeKey === "songTournament") {
+      this.startTournament();
+      return;
+    }
+    if (modeKey === "introQuiz") {
+      this.startIntroQuiz();
+      return;
+    }
+    if (modeKey === "tree") {
+      this.startTree();
+      return;
+    }
+    if (modeKey === "theme") {
+      this.startTheme();
+      return;
+    }
+    if (modeKey === "rainBox") {
+      this.startRainBox();
+      return;
+    }
+    if (modeKey === "lyrics") {
+      this.startLyricsShare();
+    }
   },
 
   syncInboxOccasionally() {
@@ -223,6 +316,19 @@ Page({
     app.globalData.currentThemeSlotId = "";
     app.globalData.currentThemeSlotArtist = null;
     wx.navigateTo({ url: "/pages/theme-tree/theme-tree" });
+  },
+
+  startRainBox() {
+    this.saveProfile();
+    wx.navigateTo({ url: "/pages/rain-box/rain-box" });
+  },
+
+  startIntroQuiz() {
+    this.saveProfile();
+    const app = getApp();
+    app.globalData.draftMode = "introQuiz";
+    app.globalData.introQuizArtist = null;
+    wx.navigateTo({ url: "/pages/artists/artists?mode=introQuiz" });
   },
 
   startLyricsShare() {

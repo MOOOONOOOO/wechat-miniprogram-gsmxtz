@@ -7,10 +7,11 @@ const {
   selectGroupWinners,
   selectWinner
 } = require("./utils/songTournament");
+const { prepareRainBoxMedia } = require("./utils/rainBoxMedia");
 
 App({
   globalData: {
-    envId: "",
+    envId: "cloud1-d7g2ztvs63d2800d4",
     user: null,
     draftMode: "artist",
     draftArtists: [],
@@ -31,6 +32,7 @@ App({
     currentColorArtist: null,
     draftTopArtist: null,
     songTournamentArtist: null,
+    introQuizArtist: null,
     creatorChoices: {},
     creatorTopSongs: [],
     creatorProfile: null,
@@ -39,7 +41,15 @@ App({
     friendChoices: {},
     friendTopSongs: [],
     treeMockCovers: [],
-    lastResult: null
+    lastResult: null,
+    rainBoxMediaStatus: "idle",
+    rainBoxMediaProgress: 0,
+    rainBoxMediaSources: null,
+    rainBoxMediaError: null,
+    rainLetterArtist: null,
+    rainLetterSong: null,
+    rainLetterSelectedLyrics: [],
+    rainLetterLyricLines: []
   },
 
   onLaunch() {
@@ -48,6 +58,36 @@ App({
       if (this.globalData.envId) cloudOptions.env = this.globalData.envId;
       wx.cloud.init(cloudOptions);
     }
+    this.prefetchRainBoxMedia().catch(() => {});
+  },
+
+  prefetchRainBoxMedia(force = false) {
+    if (this.rainBoxMediaPromise && !force) return this.rainBoxMediaPromise;
+
+    this.globalData.rainBoxMediaStatus = "loading";
+    this.globalData.rainBoxMediaProgress = 0;
+    this.globalData.rainBoxMediaError = null;
+
+    const request = prepareRainBoxMedia({
+      onProgress: ({ percent }) => {
+        this.globalData.rainBoxMediaProgress = Math.max(
+          0,
+          Math.min(100, Number(percent) || 0)
+        );
+      }
+    }).then((sources) => {
+      this.globalData.rainBoxMediaStatus = "ready";
+      this.globalData.rainBoxMediaProgress = 100;
+      this.globalData.rainBoxMediaSources = sources;
+      return sources;
+    }).catch((error) => {
+      this.globalData.rainBoxMediaStatus = "error";
+      this.globalData.rainBoxMediaError = error;
+      throw error;
+    });
+
+    this.rainBoxMediaPromise = request;
+    return request;
   },
 
   openTournamentMock(size = 16) {

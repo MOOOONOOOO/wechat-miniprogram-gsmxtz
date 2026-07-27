@@ -22,7 +22,7 @@ function getInviteShareTitle(mode, nickName) {
   if (mode === "top9") return `来做${name}的同担 Top 挑战`;
   if (mode === "color") return `来做${name}的颜色推歌挑战`;
   if (mode === "qa") return `来填${name}的歌单问答`;
-  if (mode === "tree") return `来和${name}一起完成圣诞歌名树`;
+  if (mode === "tree") return `来做${name}的圣诞树挑战`;
   return `来做${name}的音乐默契挑战`;
 }
 

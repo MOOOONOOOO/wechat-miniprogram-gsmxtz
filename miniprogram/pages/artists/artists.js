@@ -187,12 +187,14 @@ Page({
     const albumTargetCount = getAlbumTargetCount(mode);
     const topArtist = app.globalData.draftTopArtist;
     const tournamentArtist = app.globalData.songTournamentArtist;
+    const introQuizArtist = app.globalData.introQuizArtist;
     const colorId = options.colorId || app.globalData.currentColorId || "";
     const colorArtist = colorId ? ((app.globalData.draftColorArtists || {})[colorId] || app.globalData.currentColorArtist) : null;
     const slotId = options.slotId || (mode === "qa" ? app.globalData.currentQaSlotId : app.globalData.currentThemeSlotId) || "";
     const themeArtist = slotId ? ((app.globalData.draftThemeArtists || {})[slotId] || app.globalData.currentThemeSlotArtist) : null;
     const qaArtist = slotId ? ((app.globalData.draftQaArtists || {})[slotId] || app.globalData.currentQaSlotArtist) : null;
     const lyricsArtist = mode === "lyrics" ? app.globalData.lyricsShareArtist : null;
+    const rainLetterArtist = mode === "rainLetter" ? app.globalData.rainLetterArtist : null;
     const letters = this.buildLetters(this.data.localArtists);
     this.setData({
       mode,
@@ -200,7 +202,7 @@ Page({
       challengeId,
       colorId,
       slotId,
-      selected: mode === "songTournament" && tournamentArtist ? [tournamentArtist] : (mode === "top9" && topArtist ? [topArtist] : (mode === "color" && colorArtist ? [colorArtist] : (mode === "theme" && themeArtist ? [themeArtist] : (mode === "qa" && qaArtist ? [qaArtist] : (mode === "lyrics" && lyricsArtist ? [lyricsArtist] : []))))),
+      selected: mode === "introQuiz" && introQuizArtist ? [introQuizArtist] : (mode === "songTournament" && tournamentArtist ? [tournamentArtist] : (mode === "top9" && topArtist ? [topArtist] : (mode === "color" && colorArtist ? [colorArtist] : (mode === "theme" && themeArtist ? [themeArtist] : (mode === "qa" && qaArtist ? [qaArtist] : (mode === "lyrics" && lyricsArtist ? [lyricsArtist] : (mode === "rainLetter" && rainLetterArtist ? [rainLetterArtist] : []))))))),
       albumCount: (app.globalData.draftAlbums || []).length,
       isAlbumMode,
       albumTargetCount,
@@ -332,7 +334,7 @@ Page({
     const visibleAlbums = showSearchSections ? searchedAlbums.map(decorateItem) : [];
     const visibleArtistResults = showSearchSections ? searchedArtists.map(decorateItem) : [];
 
-    const isSingleArtistMode = this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" || this.data.mode === "lyrics" || this.data.mode === "songTournament";
+    const isSingleArtistMode = this.data.mode === "top9" || this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" || this.data.mode === "lyrics" || this.data.mode === "rainLetter" || this.data.mode === "songTournament" || this.data.mode === "introQuiz";
     const selectedCount = this.data.isAlbumMode ? this.data.albumCount : selected.length;
     const targetCount = this.data.isAlbumMode
       ? this.data.albumTargetCount
@@ -352,13 +354,14 @@ Page({
           : (isSingleArtistMode ? "" : getTargetCountHint(selected.length, "位")));
     const nextButtonText = this.data.isAlbumMode
       ? (this.data.mode === "themeAlbum" ? this.data.themeAlbumDoneText : getTargetCountStartText(selectedCount, "张", "专辑"))
-        : (this.data.mode === "songTournament" ? "下一步：设置决选"
+        : (this.data.mode === "introQuiz" ? "下一步：创建听歌房间"
+          : (this.data.mode === "songTournament" ? "下一步：设置决选"
           : (this.data.mode === "top9" ? "下一步：选择 Top 歌曲"
           : (this.data.mode === "color" ? "下一步：为这个颜色选歌"
             : (this.data.mode === "qa" ? "下一步：为这个问题选歌"
               : (this.data.mode === "theme" ? (treeThemeMode ? `下一步：选择 ${getTreeSongCountLabel(treeTargetCount)}` : "下一步：为这个题目选歌")
-                : (this.data.mode === "lyrics" ? "下一步：选择歌曲"
-                  : getTargetCountStartText(selected.length, "位", "歌手")))))));
+                : (this.data.mode === "lyrics" || this.data.mode === "rainLetter" ? "下一步：选择歌曲"
+                  : getTargetCountStartText(selected.length, "位", "歌手"))))))));
     this.setData({
       visibleArtists,
       visibleAlbums,
@@ -576,9 +579,13 @@ Page({
       return;
     }
 
-    if (this.data.mode === "songTournament") {
+    if (this.data.mode === "songTournament" || this.data.mode === "introQuiz") {
       const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
-      getApp().globalData.songTournamentArtist = selected[0] || null;
+      if (this.data.mode === "introQuiz") {
+        getApp().globalData.introQuizArtist = selected[0] || null;
+      } else {
+        getApp().globalData.songTournamentArtist = selected[0] || null;
+      }
       this.setData({ selected }, () => this.renderArtists());
       return;
     }
@@ -601,7 +608,7 @@ Page({
       return;
     }
 
-    if (this.data.mode === "lyrics") {
+    if (this.data.mode === "lyrics" || this.data.mode === "rainLetter") {
       const selected = this.data.selected.some((item) => item.id === id) ? [] : (artist ? [artist] : []);
       this.setData({ selected }, () => this.renderArtists());
       return;
@@ -657,6 +664,18 @@ Page({
       app.globalData.songTournamentArtist = this.data.selected[0];
       app.globalData.draftMode = "songTournament";
       wx.navigateTo({ url: "/pages/tournament-setup/tournament-setup" });
+      return;
+    }
+
+    if (this.data.mode === "introQuiz") {
+      if (this.data.selected.length !== 1) {
+        wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
+        return;
+      }
+      const app = getApp();
+      app.globalData.introQuizArtist = this.data.selected[0];
+      app.globalData.draftMode = "introQuiz";
+      wx.navigateTo({ url: "/pages/intro-quiz/intro-quiz" });
       return;
     }
 
@@ -737,6 +756,21 @@ Page({
       app.globalData.lyricsShareSong = null;
       app.globalData.lyricsShareSelectedLyrics = [];
       wx.navigateTo({ url: "/pages/songs/songs?role=creator&mode=lyrics" });
+      return;
+    }
+
+    if (this.data.mode === "rainLetter") {
+      if (this.data.selected.length !== 1) {
+        wx.showToast({ title: "请选择 1 位歌手", icon: "none" });
+        return;
+      }
+      const app = getApp();
+      app.globalData.draftMode = "rainLetter";
+      app.globalData.rainLetterArtist = this.data.selected[0];
+      app.globalData.rainLetterSong = null;
+      app.globalData.rainLetterSelectedLyrics = [];
+      app.globalData.rainLetterLyricLines = [];
+      wx.redirectTo({ url: "/pages/songs/songs?role=creator&mode=rainLetter" });
       return;
     }
 

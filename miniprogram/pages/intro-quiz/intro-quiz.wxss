@@ -1,0 +1,714 @@
+page {
+  background: #f4f0e8;
+  color: #11100e;
+}
+
+button::after {
+  border: 0;
+}
+
+.intro-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 34rpx 30rpx calc(48rpx + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+}
+
+.intro-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 24rpx;
+  border-bottom: 3rpx solid #11100e;
+}
+
+.eyebrow,
+.room-number,
+.round-line text {
+  display: block;
+  color: #5d5a54;
+  font-family: "Courier New", monospace;
+  font-size: 20rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
+}
+
+.page-title {
+  margin-top: 8rpx;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 48rpx;
+  font-weight: 900;
+  letter-spacing: -2rpx;
+}
+
+.live-mark {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 12rpx;
+  padding: 10rpx 16rpx;
+  border: 2rpx solid #11100e;
+  font-family: "Courier New", monospace;
+  font-size: 18rpx;
+  font-weight: 800;
+  letter-spacing: 2rpx;
+}
+
+.live-mark text {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #ef3b2d;
+  box-shadow: 0 0 0 6rpx rgba(239, 59, 45, .14);
+}
+
+.center-state {
+  display: flex;
+  min-height: 70vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.loading-record {
+  width: 150rpx;
+  height: 150rpx;
+  border: 3rpx solid #11100e;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #ef3b2d 0 12%, #11100e 13% 17%, transparent 18% 31%, #11100e 32% 34%, transparent 35% 48%, #11100e 49% 51%, transparent 52%);
+  animation: record-spin 1.8s linear infinite;
+}
+
+@keyframes record-spin {
+  to { transform: rotate(360deg); }
+}
+
+.state-title {
+  max-width: 600rpx;
+  margin-top: 34rpx;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 38rpx;
+  font-weight: 900;
+}
+
+.center-state > text {
+  margin-top: 14rpx;
+  color: #777169;
+  font-size: 25rpx;
+}
+
+.profile-card,
+.setup-stage,
+.waiting-stage,
+.finished-stage {
+  margin-top: 34rpx;
+}
+
+.card-index {
+  color: #ef3b2d;
+  font-family: "Courier New", monospace;
+  font-size: 22rpx;
+  font-weight: 900;
+  letter-spacing: 4rpx;
+}
+
+.section-title,
+.finished-title {
+  margin-top: 18rpx;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 54rpx;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.section-copy {
+  display: block;
+  margin-top: 14rpx;
+  color: #706b63;
+  font-size: 26rpx;
+}
+
+.profile-avatar {
+  display: flex;
+  width: 190rpx;
+  height: 190rpx;
+  align-items: center;
+  justify-content: center;
+  margin: 58rpx auto 32rpx;
+  padding: 0;
+  overflow: hidden;
+  border: 2rpx solid #11100e;
+  border-radius: 50%;
+  background: transparent;
+  color: #5d5a54;
+  font-size: 24rpx;
+}
+
+.profile-avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+.profile-input {
+  height: 96rpx;
+  padding: 0 26rpx;
+  border-top: 2rpx solid #11100e;
+  border-bottom: 2rpx solid #11100e;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 32rpx;
+  text-align: center;
+}
+
+.black-button,
+.outline-button,
+.invite-button {
+  display: flex;
+  width: 100%;
+  min-height: 94rpx;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  margin: 28rpx 0 0;
+  border-radius: 0;
+  font-size: 29rpx;
+  font-weight: 800;
+  letter-spacing: 2rpx;
+  line-height: 1.2;
+}
+
+.black-button {
+  color: #fff;
+  background: #11100e;
+}
+
+.black-button[disabled] {
+  color: #aaa49a;
+  background: #d7d1c7;
+}
+
+.outline-button,
+.invite-button {
+  border: 2rpx solid #11100e;
+  color: #11100e;
+  background: transparent;
+}
+
+.artist-ticket {
+  position: relative;
+  display: grid;
+  grid-template-columns: 156rpx 1fr auto;
+  min-height: 188rpx;
+  align-items: center;
+  gap: 24rpx;
+  margin-top: 12rpx;
+  padding: 24rpx 20rpx;
+  overflow: hidden;
+  border: 2rpx solid #11100e;
+  background: #fffdf8;
+}
+
+.artist-cover {
+  width: 156rpx;
+  height: 156rpx;
+  filter: grayscale(.12) contrast(1.04);
+}
+
+.artist-cover.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d8e8ee;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 58rpx;
+  font-weight: 900;
+}
+
+.artist-ticket-copy > text {
+  color: #777169;
+  font-family: "Courier New", monospace;
+  font-size: 19rpx;
+  letter-spacing: 3rpx;
+}
+
+.artist-ticket-copy > view {
+  margin: 10rpx 0 7rpx;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 38rpx;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.artist-ticket-copy label {
+  color: #5d5a54;
+  font-size: 23rpx;
+}
+
+.artist-ticket > button {
+  margin: 0;
+  padding: 10rpx;
+  border-bottom: 2rpx solid #11100e;
+  border-radius: 0;
+  background: transparent;
+  font-size: 22rpx;
+  line-height: 1;
+}
+
+.ticket-cut {
+  position: absolute;
+  right: 100rpx;
+  width: 28rpx;
+  height: 28rpx;
+  border: 2rpx solid #11100e;
+  border-radius: 50%;
+  background: #f4f0e8;
+}
+
+.ticket-cut.top { top: -17rpx; }
+.ticket-cut.bottom { bottom: -17rpx; }
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 30rpx;
+  border-top: 2rpx solid #11100e;
+  border-left: 2rpx solid #11100e;
+}
+
+.rules-grid view {
+  display: flex;
+  min-height: 130rpx;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 2rpx solid #11100e;
+  border-bottom: 2rpx solid #11100e;
+}
+
+.rules-grid text {
+  font-family: "Courier New", monospace;
+  font-size: 45rpx;
+  font-weight: 900;
+}
+
+.rules-grid label {
+  margin-top: 4rpx;
+  color: #6e6961;
+  font-size: 20rpx;
+}
+
+.setup-note,
+.inline-error,
+.host-waiting {
+  margin-top: 24rpx;
+  color: #69645c;
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+.inline-error {
+  padding: 18rpx;
+  color: #a72c22;
+  background: rgba(239, 59, 45, .08);
+}
+
+.room-number {
+  margin-top: 12rpx;
+  color: #ef3b2d;
+}
+
+.waiting-title {
+  margin: 28rpx 0 56rpx;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 58rpx;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+.player-pair {
+  display: grid;
+  gap: 18rpx;
+}
+
+.player-chip {
+  display: grid;
+  grid-template-columns: 86rpx 1fr auto;
+  min-height: 112rpx;
+  align-items: center;
+  gap: 22rpx;
+  padding: 14rpx 20rpx;
+  border: 2rpx solid #11100e;
+  background: rgba(255, 253, 248, .8);
+}
+
+.player-chip image,
+.player-avatar-text {
+  display: flex;
+  width: 82rpx;
+  height: 82rpx;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #dce8ea;
+  font-size: 30rpx;
+}
+
+.player-chip image { border-radius: 50%; }
+
+.player-chip text {
+  display: block;
+  font-size: 29rpx;
+  font-weight: 800;
+}
+
+.player-chip label {
+  color: #777169;
+  font-size: 21rpx;
+}
+
+.player-chip.empty {
+  border-style: dashed;
+  color: #8f8980;
+  background: transparent;
+}
+
+.invite-button {
+  gap: 16rpx;
+  color: #ef3b2d;
+  border-color: #ef3b2d;
+}
+
+.invite-button text {
+  font-size: 38rpx;
+}
+
+.host-waiting {
+  text-align: center;
+}
+
+.game-stage {
+  padding-top: 22rpx;
+}
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12rpx;
+}
+
+.score-player {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64rpx 1fr;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+  padding: 12rpx;
+  border: 2rpx solid #11100e;
+}
+
+.score-player.me {
+  background: #11100e;
+  color: #fff;
+}
+
+.score-avatar {
+  display: flex;
+  width: 60rpx;
+  height: 60rpx;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #d8e8ee;
+  color: #11100e;
+  font-weight: 900;
+}
+
+.score-avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+.score-player > view:nth-child(2) {
+  min-width: 0;
+}
+
+.score-player > view:nth-child(2) text,
+.score-player > view:nth-child(2) label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-player > view:nth-child(2) text {
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.score-player > view:nth-child(2) label {
+  opacity: .7;
+  font-family: "Courier New", monospace;
+  font-size: 20rpx;
+}
+
+.answered-dot {
+  position: absolute;
+  top: -10rpx;
+  right: -8rpx;
+  display: flex;
+  width: 30rpx;
+  height: 30rpx;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #35a466;
+  color: #fff;
+  font-size: 18rpx;
+}
+
+.round-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-top: 30rpx;
+}
+
+.round-line label {
+  color: #5d5a54;
+  font-size: 22rpx;
+  text-align: right;
+}
+
+.listen-disc {
+  position: relative;
+  width: 300rpx;
+  height: 300rpx;
+  margin: 34rpx auto 24rpx;
+  border-radius: 50%;
+  background: #11100e;
+  box-shadow: 0 22rpx 50rpx rgba(17, 16, 14, .18);
+}
+
+.listen-disc.spinning {
+  animation: disc-spin 3s linear infinite;
+}
+
+@keyframes disc-spin {
+  to { transform: rotate(360deg); }
+}
+
+.disc-ring {
+  position: absolute;
+  border: 1rpx solid rgba(255, 255, 255, .22);
+  border-radius: 50%;
+}
+
+.ring-a { inset: 34rpx; }
+.ring-b { inset: 62rpx; }
+
+.disc-label {
+  position: absolute;
+  inset: 88rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ef3b2d;
+  color: #fff;
+}
+
+.disc-label text {
+  font-family: "Courier New", monospace;
+  font-size: 42rpx;
+  font-weight: 900;
+}
+
+.disc-label label {
+  font-family: "Courier New", monospace;
+  font-size: 16rpx;
+  letter-spacing: 2rpx;
+}
+
+.tonearm {
+  position: absolute;
+  top: 30rpx;
+  right: 14rpx;
+  width: 8rpx;
+  height: 114rpx;
+  border-radius: 6rpx;
+  background: #d8d2c8;
+  transform: rotate(-24deg);
+  transform-origin: top center;
+}
+
+.time-track {
+  height: 8rpx;
+  overflow: hidden;
+  background: #d8d2c8;
+}
+
+.time-track view {
+  height: 100%;
+  background: #ef3b2d;
+  transition: width .18s linear;
+}
+
+.answer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12rpx;
+  margin-top: 24rpx;
+}
+
+.answer-option {
+  display: grid;
+  grid-template-columns: 42rpx 1fr;
+  min-height: 112rpx;
+  align-items: center;
+  gap: 10rpx;
+  margin: 0;
+  padding: 14rpx 16rpx;
+  border: 2rpx solid #11100e;
+  border-radius: 0;
+  background: #fffdf8;
+  color: #11100e;
+  font-size: 24rpx;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.answer-option > text {
+  font-family: "Courier New", monospace;
+  font-size: 22rpx;
+  font-weight: 900;
+}
+
+.answer-option[disabled] {
+  opacity: 1;
+  color: #11100e;
+}
+
+.answer-option.selected {
+  color: #fff;
+  background: #11100e;
+}
+
+.answer-option.correct {
+  border-color: #238b55;
+  color: #fff;
+  background: #238b55;
+}
+
+.answer-option.wrong {
+  border-color: #ef3b2d;
+  color: #fff;
+  background: #ef3b2d;
+}
+
+.finished-title {
+  font-size: 60rpx;
+}
+
+.accuracy-number {
+  margin-top: 46rpx;
+  font-family: "Courier New", monospace;
+  font-size: 142rpx;
+  font-weight: 900;
+  letter-spacing: -12rpx;
+  line-height: 1;
+}
+
+.accuracy-number text {
+  margin-left: 8rpx;
+  color: #ef3b2d;
+  font-size: 48rpx;
+  letter-spacing: 0;
+}
+
+.accuracy-label {
+  display: block;
+  margin-top: 8rpx;
+  color: #6e6961;
+  font-size: 23rpx;
+}
+
+.final-ranking {
+  margin-top: 42rpx;
+  border-top: 3rpx solid #11100e;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 42rpx 66rpx 1fr auto;
+  min-height: 98rpx;
+  align-items: center;
+  gap: 14rpx;
+  border-bottom: 2rpx solid #11100e;
+}
+
+.ranking-row > text,
+.ranking-score {
+  font-family: "Courier New", monospace;
+  font-size: 23rpx;
+  font-weight: 900;
+}
+
+.ranking-avatar {
+  display: flex;
+  width: 58rpx;
+  height: 58rpx;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #d8e8ee;
+  font-weight: 900;
+}
+
+.ranking-avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+.ranking-name {
+  font-size: 27rpx;
+  font-weight: 800;
+}
+
+.error-code {
+  padding: 10rpx 14rpx;
+  color: #fff;
+  background: #ef3b2d;
+  font-family: "Courier New", monospace;
+  font-size: 22rpx;
+  font-weight: 900;
+  letter-spacing: 3rpx;
+}
+
+.error-state .black-button {
+  margin-top: 44rpx;
+}
+
+.text-button {
+  margin-top: 12rpx;
+  background: transparent;
+  color: #5d5a54;
+  font-size: 24rpx;
+}
+
+@media (max-width: 360px) {
+  .answer-option {
+    grid-template-columns: 30rpx 1fr;
+    padding: 12rpx 10rpx;
+    font-size: 22rpx;
+  }
+
+  .rules-grid text {
+    font-size: 38rpx;
+  }
+}

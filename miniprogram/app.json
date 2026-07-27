@@ -1,6 +1,9 @@
 {
   "pages": [
     "pages/home/home",
+    "pages/intro-quiz/intro-quiz",
+    "pages/rain-box/rain-box",
+    "pages/rain-box-mailbox/rain-box-mailbox",
     "pages/theme/theme",
     "pages/theme-qa/theme-qa",
     "pages/theme-qa-sheet/theme-qa-sheet",

@@ -1,0 +1,305 @@
+page {
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.mailbox-page {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  padding: 52rpx 28rpx 100rpx;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  color: #20292d;
+  background:
+    linear-gradient(rgba(255, 255, 255, .93), rgba(255, 255, 255, .93)),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 51rpx,
+      rgba(80, 155, 188, .12) 52rpx 53rpx
+    );
+}
+
+.mailbox-hero {
+  display: grid;
+  grid-template-columns: 78rpx minmax(0, 1fr);
+  gap: 22rpx;
+  align-items: center;
+  width: 100%;
+  padding: 16rpx 8rpx 40rpx;
+  box-sizing: border-box;
+}
+
+.hero-envelope,
+.empty-envelope {
+  position: relative;
+  width: 66rpx;
+  height: 46rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #3b82a5;
+  border: 4rpx solid currentColor;
+  background: rgba(223, 243, 251, .62);
+}
+
+.hero-envelope-flap,
+.empty-envelope view {
+  position: absolute;
+  top: -31rpx;
+  left: 8rpx;
+  width: 48rpx;
+  height: 48rpx;
+  border-right: 4rpx solid currentColor;
+  border-bottom: 4rpx solid currentColor;
+  transform: rotate(45deg);
+}
+
+.hero-title {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 42rpx;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.hero-copy {
+  display: block;
+  margin-top: 8rpx;
+  color: #7e8c91;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 21rpx;
+}
+
+.mailbox-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-top: 1rpx solid #111111;
+  border-bottom: 1rpx solid #111111;
+}
+
+.mailbox-tabs button,
+.mailbox-page .mailbox-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 80rpx !important;
+  min-height: 80rpx !important;
+  margin: 0 !important;
+  padding: 0 24rpx !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #67767c;
+  border: 0;
+  border-radius: 0;
+  background: rgba(255, 255, 255, .78);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 23rpx;
+  line-height: 1;
+}
+
+.mailbox-tabs button:first-child {
+  border-right: 1rpx solid #111111;
+}
+
+.mailbox-tabs button::after {
+  border: 0;
+}
+
+.mailbox-tabs button.active {
+  color: #ffffff;
+  background: #111111;
+}
+
+.letter-list {
+  display: grid;
+  gap: 20rpx;
+  width: 100%;
+  margin-top: 30rpx;
+  box-sizing: border-box;
+}
+
+.mail-letter {
+  position: relative;
+  padding: 30rpx 28rpx 28rpx 76rpx;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1rpx solid #d4dcde;
+  background: rgba(255, 254, 250, .94);
+  box-shadow: 0 12rpx 32rpx rgba(36, 65, 77, .08);
+}
+
+.mail-letter::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 52rpx;
+  width: 1rpx;
+  background: rgba(192, 84, 84, .28);
+}
+
+.mail-letter-index {
+  position: absolute;
+  top: 31rpx;
+  left: 10rpx;
+  color: rgba(55, 126, 157, .38);
+  font-family: "Times New Roman", serif;
+  font-size: 18rpx;
+  letter-spacing: .04em;
+  transform: rotate(-90deg);
+}
+
+.mail-letter-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #829299;
+  font-family: "Times New Roman", "Songti SC", serif;
+  font-size: 18rpx;
+  letter-spacing: .05em;
+}
+
+.mail-letter-title {
+  margin-top: 18rpx;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 32rpx;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.mail-letter-preview {
+  margin-top: 13rpx;
+  overflow: hidden;
+  color: #68777c;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 23rpx;
+  line-height: 1.7;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-letter-detail {
+  display: grid;
+  gap: 12rpx;
+  margin-top: 26rpx;
+  padding-top: 22rpx;
+  border-top: 1rpx solid rgba(42, 60, 67, .16);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 25rpx;
+  line-height: 1.85;
+}
+
+.mail-letter-signature {
+  margin-top: 8rpx;
+  color: #58666b;
+  font-size: 22rpx;
+  text-align: right;
+}
+
+.archive-song-card {
+  display: grid;
+  grid-template-columns: 132rpx minmax(0, 1fr);
+  gap: 18rpx;
+  align-items: start;
+  margin-top: 18rpx;
+  padding: 12rpx;
+  border: 1rpx solid #d2ccc3;
+  border-radius: 7rpx;
+  background: #fffdfa;
+  box-shadow: 0 7rpx 18rpx rgba(22, 20, 17, .08);
+}
+
+.archive-song-card image,
+.archive-cover-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 132rpx;
+  height: 132rpx;
+  color: #ffffff;
+  background: #111111;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.archive-song-copy {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 132rpx;
+  align-content: start;
+}
+
+.archive-song-title,
+.archive-song-meta,
+.archive-song-lyrics text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archive-song-title {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 25rpx;
+  font-weight: 900;
+}
+
+.archive-song-meta {
+  margin-top: 5rpx;
+  color: #817a70;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 19rpx;
+  font-weight: 700;
+}
+
+.archive-song-lyrics {
+  display: grid;
+  gap: 2rpx;
+  align-content: start;
+  margin-top: 8rpx;
+  overflow: hidden;
+  color: #637075;
+  font-size: 18rpx;
+  line-height: 1.35;
+}
+
+.mailbox-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-height: 56vh;
+  color: #37474e;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 29rpx;
+  text-align: center;
+}
+
+.cloud-syncing {
+  width: 100%;
+  padding: 16rpx 0 0;
+  box-sizing: border-box;
+  color: #829299;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 19rpx;
+  text-align: center;
+}
+
+.mailbox-empty .empty-envelope {
+  margin-bottom: 32rpx;
+  color: rgba(59, 130, 165, .42);
+}
+
+.mailbox-empty > text {
+  margin-top: 12rpx;
+  color: #93a0a5;
+  font-size: 21rpx;
+}

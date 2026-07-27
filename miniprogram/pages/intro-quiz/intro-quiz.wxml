@@ -1,0 +1,195 @@
+<view class="intro-page">
+  <view class="intro-header">
+    <view>
+      <text class="eyebrow">INTRO / 15 SEC</text>
+      <view class="page-title">前奏听歌挑战</view>
+    </view>
+    <view class="live-mark">
+      <text></text>
+      LIVE
+    </view>
+  </view>
+
+  <view wx:if="{{pageState === 'loading'}}" class="center-state">
+    <view class="loading-record"></view>
+    <view class="state-title">{{joiningRoom ? "正在加入房间" : "正在准备"}}</view>
+    <text>把耳机和直觉都准备好。</text>
+  </view>
+
+  <view wx:elif="{{pageState === 'profile'}}" class="profile-card">
+    <text class="card-index">00</text>
+    <view class="section-title">先留下你的名字</view>
+    <text class="section-copy">它会出现在双方的实时比分牌上。</text>
+    <button class="profile-avatar" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+      <image wx:if="{{profile.avatarUrl}}" src="{{profile.avatarUrl}}" mode="aspectFill"></image>
+      <text wx:else>选择头像</text>
+    </button>
+    <input
+      class="profile-input"
+      type="nickname"
+      value="{{profile.nickName}}"
+      placeholder="点击输入昵称"
+      bindinput="onNicknameInput"
+    />
+    <button
+      class="black-button"
+      disabled="{{!profile.avatarUrl || !profile.nickName || profileSaving}}"
+      bindtap="confirmProfile"
+    >{{profileSaving ? "正在保存" : "进入挑战"}}</button>
+  </view>
+
+  <view wx:elif="{{pageState === 'setup'}}" class="setup-stage">
+    <view class="artist-ticket">
+      <view class="ticket-cut top"></view>
+      <view class="ticket-cut bottom"></view>
+      <image
+        wx:if="{{artist.cover || artist.avatarUrl}}"
+        class="artist-cover"
+        src="{{artist.cover || artist.avatarUrl}}"
+        mode="aspectFill"
+      ></image>
+      <view wx:else class="artist-cover fallback">{{artistInitial}}</view>
+      <view class="artist-ticket-copy">
+        <text>本场曲库</text>
+        <view>{{artist.name}}</view>
+        <label>{{preparingSongs ? "正在检查试听音源…" : candidateCount + " 首可用试听"}}</label>
+      </view>
+      <button bindtap="chooseAnotherArtist">更换</button>
+    </view>
+
+    <view class="rules-grid">
+      <view>
+        <text>08</text>
+        <label>题</label>
+      </view>
+      <view>
+        <text>15</text>
+        <label>秒 / 题</label>
+      </view>
+      <view>
+        <text>04</text>
+        <label>个选项</label>
+      </view>
+      <view>
+        <text>02</text>
+        <label>位好友</label>
+      </view>
+    </view>
+
+    <view class="setup-note">
+      双方会在同一时刻听到同一段试听。答对得 1 分，最后比较准确率。
+    </view>
+    <view wx:if="{{fatalMessage}}" class="inline-error">{{fatalMessage}}</view>
+    <button
+      class="black-button setup-create"
+      disabled="{{preparingSongs || candidateCount < 11 || creatingRoom}}"
+      bindtap="createRoom"
+    >{{creatingRoom ? "正在建房" : "创建双人房间"}}</button>
+  </view>
+
+  <view wx:elif="{{pageState === 'waiting'}}" class="waiting-stage">
+    <view class="room-number">ROOM {{roomCode}}</view>
+    <view class="waiting-title">一副耳机已经戴好，<br/>等另一副上线。</view>
+
+    <view class="player-pair waiting-pair">
+      <view wx:for="{{playerSlots}}" wx:key="slot" class="player-chip {{item.empty ? 'empty' : ''}}">
+        <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+        <view wx:else class="player-avatar-text">{{item.avatarText}}</view>
+        <view>
+          <text>{{item.name}}</text>
+          <label>{{item.empty ? "空位" : (item.isHost ? "房主" : "已加入")}}</label>
+        </view>
+      </view>
+    </view>
+
+    <button class="invite-button" open-type="share">
+      <text>↗</text>
+      邀请好友加入
+    </button>
+    <button
+      wx:if="{{room.isHost}}"
+      class="black-button"
+      disabled="{{!room.canStart || startingRoom}}"
+      bindtap="startRoom"
+    >{{startingRoom ? "正在同步" : (room.canStart ? "两人到齐，开始" : "等待好友加入")}}</button>
+    <view wx:else class="host-waiting">好友到齐后，由房主按下开始。</view>
+  </view>
+
+  <view wx:elif="{{pageState === 'game'}}" class="game-stage">
+    <view class="scoreboard">
+      <view wx:for="{{playerSlots}}" wx:key="slot" class="score-player {{item.isMe ? 'me' : ''}}">
+        <view class="score-avatar">
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <text wx:else>{{item.avatarText}}</text>
+        </view>
+        <view>
+          <text>{{item.name}}</text>
+          <label>{{item.scoreText}}</label>
+        </view>
+        <view wx:if="{{item.answeredCurrent}}" class="answered-dot">✓</view>
+      </view>
+    </view>
+
+    <view class="round-line">
+      <text>TRACK {{questionNumber}} / {{questionCount}}</text>
+      <label>{{phaseText}}</label>
+    </view>
+
+    <view class="listen-disc {{audioStatus === 'playing' ? 'spinning' : ''}}">
+      <view class="disc-ring ring-a"></view>
+      <view class="disc-ring ring-b"></view>
+      <view class="disc-label">
+        <text>{{countdownText}}</text>
+        <label>{{audioStatus === "buffering" || audioStatus === "loading" ? "LOADING" : "LISTEN"}}</label>
+      </view>
+      <view class="tonearm"></view>
+    </view>
+
+    <view class="time-track">
+      <view style="width: {{progressPercent}}%;"></view>
+    </view>
+
+    <view class="answer-grid">
+      <button
+        wx:for="{{options}}"
+        wx:key="id"
+        class="answer-option {{item.stateClass}}"
+        data-option-id="{{item.id}}"
+        disabled="{{room.phase !== 'playing' || room.myAnswer || submittingAnswer}}"
+        bindtap="chooseOption"
+      >
+        <text>{{item.letter}}</text>
+        <view>{{item.name}}</view>
+      </button>
+    </view>
+  </view>
+
+  <view wx:elif="{{pageState === 'finished'}}" class="finished-stage">
+    <text class="card-index">END</text>
+    <view class="finished-title">耳朵不会说谎。</view>
+    <view class="accuracy-number">{{myAccuracy}}<text>%</text></view>
+    <label class="accuracy-label">你的识别准确率</label>
+
+    <view class="final-ranking">
+      <view wx:for="{{finalRankings}}" wx:key="slot" class="ranking-row">
+        <text>{{item.rank}}</text>
+        <view class="ranking-avatar">
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <label wx:else>{{item.avatarText}}</label>
+        </view>
+        <view class="ranking-name">{{item.name}}</view>
+        <view class="ranking-score">{{item.score}} / {{questionCount}}</view>
+      </view>
+    </view>
+
+    <button class="black-button" bindtap="backHome">回到模式列表</button>
+    <button class="outline-button" bindtap="chooseAnotherArtist">换位歌手再开一局</button>
+  </view>
+
+  <view wx:elif="{{pageState === 'error'}}" class="center-state error-state">
+    <view class="error-code">OFF AIR</view>
+    <view class="state-title">{{fatalMessage}}</view>
+    <button class="black-button" bindtap="retrySetup">重新连接</button>
+    <button class="text-button" bindtap="backHome">返回首页</button>
+  </view>
+</view>

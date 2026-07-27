@@ -26,52 +26,16 @@
   </view>
 
   <view class="mode-list">
-    <button class="mode-card" data-mode="artist" bindtap="start">
+    <button
+      wx:for="{{homeModes}}"
+      wx:key="modeKey"
+      class="mode-card"
+      data-mode-key="{{item.modeKey}}"
+      bindtap="openMode"
+    >
       <view>
-        <text>歌手默契挑战</text>
-        <label>选几位歌手，每位 1 首最爱</label>
-      </view>
-      <text class="mode-arrow">›</text>
-    </button>
-    <button class="mode-card" data-mode="album" bindtap="start">
-      <view>
-        <text>专辑默契挑战</text>
-        <label>选几张专辑，每位 1 首最爱</label>
-      </view>
-      <text class="mode-arrow">›</text>
-    </button>
-    <button class="mode-card" data-mode="top9" bindtap="start">
-      <view>
-        <text>同担 Top 挑战</text>
-        <label>选 1 位歌手，排出自己的最爱</label>
-      </view>
-      <text class="mode-arrow">›</text>
-    </button>
-    <button class="mode-card" bindtap="startTournament">
-      <view>
-        <text>决战歌曲之巅</text>
-        <label>首轮每 4 首留下 2 首，再两两选出最后一首</label>
-      </view>
-      <text class="mode-arrow">›</text>
-    </button>
-    <button class="mode-card tree-mode-card" bindtap="startTree">
-      <view>
-        <text>圣诞树推歌</text>
-        <label>两个人，用歌名一起拼一棵圣诞树</label>
-      </view>
-      <text class="mode-arrow">›</text>
-    </button>
-    <button class="mode-card theme-mode-card" bindtap="startTheme">
-      <view>
-        <text>主题推歌</text>
-        <label>颜色、心形专辑、人生九专、歌单问答</label>
-      </view>
-      <text class="mode-arrow">›</text>
-    </button>
-    <button class="mode-card lyrics-mode-card" bindtap="startLyricsShare">
-      <view>
-        <text>歌词分享</text>
-        <label>选一首歌，截几句歌词做成卡片（实验功能）</label>
+        <text>{{item.title}}</text>
+        <label>{{item.description}}</label>
       </view>
       <text class="mode-arrow">›</text>
     </button>

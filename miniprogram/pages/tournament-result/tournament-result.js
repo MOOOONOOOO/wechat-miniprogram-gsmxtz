@@ -1,7 +1,9 @@
 const { getMiniProgramCode } = require("../../utils/api");
 const { imageShareMethods } = require("../../utils/imageShare");
 const { resolveCloudFileUrl } = require("../../utils/profile");
+const { getSongKey } = require("../../utils/songIdentity");
 const {
+  buildTournamentColumns,
   clearActiveTournament,
   deriveTournament,
   getSongName,
@@ -9,7 +11,9 @@ const {
 } = require("../../utils/songTournament");
 const {
   POSTER_WIDTH,
-  buildPosterGraph
+  buildPosterGraph,
+  getCoverSource,
+  getFallbackText
 } = require("../../utils/tournamentPoster");
 
 const EXPORT_WIDTH = 1080;
@@ -18,6 +22,10 @@ const EXPORT_HEIGHT = Math.round(1050 * EXPORT_SCALE);
 const SHARE_WIDTH = 500;
 const SHARE_HEIGHT = 400;
 const COVER_LOAD_CONCURRENCY = 6;
+const RESULT_STYLE_STORAGE_KEY = "songTournamentResultStyle";
+const RESULT_STYLE_ROUTE = "route";
+const RESULT_STYLE_TABLE = "table";
+const TABLE_BODY_HEIGHT = 731;
 
 function setCanvasFont(ctx, size, bold = false, family = "serif") {
   ctx.setFontSize(size);
@@ -163,6 +171,63 @@ function scaled(value) {
   return value * EXPORT_SCALE;
 }
 
+function normalizeResultStyle(value) {
+  return value === RESULT_STYLE_TABLE ? RESULT_STYLE_TABLE : RESULT_STYLE_ROUTE;
+}
+
+function readResultStylePreference() {
+  try {
+    return normalizeResultStyle(wx.getStorageSync(RESULT_STYLE_STORAGE_KEY));
+  } catch (error) {
+    return RESULT_STYLE_ROUTE;
+  }
+}
+
+function getStageLabel(songCount) {
+  const count = Number(songCount || 0);
+  if (count === 1) return "冠军";
+  if (count === 2) return "决赛";
+  return `${count}强`;
+}
+
+function buildTableColumns(record, derived) {
+  const championKey = getSongKey(derived && derived.champion);
+  const tournamentSize = Math.max(1, Number((record || {}).size || 0));
+  return buildTournamentColumns(record, derived).map((column, stageIndex) => {
+    const cells = column.cells || [];
+    const rowCount = Math.max(1, cells.length);
+    const rowHeight = TABLE_BODY_HEIGHT / rowCount;
+    const groupSize = stageIndex === 0 ? 4 : 2;
+    const thumbSize = Math.max(12, Math.min(48, Math.floor(rowHeight - 5)));
+    const fontSize = Math.max(7, Math.min(13, Math.round(rowHeight * 0.34)));
+    return {
+      key: column.key || `stage-${stageIndex}`,
+      label: getStageLabel(rowCount),
+      count: rowCount,
+      rows: cells.map((cell, songIndex) => {
+        const song = cell.song;
+        const songKey = getSongKey(song);
+        const highlighted = Boolean(championKey && songKey === championKey);
+        const span = Math.max(1, Number(cell.span || 1));
+        return {
+          key: `${stageIndex}-${songIndex}-${songKey}`,
+          name: getSongName(song),
+          cover: getCoverSource(song),
+          fallbackText: getFallbackText(song),
+          highlighted,
+          className: [
+            highlighted ? "winner-cell" : "",
+            (songIndex + 1) % groupSize === 0 && songIndex < cells.length - 1 ? "group-end" : ""
+          ].filter(Boolean).join(" "),
+          rowStyle: `height:${span / tournamentSize * 100}%`,
+          thumbStyle: `width:${thumbSize}rpx;height:${thumbSize}rpx`,
+          textStyle: `font-size:${fontSize}rpx`
+        };
+      })
+    };
+  });
+}
+
 Page({
   data: {
     invalid: false,
@@ -176,6 +241,8 @@ Page({
     posterNodes: [],
     posterEdges: [],
     finalistLabels: [],
+    tableColumns: [],
+    resultStyle: RESULT_STYLE_ROUTE,
     qrUrl: "",
     savingPoster: false,
     shareImageLoading: true,
@@ -203,6 +270,11 @@ Page({
     this.record = record;
     this.derived = derived;
     this.posterGraph = buildPosterGraph(record, derived);
+    this.tableColumns = buildTableColumns(record, derived);
+    this.posterPreviewCache = {};
+    this.posterPreviewPromises = {};
+    this.posterRenderQueue = Promise.resolve();
+    const resultStyle = readResultStylePreference();
     if (wx.hideShareMenu) wx.hideShareMenu();
     this.loadHomeQrCode();
     this.setData({
@@ -215,10 +287,12 @@ Page({
       championFallback: this.posterGraph.champion.fallbackText,
       posterNodes: this.posterGraph.nodes,
       posterEdges: this.posterGraph.edges,
-      finalistLabels: finalistLabels(this.posterGraph)
+      finalistLabels: finalistLabels(this.posterGraph),
+      tableColumns: this.tableColumns,
+      resultStyle
     }, () => {
       this.prepareShareThumbnail();
-      this.preparePosterPreview().catch(() => {});
+      this.preparePosterPreview(resultStyle).catch(() => {});
     });
   },
 
@@ -242,10 +316,31 @@ Page({
     const updates = {
       posterNodes: this.data.posterNodes.map((node) => (
         node.cover === failedCover ? { ...node, cover: "" } : node
-      ))
+      )),
+      tableColumns: this.data.tableColumns.map((column) => ({
+        ...column,
+        rows: column.rows.map((row) => (
+          row.cover === failedCover ? { ...row, cover: "" } : row
+        ))
+      }))
     };
     if (this.data.championCover === failedCover) updates.championCover = "";
     this.setData(updates);
+  },
+
+  switchResultStyle(event) {
+    const resultStyle = normalizeResultStyle(event.currentTarget.dataset.style);
+    if (resultStyle === this.data.resultStyle) return;
+    try {
+      wx.setStorageSync(RESULT_STYLE_STORAGE_KEY, resultStyle);
+    } catch (error) {}
+    const cachedPreview = (this.posterPreviewCache || {})[resultStyle] || "";
+    this.setData({
+      resultStyle,
+      posterPreviewUrl: cachedPreview,
+      posterPreviewLoading: !cachedPreview
+    });
+    if (!cachedPreview) this.preparePosterPreview(resultStyle).catch(() => {});
   },
 
   onQrError() {
@@ -323,8 +418,6 @@ Page({
       ctx.setFillStyle(background);
       ctx.fillRect(0, 0, SHARE_WIDTH, SHARE_HEIGHT);
 
-      ctx.setFillStyle("rgba(61,127,90,0.12)");
-      ctx.fillRect(0, 0, 12, SHARE_HEIGHT);
       ctx.setFillStyle("#171512");
       ctx.setTextAlign("left");
       ctx.setTextBaseline("middle");
@@ -340,18 +433,18 @@ Page({
 
       drawCover(ctx, coverImage, champion.fallbackText, 35, 116, 230, true);
       ctx.setFillStyle("#3d7f5a");
-      setCanvasFont(ctx, 14, true, "sans");
-      ctx.fillText("最 后 留 下", 296, 144);
+      setCanvasFont(ctx, 23, true);
+      ctx.fillText("最后留下", 296, 144);
       ctx.setFillStyle("#171512");
-      setCanvasFont(ctx, 28, true);
+      setCanvasFont(ctx, 30, true);
       const songName = clipText(ctx, champion.name, 168);
       ctx.fillText(songName, 296, 195);
       ctx.setFillStyle("#827b70");
-      setCanvasFont(ctx, 14, false, "sans");
-      ctx.fillText(clipText(ctx, champion.album, 168), 296, 230);
+      setCanvasFont(ctx, 15, false, "sans");
+      ctx.fillText(clipText(ctx, `出自 ${champion.album || "未知专辑"}`, 168), 296, 234);
       ctx.setFillStyle("#1f6f42");
-      setCanvasFont(ctx, 17, true, "sans");
-      ctx.fillText("你也来选一遍", 296, 312);
+      setCanvasFont(ctx, 22, true, "sans");
+      ctx.fillText("你来试试看", 296, 312);
 
       ctx.draw(false, () => {
         this.exportShareCanvas().then(resolve).catch(reject);
@@ -361,9 +454,10 @@ Page({
 
   saveResultPoster() {
     if (this.data.savingPoster || !this.derived) return;
+    const resultStyle = normalizeResultStyle(this.data.resultStyle);
     this.setData({ savingPoster: true });
-    wx.showLoading({ title: "生成决选海报" });
-    this.preparePosterPreview()
+    wx.showLoading({ title: resultStyle === RESULT_STYLE_TABLE ? "生成表格海报" : "生成晋级海报" });
+    this.preparePosterPreview(resultStyle)
       .then((filePath) => this.shareOrSaveImage(filePath))
       .then(() => {
         if (!this.usedImageShareMenu) wx.showToast({ title: "已保存到相册", icon: "success" });
@@ -375,28 +469,51 @@ Page({
       });
   },
 
-  preparePosterPreview() {
-    if (this.posterPreviewPromise) return this.posterPreviewPromise;
-    this.setData({ posterPreviewLoading: true });
+  preparePosterPreview(requestedStyle) {
+    const resultStyle = normalizeResultStyle(requestedStyle || this.data.resultStyle);
+    this.posterPreviewCache = this.posterPreviewCache || {};
+    this.posterPreviewPromises = this.posterPreviewPromises || {};
+    if (this.posterPreviewCache[resultStyle]) {
+      return Promise.resolve(this.posterPreviewCache[resultStyle]);
+    }
+    if (this.posterPreviewPromises[resultStyle]) {
+      return this.posterPreviewPromises[resultStyle];
+    }
+    if (this.data.resultStyle === resultStyle) this.setData({ posterPreviewLoading: true });
     const qrPromise = this.qrUrlPromise || Promise.resolve(this.data.qrUrl || "");
-    this.posterPreviewPromise = qrPromise
-      .then((qrUrl) => this.drawResultPoster(qrUrl))
+    const renderTask = (this.posterRenderQueue || Promise.resolve())
+      .catch(() => {})
+      .then(() => qrPromise)
+      .then((qrUrl) => this.drawResultPoster(qrUrl, resultStyle))
       .then((posterPreviewUrl) => {
-        this.setData({
-          posterPreviewUrl,
-          posterPreviewLoading: false
-        });
+        this.posterPreviewCache[resultStyle] = posterPreviewUrl;
+        if (this.data.resultStyle === resultStyle) {
+          this.setData({
+            posterPreviewUrl,
+            posterPreviewLoading: false
+          });
+        }
         return posterPreviewUrl;
       })
       .catch((error) => {
-        this.posterPreviewPromise = null;
-        this.setData({ posterPreviewLoading: false });
+        this.posterPreviewPromises[resultStyle] = null;
+        if (this.data.resultStyle === resultStyle) {
+          this.setData({ posterPreviewLoading: false });
+        }
         throw error;
       });
-    return this.posterPreviewPromise;
+    this.posterPreviewPromises[resultStyle] = renderTask;
+    this.posterRenderQueue = renderTask.catch(() => {});
+    return renderTask;
   },
 
-  drawResultPoster(qrUrl) {
+  drawResultPoster(qrUrl, requestedStyle) {
+    return normalizeResultStyle(requestedStyle) === RESULT_STYLE_TABLE
+      ? this.drawTableResultPoster(qrUrl)
+      : this.drawRouteResultPoster(qrUrl);
+  },
+
+  drawRouteResultPoster(qrUrl) {
     const graph = this.posterGraph;
     const sources = graph.nodes.map((node) => node.cover)
       .concat([graph.champion.cover, qrUrl])
@@ -490,9 +607,154 @@ Page({
     });
   },
 
+  drawTableResultPoster(qrUrl) {
+    const columns = this.tableColumns || [];
+    const sources = columns.reduce(
+      (items, column) => items.concat(column.rows.map((row) => row.cover)),
+      []
+    ).concat([qrUrl]).filter(Boolean);
+    return loadImageMap(sources).then((images) => {
+      const ctx = wx.createCanvasContext("tournamentPosterCanvas", this);
+      const background = ctx.createLinearGradient(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+      background.addColorStop(0, "#fffdfa");
+      background.addColorStop(0.58, "#f5efe5");
+      background.addColorStop(1, "#e8e2d6");
+      ctx.setFillStyle(background);
+      ctx.fillRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+
+      ctx.setTextBaseline("middle");
+      setCanvasFont(ctx, 55, true);
+      ctx.setFillStyle("#171512");
+      ctx.setTextAlign("center");
+      ctx.fillText("决 战 歌 曲 之 巅", EXPORT_WIDTH / 2, 82);
+      setCanvasFont(ctx, 27, true);
+      ctx.setFillStyle("#5c554d");
+      ctx.fillText(
+        clipText(ctx, `${this.data.artistName}丨${this.data.size}首参赛`, 520),
+        EXPORT_WIDTH / 2,
+        136
+      );
+
+      const tableX = 42;
+      const tableY = 190;
+      const tableWidth = EXPORT_WIDTH - tableX * 2;
+      const tableHeight = 1118;
+      const headerHeight = 58;
+      const bodyY = tableY + headerHeight;
+      const bodyHeight = tableHeight - headerHeight;
+      const columnGap = 7;
+      const columnCount = Math.max(1, columns.length);
+      const columnWidth = (tableWidth - columnGap * (columnCount - 1)) / columnCount;
+
+      ctx.setFillStyle("rgba(255,253,250,0.74)");
+      drawRoundRectPath(ctx, tableX - 8, tableY - 8, tableWidth + 16, tableHeight + 16, 10);
+      ctx.fill();
+
+      columns.forEach((column, columnIndex) => {
+        const columnX = tableX + columnIndex * (columnWidth + columnGap);
+        ctx.setFillStyle(columnIndex === columnCount - 1 ? "#174d32" : "#2f704e");
+        ctx.fillRect(columnX, tableY, columnWidth, headerHeight);
+        setCanvasFont(ctx, 18, true, "sans");
+        ctx.setFillStyle("#fffdfa");
+        ctx.setTextAlign("center");
+        ctx.fillText(column.label, columnX + columnWidth / 2, tableY + headerHeight / 2);
+
+        const rowCount = Math.max(1, column.rows.length);
+        const rowHeight = bodyHeight / rowCount;
+        column.rows.forEach((row, rowIndex) => {
+          const rowY = bodyY + rowIndex * rowHeight;
+          ctx.setFillStyle(row.highlighted ? "#dceccd" : (
+            columnIndex % 2 === 0 ? "rgba(255,253,250,0.96)" : "rgba(248,244,236,0.96)"
+          ));
+          ctx.fillRect(columnX, rowY, columnWidth, rowHeight);
+          ctx.setStrokeStyle(row.highlighted ? "rgba(31,111,66,0.72)" : "rgba(23,21,18,0.14)");
+          ctx.setLineWidth(row.highlighted ? 1.8 : 0.7);
+          ctx.strokeRect(columnX, rowY, columnWidth, rowHeight);
+
+          const isChampionCell = rowCount === 1;
+          const coverSize = isChampionCell
+            ? Math.min(92, columnWidth - 28)
+            : Math.max(15, Math.min(58, rowHeight - 10, columnWidth * 0.34));
+          if (isChampionCell) {
+            const coverX = columnX + (columnWidth - coverSize) / 2;
+            const coverY = rowY + rowHeight / 2 - coverSize / 2 - 24;
+            drawCover(
+              ctx,
+              images[row.cover],
+              row.fallbackText,
+              coverX,
+              coverY,
+              coverSize,
+              true
+            );
+            setCanvasFont(ctx, 18, true);
+            ctx.setFillStyle("#1f6f42");
+            ctx.setTextAlign("center");
+            ctx.fillText(
+              clipText(ctx, row.name, columnWidth - 20),
+              columnX + columnWidth / 2,
+              coverY + coverSize + 30
+            );
+          } else {
+            const coverX = columnX + 7;
+            const coverY = rowY + (rowHeight - coverSize) / 2;
+            drawCover(
+              ctx,
+              images[row.cover],
+              row.fallbackText,
+              coverX,
+              coverY,
+              coverSize,
+              row.highlighted
+            );
+            const textX = coverX + coverSize + 7;
+            const textWidth = Math.max(10, columnX + columnWidth - 7 - textX);
+            setCanvasFont(ctx, Math.max(9, Math.min(17, rowHeight * 0.33)), true, "sans");
+            ctx.setFillStyle(row.highlighted ? "#1f6f42" : "#171512");
+            ctx.setTextAlign("left");
+            ctx.fillText(
+              clipText(ctx, row.name, textWidth),
+              textX,
+              rowY + rowHeight / 2
+            );
+          }
+
+          if (row.className.indexOf("group-end") >= 0) {
+            ctx.setStrokeStyle("rgba(31,111,66,0.48)");
+            ctx.setLineWidth(1.4);
+            ctx.beginPath();
+            ctx.moveTo(columnX, rowY + rowHeight);
+            ctx.lineTo(columnX + columnWidth, rowY + rowHeight);
+            ctx.stroke();
+          }
+        });
+      });
+
+      const footerY = EXPORT_HEIGHT - 136;
+      const qrImage = images[qrUrl];
+      const brandX = qrImage && qrImage.path ? 492 : EXPORT_WIDTH / 2;
+      if (qrImage && qrImage.path) {
+        ctx.setFillStyle("#fffdfa");
+        ctx.fillRect(387, footerY - 8, 92, 92);
+        ctx.drawImage(qrImage.path, 393, footerY - 2, 80, 80);
+      }
+      ctx.setTextAlign(qrImage && qrImage.path ? "left" : "center");
+      setCanvasFont(ctx, 21, true);
+      ctx.setFillStyle("#171512");
+      ctx.fillText("决战歌曲之巅", brandX, footerY + 18);
+      setCanvasFont(ctx, 12, false, "sans");
+      ctx.setFillStyle("#827b70");
+      ctx.fillText("扫码开始你的歌曲决选", brandX, footerY + 49);
+
+      return new Promise((resolve, reject) => {
+        ctx.draw(false, () => this.exportCanvas().then(resolve).catch(reject));
+      });
+    });
+  },
+
   onShareAppMessage() {
     const payload = {
-      title: `我留下了《${this.data.championName}》，你也来选一遍`,
+      title: `我留下了《${this.data.championName}》，你来试试看`,
       path: "/pages/artists/artists?mode=songTournament&fromShare=1"
     };
     if (this.data.shareImageUrl) payload.imageUrl = this.data.shareImageUrl;
@@ -501,7 +763,7 @@ Page({
 
   onShareTimeline() {
     const payload = {
-      title: `我留下了《${this.data.championName}》，你也来选一遍`,
+      title: `我留下了《${this.data.championName}》，你来试试看`,
       query: "fromShare=1"
     };
     if (this.data.shareImageUrl) payload.imageUrl = this.data.shareImageUrl;

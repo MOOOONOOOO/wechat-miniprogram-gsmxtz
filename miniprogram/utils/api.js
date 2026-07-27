@@ -449,10 +449,6 @@ function getMiniProgramCode(payload) {
   return call("getMiniProgramCode", typeof payload === "object" ? payload : { challengeId: payload });
 }
 
-function renderTreeVideo(payload) {
-  return call("renderTreeVideo", payload || {});
-}
-
 function publishSharedResult(payload) {
   return call("publishSharedResult", payload);
 }
@@ -463,6 +459,54 @@ function getSharedResult(payload) {
 
 function getLyrics(payload) {
   return call("getLyrics", payload);
+}
+
+function sendRainLetter(payload) {
+  return call("rainLetters", {
+    action: "send",
+    ...(payload || {})
+  });
+}
+
+function receiveRainLetter(payload = {}) {
+  return call("rainLetters", {
+    action: "receive",
+    ...payload
+  });
+}
+
+function listRainLetters(payload = {}) {
+  return call("rainLetters", {
+    action: "list",
+    ...payload
+  });
+}
+
+function callIntroQuiz(action, payload = {}) {
+  return call("introQuiz", {
+    action,
+    ...payload
+  });
+}
+
+function createIntroQuiz(payload) {
+  return callIntroQuiz("create", payload);
+}
+
+function joinIntroQuiz(payload) {
+  return callIntroQuiz("join", payload);
+}
+
+function getIntroQuizState(payload) {
+  return callIntroQuiz("state", payload);
+}
+
+function startIntroQuiz(payload) {
+  return callIntroQuiz("start", payload);
+}
+
+function answerIntroQuiz(payload) {
+  return callIntroQuiz("answer", payload);
 }
 
 module.exports = {
@@ -481,8 +525,15 @@ module.exports = {
   getCreatorInbox,
   updateChallengeProfile,
   getMiniProgramCode,
-  renderTreeVideo,
   publishSharedResult,
   getSharedResult,
-  getLyrics
+  getLyrics,
+  sendRainLetter,
+  receiveRainLetter,
+  listRainLetters,
+  createIntroQuiz,
+  joinIntroQuiz,
+  getIntroQuizState,
+  startIntroQuiz,
+  answerIntroQuiz
 };

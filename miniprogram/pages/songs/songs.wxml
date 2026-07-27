@@ -42,8 +42,16 @@
     <view wx:for="{{progressDots}}" wx:key="id" class="dot {{item.doneClass}}"></view>
   </view>
 
+  <view wx:if="{{mode === 'rainLetter' && canProceed}}" class="rain-skip-hint">跳过歌词选择，返回信纸后自动补充前三句。</view>
+
   <view class="bottom-action nav-actions {{mode === 'top9' || mode === 'lyrics' ? 'top9-actions' : ''}}">
-    <button wx:if="{{mode !== 'top9' && mode !== 'lyrics'}}" class="secondary-button" disabled="{{!canPrev}}" bindtap="prev">返回歌手页</button>
+    <button wx:if="{{mode !== 'top9' && mode !== 'lyrics' && mode !== 'rainLetter'}}" class="secondary-button" disabled="{{!canPrev}}" bindtap="prev">返回歌手页</button>
+    <button
+      wx:if="{{mode === 'rainLetter'}}"
+      class="secondary-button rain-skip-button"
+      disabled="{{!canProceed}}"
+      bindtap="skipRainLyrics"
+    >跳过歌词</button>
     <button class="primary-button" disabled="{{!canProceed}}" bindtap="next">{{nextLabel}}</button>
   </view>
 

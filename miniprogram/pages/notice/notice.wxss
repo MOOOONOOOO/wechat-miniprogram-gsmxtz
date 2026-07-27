@@ -110,18 +110,70 @@
   font-weight: 900;
 }
 
-.announcement-content {
+.announcement-content-shell {
+  position: relative;
   margin-top: 12rpx;
+}
+
+.announcement-content,
+.announcement-content-probe,
+.announcement-content-measure {
   color: #5f584f;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
   font-size: 25rpx;
-  line-height: 1.55;
+  line-height: 38.75rpx;
   font-weight: 700;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.announcement-content text {
-  display: block;
-  min-height: 1.55em;
+.announcement-content.collapsed,
+.announcement-content-probe {
+  max-height: 387.5rpx;
+  overflow: hidden;
+}
+
+.announcement-content.expanded {
+  max-height: none;
+}
+
+.announcement-content-probe,
+.announcement-content-measure {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.announcement-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 16rpx;
+  padding: 5rpx 0;
+  color: #2f704e;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 22rpx;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.announcement-toggle-mark {
+  width: 8rpx;
+  height: 8rpx;
+  margin-top: -4rpx;
+  border-right: 2rpx solid currentColor;
+  border-bottom: 2rpx solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 180ms ease;
+}
+
+.announcement-toggle-mark.expanded {
+  margin-top: 4rpx;
+  transform: rotate(225deg);
 }
 
 .notice-empty view {

@@ -14,14 +14,7 @@
       bindtap="openTemplate"
     >
       <view class="template-visual">
-        <view wx:if="{{item.id == 'color' || item.id == 'life9'}}" class="color-cover-preview">
-          <view
-            wx:for="{{item.previewCells}}"
-            wx:key="index"
-            class="color-cover-cell color-cover-cell-{{index}}"
-          ></view>
-        </view>
-        <view wx:elif="{{item.id == 'tree'}}" class="tree-cover-preview">
+        <view wx:if="{{item.id == 'tree'}}" class="tree-cover-preview">
           <view class="tree-cover-star">✦</view>
           <view
             wx:for="{{item.previewRows}}"

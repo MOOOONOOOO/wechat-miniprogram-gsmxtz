@@ -22,8 +22,20 @@
           <label>{{item.timeText}}</label>
         </view>
         <view class="announcement-title">{{item.title}}</view>
-        <view class="announcement-content">
-          <text wx:for="{{item.contentLines}}" wx:key="index">{{item}}</text>
+        <view class="announcement-content-shell">
+          <view class="announcement-content {{item.expanded ? 'expanded' : 'collapsed'}}">{{item.contentText}}</view>
+          <view class="announcement-content-probe" aria-hidden="true">{{item.contentText}}</view>
+          <view class="announcement-content-measure" aria-hidden="true">{{item.contentText}}</view>
+        </view>
+        <view
+          wx:if="{{item.canExpand}}"
+          class="announcement-toggle"
+          data-index="{{index}}"
+          bindtap="toggleAnnouncement"
+          aria-label="{{item.expanded ? '收起公告内容' : '展开公告全文'}}"
+        >
+          <text>{{item.expanded ? "收起" : "展开全文"}}</text>
+          <view class="announcement-toggle-mark {{item.expanded ? 'expanded' : ''}}"></view>
         </view>
       </view>
     </view>

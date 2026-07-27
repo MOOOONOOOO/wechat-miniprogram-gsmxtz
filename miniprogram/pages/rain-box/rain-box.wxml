@@ -1,0 +1,360 @@
+<view class="rain-page">
+  <button
+    class="mailbox-button"
+    aria-label="打开信箱"
+    bindtap="openMailbox"
+  >
+    <view class="envelope-icon">
+      <view class="envelope-flap"></view>
+    </view>
+  </button>
+
+  <view class="box-stage">
+    <block wx:if="{{mediaStatus === 'warming' || mediaStatus === 'ready'}}">
+      <video
+        id="rainTimeline1"
+        class="timeline {{activeTimeline === 'timeline1' ? 'active' : ''}}"
+        data-key="timeline1"
+        src="{{videoSrc1}}"
+        poster="/images/rain-box-enter-poster.jpg"
+        muted="{{true}}"
+        controls="{{false}}"
+        autoplay="{{false}}"
+        loop="{{false}}"
+        object-fit="contain"
+        show-center-play-btn="{{false}}"
+        show-play-btn="{{false}}"
+        show-fullscreen-btn="{{false}}"
+        show-mute-btn="{{false}}"
+        enable-progress-gesture="{{false}}"
+        bindloadedmetadata="onVideoLoaded"
+        bindended="onTimeline1Ended"
+        binderror="onVideoError"
+      ></video>
+      <video
+        id="rainTimeline2"
+        class="timeline {{activeTimeline === 'timeline2' ? 'active' : ''}}"
+        data-key="timeline2"
+        src="{{videoSrc2}}"
+        muted="{{true}}"
+        controls="{{false}}"
+        autoplay="{{false}}"
+        loop="{{true}}"
+        object-fit="contain"
+        show-center-play-btn="{{false}}"
+        show-play-btn="{{false}}"
+        show-fullscreen-btn="{{false}}"
+        show-mute-btn="{{false}}"
+        enable-progress-gesture="{{false}}"
+        bindloadedmetadata="onVideoLoaded"
+        binderror="onVideoError"
+      ></video>
+      <video
+        id="rainTimeline3"
+        class="timeline {{activeTimeline === 'timeline3' ? 'active' : ''}}"
+        data-key="timeline3"
+        src="{{videoSrc3}}"
+        muted="{{true}}"
+        controls="{{false}}"
+        autoplay="{{false}}"
+        loop="{{false}}"
+        object-fit="contain"
+        show-center-play-btn="{{false}}"
+        show-play-btn="{{false}}"
+        show-fullscreen-btn="{{false}}"
+        show-mute-btn="{{false}}"
+        enable-progress-gesture="{{false}}"
+        bindloadedmetadata="onVideoLoaded"
+        bindended="onTimeline3Ended"
+        binderror="onVideoError"
+      ></video>
+      <video
+        id="rainTimeline4"
+        class="timeline {{activeTimeline === 'timeline4' ? 'active' : ''}}"
+        data-key="timeline4"
+        src="{{videoSrc4}}"
+        muted="{{true}}"
+        controls="{{false}}"
+        autoplay="{{false}}"
+        loop="{{false}}"
+        object-fit="contain"
+        show-center-play-btn="{{false}}"
+        show-play-btn="{{false}}"
+        show-fullscreen-btn="{{false}}"
+        show-mute-btn="{{false}}"
+        enable-progress-gesture="{{false}}"
+        bindloadedmetadata="onVideoLoaded"
+        bindended="onTimeline4Ended"
+        binderror="onVideoError"
+      ></video>
+    </block>
+    <image
+      wx:if="{{activeTimeline === 'timeline1' && sceneState === 'idle'}}"
+      class="timeline-entry-poster"
+      src="/images/rain-box-enter-poster.jpg"
+      mode="aspectFit"
+    ></image>
+    <view class="video-switch-mask {{videoMaskVisible ? 'visible' : ''}}"></view>
+  </view>
+
+  <view class="mode-actions">
+    <button
+      class="open-button"
+      disabled="{{mediaStatus === 'error' ? false : actionDisabled}}"
+      bindtap="onOpenTap"
+    >
+      <text wx:if="{{sceneState === 'received'}}">{{buttonLabel}}</text>
+      <text wx:elif="{{mediaStatus === 'loading'}}">准备中 {{mediaProgress}}%</text>
+      <text wx:elif="{{mediaStatus === 'warming'}}">准备中</text>
+      <text wx:elif="{{mediaStatus === 'error'}}">重新准备</text>
+      <text wx:else>{{buttonLabel}}</text>
+    </button>
+    <button
+      class="write-button"
+      disabled="{{hasWrittenToday || !videoPrepared || sendingLetter}}"
+      bindtap="openComposer"
+    >{{hasWrittenToday ? "今日已写" : "写信"}}</button>
+  </view>
+</view>
+
+<view
+  wx:if="{{showLetter}}"
+  class="letter-scene"
+  bindtap="onLetterSceneTap"
+  bindtouchstart="onLetterGestureStart"
+  bindtouchend="onLetterGestureEnd"
+  bindtouchcancel="onLetterGestureCancel"
+>
+  <scroll-view
+    class="letter-scroll"
+    scroll-y="{{true}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="letter-paper">
+    <view class="letter-lines"></view>
+    <view class="letter-header">
+      <view>
+        <text class="letter-kicker">一封来自雨里的信</text>
+        <view class="letter-title">{{receivedLetter.title}}</view>
+      </view>
+      <text class="letter-date">{{receivedLetter.dateText}}</text>
+    </view>
+
+    <view class="letter-body">
+      <text wx:for="{{receivedLetter.bodyLines}}" wx:key="index">{{item}}</text>
+      <text class="letter-signature">—— {{receivedLetter.signature}}</text>
+    </view>
+
+    <view class="letter-footer">
+      <view class="letter-actions">
+        <button catchtap="closeLetter">收好这封信</button>
+        <button class="replay-button" catchtap="replayAnimation">重看动画</button>
+      </view>
+    </view>
+
+    <view class="letter-song-card">
+      <view class="letter-song-artwork">
+        <image
+          wx:if="{{receivedSong.cover}}"
+          src="{{receivedSong.cover}}"
+          mode="aspectFill"
+          binderror="onReceivedSongCoverError"
+        ></image>
+        <view wx:else class="letter-song-cover-fallback">雨</view>
+      </view>
+      <view class="letter-song-copy">
+        <view class="letter-song-title">{{receivedSong.name}}</view>
+        <view class="letter-song-artist">
+          <text>{{receivedSong.artistName}}</text>
+          <text wx:if="{{receivedSong.album}}"> · {{receivedSong.album}}</text>
+        </view>
+        <view class="letter-song-lyrics">
+          <text wx:if="{{receivedLyricsLoading && !receivedSong.lyrics.length}}">歌词正在抵达…</text>
+          <text wx:for="{{receivedSong.lyrics}}" wx:key="index">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="postmark">
+      <text>RAIN</text>
+      <text>LETTER</text>
+    </view>
+    </view>
+  </scroll-view>
+</view>
+
+<view
+  wx:if="{{showComposer}}"
+  class="letter-scene compose-scene"
+  bindtap="closeComposer"
+>
+  <scroll-view
+    class="letter-scroll"
+    scroll-y="{{true}}"
+    show-scrollbar="{{false}}"
+    catchtap="noop"
+  >
+    <view class="letter-paper compose-paper">
+    <view class="letter-lines"></view>
+    <view class="letter-header compose-header">
+      <text class="letter-kicker">写给下一个打开盒子的人</text>
+      <input
+        class="compose-title-input"
+        value="{{composeTitle}}"
+        maxlength="30"
+        placeholder="这封信的标题"
+        data-field="composeTitle"
+        bindinput="onComposerInput"
+      />
+      <text class="letter-date">{{composeDateText}}</text>
+    </view>
+
+    <view class="compose-body">
+      <textarea
+        class="compose-body-input"
+        value="{{composeBody}}"
+        maxlength="{{composeBodyMaxLength}}"
+        placeholder="把今天想留下的话写在这里……"
+        data-field="composeBody"
+        bindinput="onComposerInput"
+      ></textarea>
+      <view class="compose-body-count">{{composeBodyCount}} / {{composeBodyMaxLength}}</view>
+      <input
+        class="compose-signature-input"
+        value="{{composeSignature}}"
+        maxlength="24"
+        placeholder="点击输入落款"
+        data-field="composeSignature"
+        bindinput="onComposerInput"
+      />
+    </view>
+
+    <button
+      wx:if="{{!composeSong}}"
+      class="add-song-button"
+      bindtap="chooseSongForLetter"
+    >
+      <text>＋</text>
+      <view>
+        <view>选择一首歌</view>
+        <text>从歌手页开始寻找</text>
+      </view>
+    </button>
+
+    <view wx:else class="compose-song-section">
+      <view class="compose-song-label">
+        <text>附在信里的歌</text>
+        <button bindtap="chooseSongForLetter">重新选择</button>
+      </view>
+      <view class="letter-song-card compose-song-card">
+        <view class="letter-song-artwork">
+          <image
+            wx:if="{{composeSong.cover}}"
+            src="{{composeSong.cover}}"
+            mode="aspectFill"
+            binderror="onComposeSongCoverError"
+          ></image>
+          <view wx:else class="letter-song-cover-fallback">{{composeSong.name}}</view>
+        </view>
+        <view class="letter-song-copy">
+          <view class="letter-song-title">{{composeSong.name}}</view>
+          <view class="letter-song-artist">
+            <text>{{composeSong.artistName}}</text>
+            <text wx:if="{{composeSong.album}}"> · {{composeSong.album}}</text>
+          </view>
+          <view class="letter-song-lyrics">
+            <text wx:if="{{composeLyricsLoading && !composeLyrics.length}}">歌词正在抵达…</text>
+            <text wx:for="{{composeLyrics}}" wx:key="index">{{item}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="compose-actions">
+      <button class="compose-cancel" bindtap="closeComposer">暂时不写</button>
+      <button
+        class="compose-send"
+        disabled="{{!composerCanSend}}"
+        bindtap="submitLetter"
+      >{{sendingLetter ? "正在寄出" : "发送信件"}}</button>
+      <button
+        class="compose-preview-button"
+        disabled="{{!composerCanSend}}"
+        bindtap="previewComposedLetter"
+      >预览</button>
+    </view>
+
+    <view class="postmark">
+      <text>RAIN</text>
+      <text>LETTER</text>
+    </view>
+    </view>
+  </scroll-view>
+</view>
+
+<view
+  wx:if="{{showLetterPreview}}"
+  class="letter-scene preview-scene"
+>
+  <scroll-view
+    class="letter-scroll"
+    scroll-y="{{true}}"
+    show-scrollbar="{{false}}"
+    catchtap="noop"
+  >
+    <view class="letter-paper preview-paper">
+    <view class="letter-lines"></view>
+    <view class="letter-header">
+      <view>
+        <text class="letter-kicker">写给下一个打开盒子的人</text>
+        <view wx:if="{{composeTitle}}" class="letter-title">{{composeTitle}}</view>
+      </view>
+      <text class="letter-date">{{composeDateText}}</text>
+    </view>
+
+    <view class="letter-body preview-letter-body">
+      <text class="preview-body-text">{{composeBody}}</text>
+      <text class="letter-signature">—— {{composeSignature || "神秘人"}}</text>
+    </view>
+
+    <view wx:if="{{composeSong}}" class="letter-song-card">
+      <view class="letter-song-artwork">
+        <image
+          wx:if="{{composeSong.cover}}"
+          src="{{composeSong.cover}}"
+          mode="aspectFill"
+        ></image>
+        <view wx:else class="letter-song-cover-fallback">{{composeSong.name}}</view>
+      </view>
+      <view class="letter-song-copy">
+        <view class="letter-song-title">{{composeSong.name}}</view>
+        <view class="letter-song-artist">
+          <text>{{composeSong.artistName}}</text>
+          <text wx:if="{{composeSong.album}}"> · {{composeSong.album}}</text>
+        </view>
+        <view class="letter-song-lyrics">
+          <text wx:for="{{composeLyrics}}" wx:key="index">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <button class="preview-back-button" bindtap="closeLetterPreview">返回继续写</button>
+
+    <view class="postmark">
+      <text>RAIN</text>
+      <text>LETTER</text>
+    </view>
+    </view>
+  </scroll-view>
+</view>
+
+<view class="rain-layer {{rainDirectionClass}}" aria-hidden="true">
+  <view
+    wx:for="{{rainDrops}}"
+    wx:key="id"
+    class="rain-drop"
+    style="{{item.motionStyle}}"
+  >
+    <view class="rain-streak" style="{{item.streakStyle}}"></view>
+  </view>
+</view>

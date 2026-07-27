@@ -49,6 +49,14 @@ Page({
     if (this.data.activeTab === "announcements") this.loadAnnouncements();
   },
 
+  onResize() {
+    if (this.data.activeTab === "announcements") this.scheduleAnnouncementMeasure();
+  },
+
+  onUnload() {
+    if (this.announcementMeasureTimer) clearTimeout(this.announcementMeasureTimer);
+  },
+
   setTab(event) {
     const activeTab = event.currentTarget.dataset.tab || "announcements";
     this.setData({ activeTab }, () => {
@@ -58,6 +66,50 @@ Page({
 
   onContentInput(event) {
     this.setData({ content: event.detail.value || "" });
+  },
+
+  toggleAnnouncement(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const item = this.data.announcements[index];
+    if (!item || !item.canExpand) return;
+    this.setData({
+      [`announcements[${index}].expanded`]: !item.expanded
+    });
+  },
+
+  scheduleAnnouncementMeasure() {
+    if (this.announcementMeasureTimer) clearTimeout(this.announcementMeasureTimer);
+    this.announcementMeasureTimer = setTimeout(() => {
+      this.announcementMeasureTimer = null;
+      this.measureAnnouncementOverflow();
+    }, 60);
+  },
+
+  measureAnnouncementOverflow() {
+    if (!this.data.announcements.length || this.data.activeTab !== "announcements") return;
+    const query = wx.createSelectorQuery().in(this);
+    query.selectAll(".announcement-content-probe").boundingClientRect();
+    query.selectAll(".announcement-content-measure").boundingClientRect();
+    query.exec((results) => {
+      const probes = results[0] || [];
+      const fullContents = results[1] || [];
+      if (!probes.length || probes.length !== fullContents.length) return;
+      const updates = {};
+      let changed = false;
+      this.data.announcements.forEach((item, index) => {
+        const canExpand = Number((fullContents[index] || {}).height || 0)
+          > Number((probes[index] || {}).height || 0) + 1;
+        if (item.canExpand !== canExpand) {
+          updates[`announcements[${index}].canExpand`] = canExpand;
+          changed = true;
+        }
+        if (!canExpand && item.expanded) {
+          updates[`announcements[${index}].expanded`] = false;
+          changed = true;
+        }
+      });
+      if (changed) this.setData(updates);
+    });
   },
 
   submitFeedback() {
@@ -91,12 +143,17 @@ Page({
     callNoticeHub({ action: "listAnnouncements" })
       .then((res) => {
         this.setData({
-          announcements: (res.announcements || []).map((item) => ({
-            ...item,
-            contentLines: splitContentLines(item.content),
-            timeText: formatTime(item.time)
-          }))
-        });
+          announcements: (res.announcements || []).map((item) => {
+            const contentText = splitContentLines(item.content).join("\n");
+            return {
+              ...item,
+              contentText,
+              timeText: formatTime(item.time),
+              canExpand: false,
+              expanded: false
+            };
+          })
+        }, () => this.scheduleAnnouncementMeasure());
       })
       .catch(() => {
         this.setData({ announcements: [] });

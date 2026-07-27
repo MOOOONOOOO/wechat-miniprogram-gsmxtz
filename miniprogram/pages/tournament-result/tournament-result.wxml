@@ -5,15 +5,38 @@
   </view>
 
   <block wx:else>
+    <view class="result-style-toolbar">
+      <view class="result-style-switch" role="tablist" aria-label="结果展示样式">
+        <view
+          class="result-style-option {{resultStyle === 'route' ? 'active' : ''}}"
+          role="tab"
+          aria-selected="{{resultStyle === 'route'}}"
+          data-style="route"
+          bindtap="switchResultStyle"
+        >
+          晋级路线
+        </view>
+        <view
+          class="result-style-option {{resultStyle === 'table' ? 'active' : ''}}"
+          role="tab"
+          aria-selected="{{resultStyle === 'table'}}"
+          data-style="table"
+          bindtap="switchResultStyle"
+        >
+          表格结果
+        </view>
+      </view>
+    </view>
+
     <view class="panel result-poster-shell">
       <image
         wx:if="{{posterPreviewUrl}}"
         class="result-poster-image"
         src="{{posterPreviewUrl}}"
         mode="widthFix"
-        aria-label="决战歌曲之巅完整晋级海报"
+        aria-label="{{resultStyle === 'table' ? '决战歌曲之巅表格结果海报' : '决战歌曲之巅完整晋级海报'}}"
       ></image>
-      <view wx:else class="result-poster" aria-label="决战歌曲之巅完整晋级海报">
+      <view wx:elif="{{resultStyle === 'route'}}" class="result-poster" aria-label="决战歌曲之巅完整晋级海报">
         <view class="poster-atmosphere poster-atmosphere-left"></view>
         <view class="poster-atmosphere poster-atmosphere-right"></view>
         <view class="poster-grain"></view>
@@ -90,6 +113,59 @@
           </view>
         </view>
       </view>
+
+      <view wx:else class="table-result-poster" aria-label="决战歌曲之巅表格结果海报">
+        <view class="table-poster-header">
+          <view class="table-poster-title">决 战 歌 曲 之 巅</view>
+          <view class="table-poster-artist">{{artistName}}丨{{size}}首参赛</view>
+        </view>
+
+        <view class="table-stage-grid table-stage-grid-{{tableColumns.length}}">
+          <view
+            class="table-stage-column"
+            wx:for="{{tableColumns}}"
+            wx:for-item="column"
+            wx:key="key"
+          >
+            <view class="table-stage-heading">{{column.label}}</view>
+            <view class="table-stage-body">
+              <view
+                class="table-song-cell {{row.className}}"
+                wx:for="{{column.rows}}"
+                wx:for-item="row"
+                wx:key="key"
+                style="{{row.rowStyle}}"
+              >
+                <view class="table-song-cover" style="{{row.thumbStyle}}">
+                  <image
+                    wx:if="{{row.cover}}"
+                    src="{{row.cover}}"
+                    mode="aspectFill"
+                    data-cover="{{row.cover}}"
+                    binderror="onPosterCoverError"
+                  ></image>
+                  <view wx:else class="table-song-fallback">{{row.fallbackText}}</view>
+                </view>
+                <text class="table-song-name" style="{{row.textStyle}}">{{row.name}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="poster-footer table-poster-footer {{qrUrl ? '' : 'without-qr'}}">
+          <image
+            wx:if="{{qrUrl}}"
+            class="poster-qr"
+            src="{{qrUrl}}"
+            mode="aspectFit"
+            binderror="onQrError"
+          ></image>
+          <view class="poster-brand">
+            <view>决战歌曲之巅</view>
+            <text>扫码开始你的歌曲决选</text>
+          </view>
+        </view>
+      </view>
     </view>
 
     <view class="result-actions">
@@ -97,7 +173,7 @@
         {{shareImageLoading ? "正在准备分享图" : "分享给好友"}}
       </button>
       <button class="secondary-button save-poster-button" disabled="{{savingPoster}}" bindtap="saveResultPoster">
-        {{savingPoster ? "生成中" : "保存结果海报"}}
+        {{savingPoster ? "生成中" : (resultStyle === "table" ? "保存表格结果" : "保存晋级路线")}}
       </button>
       <view class="result-secondary-actions">
         <button class="secondary-button" bindtap="replay">再玩一次</button>

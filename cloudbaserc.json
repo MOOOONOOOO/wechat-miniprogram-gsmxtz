@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "envId": "cloud1-d7g2ztvs63d2800d4",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "rainLetters",
+      "type": "Event",
+      "handler": "index.main",
+      "timeout": 10,
+      "runtime": "Nodejs16.13",
+      "memorySize": 256,
+      "installDependency": true,
+      "envVariables": {
+        "RAIN_LETTERS_ENABLED": "true",
+        "RAIN_LETTERS_ALLOW_PREVIEW_BYPASS": "false"
+      }
+    },
+    {
+      "name": "modeCatalog",
+      "type": "Event",
+      "handler": "index.main",
+      "timeout": 3,
+      "runtime": "Nodejs16.13",
+      "memorySize": 256,
+      "installDependency": true
+    },
+    {
+      "name": "introQuiz",
+      "type": "Event",
+      "handler": "index.main",
+      "timeout": 10,
+      "runtime": "Nodejs16.13",
+      "memorySize": 256,
+      "installDependency": true
+    }
+  ]
+}

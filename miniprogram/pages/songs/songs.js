@@ -28,6 +28,10 @@ const { getSongKey } = require("../../utils/songIdentity");
 const SONG_LIST_CACHE_VERSION = 2;
 const MIN_LEGACY_DEFAULT_SONGS = 24;
 
+function isSingleSongMode(mode) {
+  return mode === "lyrics" || mode === "rainLetter";
+}
+
 function truncateText(text, maxLength = 12) {
   const value = String(text || "");
   return value.length > maxLength ? `${value.slice(0, maxLength)}....` : value;
@@ -137,7 +141,7 @@ function stableInsertIndex(song, length) {
 
 function getChallengeTargetCount(mode, app, fallbackItems = []) {
   const challenge = app.globalData.challenge || {};
-  if (mode === "lyrics") return 1;
+  if (isSingleSongMode(mode)) return 1;
   if (mode === "theme") return (app.globalData.draftThemePrompts || []).length || 9;
   if (mode === "qa") return (app.globalData.draftQaPrompts || []).length || 9;
   if (mode === "color") return (app.globalData.draftColors || getColorSubjects()).length || 9;
@@ -209,11 +213,12 @@ Page({
     const themeArtist = mode === "theme" ? (app.globalData.currentThemeSlotArtist || ((app.globalData.draftThemeArtists || {})[slotId])) : null;
     const qaArtist = mode === "qa" ? (app.globalData.currentQaSlotArtist || ((app.globalData.draftQaArtists || {})[slotId])) : null;
     const lyricsArtist = mode === "lyrics" ? (app.globalData.lyricsShareArtist || (app.globalData.draftArtists || [])[0]) : null;
+    const rainLetterArtist = mode === "rainLetter" ? app.globalData.rainLetterArtist : null;
     const artists = mode === "album"
       ? (app.globalData.draftAlbums || [])
       : (mode === "top9"
           ? [app.globalData.draftTopArtist || (app.globalData.challenge || {}).topArtist].filter(Boolean)
-          : (mode === "lyrics" ? [lyricsArtist].filter(Boolean) : (mode === "color" ? [colorArtist].filter(Boolean) : (mode === "theme" ? [themeArtist].filter(Boolean) : (mode === "qa" ? [qaArtist].filter(Boolean) : (app.globalData.draftArtists || []))))));
+          : (mode === "lyrics" ? [lyricsArtist].filter(Boolean) : (mode === "rainLetter" ? [rainLetterArtist].filter(Boolean) : (mode === "color" ? [colorArtist].filter(Boolean) : (mode === "theme" ? [themeArtist].filter(Boolean) : (mode === "qa" ? [qaArtist].filter(Boolean) : (app.globalData.draftArtists || [])))))));
     const targetCount = getChallengeTargetCount(mode, app, artists);
     if (role === "friend" && challengeId) {
       const draft = readFriendDraft(challengeId);
@@ -259,8 +264,10 @@ Page({
   ...creatorProfileGateMethods,
 
   onShow() {
-    if (this.data.mode === "lyrics") {
-      const selectedSong = getApp().globalData.lyricsShareSong || null;
+    if (isSingleSongMode(this.data.mode)) {
+      const selectedSong = this.data.mode === "rainLetter"
+        ? (getApp().globalData.rainLetterSong || null)
+        : (getApp().globalData.lyricsShareSong || null);
       const selectedTrackId = selectedSong && selectedSong.trackId ? String(selectedSong.trackId) : "";
       this.setData({
         selectedTrackId,
@@ -305,8 +312,10 @@ Page({
       displayName: this.data.mode === "album" ? truncateText(artist.name, 12) : artist.name
     };
     const choiceKey = this.data.mode === "color" ? this.data.colorId : (this.data.mode === "theme" || this.data.mode === "qa" ? this.data.slotId : currentArtist.id);
-    const selected = this.data.mode === "lyrics"
-      ? (getApp().globalData.lyricsShareSong || null)
+    const selected = isSingleSongMode(this.data.mode)
+      ? (this.data.mode === "rainLetter"
+          ? (getApp().globalData.rainLetterSong || null)
+          : (getApp().globalData.lyricsShareSong || null))
       : (this.data.mode === "top9" ? null : this.data.choices[choiceKey]);
     const selectedCount = Object.keys(this.data.choices || {}).length;
     const topTargetCount = this.getTopTargetCount(this.data.topSongs.length);
@@ -327,16 +336,16 @@ Page({
       query: "",
       songs: [],
       selectedTrackId: selected ? selected.trackId : "",
-      stepText: this.data.mode === "top9" ? this.data.topSongs.length : (this.data.mode === "lyrics" ? (selected ? 1 : 0) : (this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? selectedCount : index + 1)),
+      stepText: this.data.mode === "top9" ? this.data.topSongs.length : (isSingleSongMode(this.data.mode) ? (selected ? 1 : 0) : (this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? selectedCount : index + 1)),
       targetCount,
-      canPrev: this.data.mode !== "top9" && this.data.mode !== "lyrics",
+      canPrev: this.data.mode !== "top9" && !isSingleSongMode(this.data.mode),
       canProceed: this.data.mode === "top9" ? this.canUseTopSongs(this.data.topSongs.length) : Boolean(selected),
-      nextLabel: this.data.mode === "top9" ? getTopNextLabel(this.data.role, this.data.topSongs.length) : (this.data.mode === "lyrics" ? "下一步：选择歌词" : (this.data.mode === "color" ? "回到颜色格" : (this.data.mode === "theme" ? (treeThemeMode ? "回到圣诞树" : "回到题目格") : (this.data.mode === "qa" ? "回到问答格" : (isLastSubject ? (this.data.role === "friend" ? "查看结果" : "创建挑战") : (this.data.mode === "album" ? "下一张" : "下一位")))))),
+      nextLabel: this.data.mode === "top9" ? getTopNextLabel(this.data.role, this.data.topSongs.length) : (isSingleSongMode(this.data.mode) ? "下一步：选择歌词" : (this.data.mode === "color" ? "回到颜色格" : (this.data.mode === "theme" ? (treeThemeMode ? "回到圣诞树" : "回到题目格") : (this.data.mode === "qa" ? "回到问答格" : (isLastSubject ? (this.data.role === "friend" ? "查看结果" : "创建挑战") : (this.data.mode === "album" ? "下一张" : "下一位")))))),
       showEmpty: false,
       emptyText: treeThemeMode
         ? `这位歌手暂时没有 ${treeSongCountLabel}歌，试试搜索歌名或换一位歌手。`
         : (this.data.mode === "color" || this.data.mode === "theme" || this.data.mode === "qa" ? "没有找到这位歌手的歌曲，换个关键词试试。" : "没有找到相关歌曲，换个关键词试试。"),
-      progressDots: this.data.mode === "lyrics"
+      progressDots: isSingleSongMode(this.data.mode)
         ? buildScaledProgressDots(selected ? 1 : 0, 1)
         : (this.data.mode === "top9"
           ? buildScaledProgressDots(this.data.topSongs.length, topTargetCount)
@@ -547,6 +556,8 @@ Page({
     } else if (this.data.mode === "lyrics") {
       app.globalData.lyricsShareArtist = currentArtist;
       app.globalData.draftArtists = (app.globalData.draftArtists || []).map(patch);
+    } else if (this.data.mode === "rainLetter") {
+      app.globalData.rainLetterArtist = currentArtist;
     }
     this.setData({ artists, currentArtist });
   },
@@ -578,12 +589,19 @@ Page({
       return;
     }
 
-    if (this.data.mode === "lyrics") {
+    if (isSingleSongMode(this.data.mode)) {
       const selectedSong = normalizeLyricsSong(song);
       const app = getApp();
-      app.globalData.lyricsShareArtist = this.data.currentArtist;
-      app.globalData.lyricsShareSong = selectedSong;
-      app.globalData.lyricsShareSelectedLyrics = [];
+      if (this.data.mode === "rainLetter") {
+        app.globalData.rainLetterArtist = this.data.currentArtist;
+        app.globalData.rainLetterSong = selectedSong;
+        app.globalData.rainLetterSelectedLyrics = [];
+        app.globalData.rainLetterLyricLines = [];
+      } else {
+        app.globalData.lyricsShareArtist = this.data.currentArtist;
+        app.globalData.lyricsShareSong = selectedSong;
+        app.globalData.lyricsShareSelectedLyrics = [];
+      }
       this.setData({
         selectedTrackId: String(trackId),
         stepText: 1,
@@ -594,7 +612,9 @@ Page({
           selectedClass: String(item.trackId) === String(trackId) ? "selected" : ""
         }))
       });
-      wx.navigateTo({ url: "/pages/lyrics-select/lyrics-select" });
+      if (this.data.mode !== "rainLetter") {
+        wx.navigateTo({ url: "/pages/lyrics-select/lyrics-select" });
+      }
       return;
     }
 
@@ -781,8 +801,11 @@ Page({
   },
 
   buildProgressDots(artists, choices, targetCount) {
-    if (this.data.mode === "lyrics") {
-      return buildScaledProgressDots(getApp().globalData.lyricsShareSong ? 1 : 0, 1);
+    if (isSingleSongMode(this.data.mode)) {
+      const selectedSong = this.data.mode === "rainLetter"
+        ? getApp().globalData.rainLetterSong
+        : getApp().globalData.lyricsShareSong;
+      return buildScaledProgressDots(selectedSong ? 1 : 0, 1);
     }
     if (this.data.mode === "artist" || this.data.mode === "album") {
       return buildScaledProgressDots(Object.keys(choices || {}).length, targetCount || (artists || []).length || 9);
@@ -830,13 +853,34 @@ Page({
     wx.redirectTo({ url: `/pages/artists/artists?${params.join("&")}` });
   },
 
+  skipRainLyrics() {
+    if (this.data.mode !== "rainLetter") return;
+    const app = getApp();
+    const song = normalizeLyricsSong(app.globalData.rainLetterSong || {});
+    if (!song.name) {
+      wx.showToast({ title: "先选一首歌", icon: "none" });
+      return;
+    }
+
+    app.globalData.rainLetterSelectedLyrics = [];
+    app.globalData.rainLetterLyricLines = [];
+    wx.navigateBack({ delta: 1 });
+  },
+
   next() {
-    if (this.data.mode === "lyrics") {
-      if (!getApp().globalData.lyricsShareSong) {
+    if (isSingleSongMode(this.data.mode)) {
+      const selectedSong = this.data.mode === "rainLetter"
+        ? getApp().globalData.rainLetterSong
+        : getApp().globalData.lyricsShareSong;
+      if (!selectedSong) {
         wx.showToast({ title: "先选一首歌", icon: "none" });
         return;
       }
-      wx.navigateTo({ url: "/pages/lyrics-select/lyrics-select" });
+      wx.navigateTo({
+        url: this.data.mode === "rainLetter"
+          ? "/pages/lyrics-select/lyrics-select?mode=rainLetter"
+          : "/pages/lyrics-select/lyrics-select"
+      });
       return;
     }
 

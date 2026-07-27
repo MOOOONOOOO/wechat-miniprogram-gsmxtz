@@ -8,6 +8,7 @@ const COLOR_TEMPLATE = {
   status: "ready",
   prompts: []
 };
+const LIFE9_COVER_FALLBACK = "/images/theme/life9-cover.jpg";
 
 function readThemeCoverConfig() {
   if (!wx.cloud) return Promise.resolve({});
@@ -53,8 +54,12 @@ function decorateTemplates(cloudCovers = {}, failedCovers = {}) {
     COLOR_TEMPLATE,
     ...getThemeTemplates().filter((item) => item.id !== "tree")
   ];
+  const life9Cover = cloudCovers.life9 || LIFE9_COVER_FALLBACK;
   return visibleTemplates.map((item) => {
-    const coverImage = failedCovers[item.id] ? "" : (cloudCovers[item.id] || "");
+    const sharedLife9Cover = item.id === "color" || item.id === "life9";
+    const coverImage = failedCovers[item.id]
+      ? ""
+      : (sharedLife9Cover ? life9Cover : (cloudCovers[item.id] || ""));
     return {
       ...item,
       coverImage,

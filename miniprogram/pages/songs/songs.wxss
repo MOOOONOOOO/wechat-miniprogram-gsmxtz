@@ -300,3 +300,20 @@
   padding: 0 18rpx;
   box-sizing: border-box;
 }
+
+.rain-skip-hint {
+  flex: 0 0 auto;
+  width: 100%;
+  margin-top: 12rpx;
+  color: #827b70;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 20rpx;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.rain-skip-button {
+  color: #3e4b50;
+  border-color: rgba(23, 21, 18, .3);
+  background: rgba(255, 255, 255, .72);
+}
