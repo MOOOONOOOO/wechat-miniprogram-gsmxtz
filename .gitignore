@@ -15,3 +15,8 @@ Thumbs.db
 
 # Old nested scaffold repo in this workspace
 wechat-miniprogram/
+
+# Private rain-letter source data
+_source-assets/rainLetterPrivateSeeds.js
+cloudfunctions/rainLetters/seeds/
+miniprogram/data/rainLetterSeeds.js

@@ -2,7 +2,7 @@ const {
   receiveRainLetter,
   sendRainLetter
 } = require("../../utils/api");
-const { WELCOME_RAIN_LETTER } = require("../../data/rainLetterSeeds");
+const { DEVELOPMENT_RAIN_LETTER } = require("../../data/rainLetterPreview");
 const { hydrateRainLetterSong } = require("../../utils/rainLetterLyrics");
 
 const DAILY_RECEIVED_KEY = "rainBoxReceivedDate:v1";
@@ -944,7 +944,7 @@ Page({
   },
 
   useDevelopmentIncomingLetter() {
-    const receivedLetter = normalizeReceivedLetter(WELCOME_RAIN_LETTER);
+    const receivedLetter = normalizeReceivedLetter(DEVELOPMENT_RAIN_LETTER);
     this.setData({
       receivedLetter,
       receivedSong: receivedLetter.song,
