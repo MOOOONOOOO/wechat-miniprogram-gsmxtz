@@ -505,6 +505,10 @@ function startIntroQuiz(payload) {
   return callIntroQuiz("start", payload);
 }
 
+function readyIntroQuiz(payload) {
+  return callIntroQuiz("ready", payload);
+}
+
 function answerIntroQuiz(payload) {
   return callIntroQuiz("answer", payload);
 }
@@ -535,5 +539,6 @@ module.exports = {
   joinIntroQuiz,
   getIntroQuizState,
   startIntroQuiz,
+  readyIntroQuiz,
   answerIntroQuiz
 };

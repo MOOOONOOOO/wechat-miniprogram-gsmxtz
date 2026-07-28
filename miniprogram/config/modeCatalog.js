@@ -21,8 +21,8 @@ const MODE_DEFINITIONS = [
   },
   {
     modeKey: "introQuiz",
-    title: "前奏听歌挑战",
-    description: "两位好友同时听 15 秒，四选一抢认歌曲"
+    title: "片段猜歌挑战",
+    description: "单人练习或 2–5 人同场，自选片段时长四选一猜歌"
   },
   {
     modeKey: "tree",

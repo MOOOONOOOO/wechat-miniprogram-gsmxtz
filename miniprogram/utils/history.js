@@ -220,6 +220,7 @@ function modeTitle(mode) {
   if (mode === "color") return "颜色推歌挑战";
   if (mode === "qa") return "歌单问答";
   if (mode === "tree") return "圣诞树推歌";
+  if (mode === "introQuiz") return "片段猜歌挑战";
   return mode === "album" ? "专辑默契挑战" : "歌手默契挑战";
 }
 
@@ -468,6 +469,28 @@ function summarizeParticipated(record) {
   const isColorMode = record.mode === "color";
   const isQaMode = record.mode === "qa";
   const isTreeMode = record.mode === "tree";
+  const isIntroQuiz = record.mode === "introQuiz";
+  const quizArtist = (((record.challenge || {}).artists || [])[0]) || {};
+  if (isIntroQuiz) {
+    return {
+      id: `participated:${record.challengeId}`,
+      type: "participated",
+      recordKind: "introQuiz",
+      typeText: "我参与",
+      challengeId: record.challengeId,
+      title: modeTitle(record.mode),
+      counterpartName: quizArtist.name || "本场曲库",
+      avatarText: (quizArtist.name || "音").slice(0, 1),
+      avatarUrl: quizArtist.cover || quizArtist.coverUrl || quizArtist.avatarUrl || "",
+      scoreText: `${score}%`,
+      timeText: formatTime(record.savedAt || record.updatedAt),
+      rawTime: normalizeTime(record.savedAt || record.updatedAt),
+      resultCount: 1,
+      canView: false,
+      canShare: false,
+      actionClass: "action-count-1"
+    };
+  }
   return {
     id: `participated:${record.challengeId}`,
     type: "participated",

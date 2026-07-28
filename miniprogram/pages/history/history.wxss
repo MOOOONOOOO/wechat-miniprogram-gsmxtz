@@ -177,6 +177,10 @@
   overflow: hidden;
 }
 
+.record-actions.action-count-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .record-actions.action-count-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

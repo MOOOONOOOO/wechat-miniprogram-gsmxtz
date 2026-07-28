@@ -9,6 +9,7 @@ const KNOWN_MODE_KEYS = new Set([
   "album",
   "top9",
   "songTournament",
+  "introQuiz",
   "tree",
   "theme",
   "rainBox",
